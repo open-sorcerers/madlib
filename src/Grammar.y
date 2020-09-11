@@ -69,12 +69,14 @@ exps :: { [Exp] }
   | exp                 { [$1] }
 
 exp :: { Exp }
-  : int                     { IntLit    { etype = Just "Num", epos = tokenToPos $1} }
+  : '(' exp ')'             { $2 }
+  | int                     { IntLit    { etype = Just "Num", epos = tokenToPos $1} }
   | str                     { StringLit { etype = Just "String", epos = tokenToPos $1} }
   | false                   { BoolLit   { etype = Just "Bool", epos = tokenToPos $1} }
   | true                    { BoolLit   { etype = Just "Bool", epos = tokenToPos $1} }
   | exp operator exp        { Operation { etype = Nothing, epos = epos $1, eleft = $1, eoperator = $2, eright = $3 }}
   | name                    { VarAccess { etype = Nothing, epos = tokenToPos $1, ename = strV $1 }}
+
 
 params :: { [Param] }
   : name ',' params { (strV $1) : $3 }
@@ -101,7 +103,7 @@ data FunctionDef = FunctionDef { ftype :: Maybe Type
                                , fname :: String
                                , fparams :: [Param]
                                , fbody :: Body }
-  deriving(Eq, Show)
+   deriving(Eq, Show)
 
 data Typing = Typing { tpos :: Pos, tfor :: Name, ttypes :: [Type] } deriving(Eq, Show)
 

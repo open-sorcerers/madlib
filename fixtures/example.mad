@@ -11,4 +11,4 @@ multiply :: Num -> Num -> Num
 multiply = (a, b) => a * b
 
 divide :: Num -> Num -> Num
-divide = (a, b) => a / b
+divide = (a, b) => ((a) / (b))
