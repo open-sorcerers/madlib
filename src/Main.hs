@@ -1,6 +1,6 @@
 module Main where
 
-import qualified Data.Map as M
+import qualified Data.Map                      as M
 import           Resolver
 
 main :: IO ()
