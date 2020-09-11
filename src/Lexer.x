@@ -43,6 +43,9 @@ tokens :-
   const                                 { mapToken (\_ -> TokenConst) }
   [=]                                   { mapToken (\_ -> TokenEq) }
   "+"                                   { mapToken (\_ -> TokenPlus) }
+  "-"                                   { mapToken (\_ -> TokenMinus) }
+  "/"                                   { mapToken (\_ -> TokenSlash) }
+  "*"                                   { mapToken (\_ -> TokenAsterisk) }
   if                                    { mapToken (\_ -> TokenIf) }
   $digit+                               { mapToken (\s -> TokenInt (read s)) }
   "true"                                { mapToken (\_ -> (TokenBool True)) }
@@ -85,6 +88,9 @@ data TokenClass
  | TokenIf
  | TokenEq
  | TokenPlus
+ | TokenMinus
+ | TokenSlash
+ | TokenAsterisk
  | TokenTripleEq
  | TokenComa
  | TokenLeftCurly

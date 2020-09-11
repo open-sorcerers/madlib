@@ -17,6 +17,9 @@ import Text.Printf
   name  { Token _ (TokenName _) }
   '='   { Token _ TokenEq }
   '+'   { Token _ TokenPlus }
+  '-'   { Token _ TokenMinus }
+  '/'   { Token _ TokenSlash }
+  '*'   { Token _ TokenAsterisk }
   '::'  { Token _ TokenDoubleColon }
   '->'  { Token _ TokenArrow }
   '=>'  { Token _ TokenFatArrow }
@@ -83,6 +86,9 @@ body :: { Body }
 operator :: { Operator }
   : '===' { TripleEq }
   | '+'   { Plus }
+  | '-'   { Minus }
+  | '/'   { Slash }
+  | '*'   { Asterisk }
 
 {
 
@@ -114,6 +120,9 @@ data Body = Body Exp deriving(Eq, Show)
 
 data Operator = TripleEq 
               | Plus
+              | Minus
+              | Slash
+              | Asterisk
   deriving(Eq, Show)
 
 lexerWrap :: (Token -> Alex a) -> Alex a

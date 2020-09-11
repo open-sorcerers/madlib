@@ -1,10 +1,10 @@
 TIX_FILE := $(shell stack path --local-hpc-root)/combined/custom/custom.tix
 
 lint:
-	hlint src
+  brittany src/*.hs -c
 
 prettify:
-	stylish-haskell -r -v -i src/*.hs &&  stylish-haskell -r -v -i test/*.hs
+  brittany src/*.hs --write-mode inplace --suppress-output && brittany test/*.hs --write-mode inplace --suppress-output
 
 test:
 	stack test

@@ -1,5 +1,14 @@
-fn :: Num -> Num -> Num
-fn = (a, b) => a + b
+add :: Num -> Num -> Num
+add = (a, b) => a + b
 
-fn2 :: Num -> Num -> Num -> Num
-fn2 = (a, b, c) => a + b + c
+add3 :: Num -> Num -> Num -> Num
+add3 = (a, b, c) => a + b + c
+
+subtract :: Num -> Num -> Num
+subtract = (a, b) => a - b
+
+multiply :: Num -> Num -> Num
+multiply = (a, b) => a * b
+
+divide :: Num -> Num -> Num
+divide = (a, b) => a / b
