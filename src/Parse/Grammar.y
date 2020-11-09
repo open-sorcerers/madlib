@@ -65,7 +65,8 @@ import           Explain.Meta
   '<='     { Token _ TokenLeftChevronEq }
   '!'      { Token _ TokenExclamationMark }
 
-%left '>' '<' '>=' '<=' '==' '?' ':' '->' '|' '|>'
+%left '|>'
+%left '>' '<' '>=' '<=' '==' '?' ':' '->' '|'
 %left '+' '-' '||'
 %left '*' '/' '&&'
 %left 'ret' ','
@@ -178,7 +179,7 @@ exp :: { Src.Exp }
   | js                        %shift { Meta emptyInfos (tokenToArea $1) (Src.JSExp $ strV $1) }
   | name '=' exp              %shift { Meta emptyInfos (tokenToArea $1) (Src.Assignment (strV $1) $3) }
   | name                      %shift { Meta emptyInfos (tokenToArea $1) (Src.Var $ strV $1) }
-  | name rParenL args ')'     %shift { buildApp (mergeAreas (tokenToArea $1) (tokenToArea $4)) (Meta emptyInfos (tokenToArea $1) (Src.Var $ strV $1)) $3 }
+  -- | name rParenL args ')'     %shift { buildApp (mergeAreas (tokenToArea $1) (tokenToArea $4)) (Meta emptyInfos (tokenToArea $1) (Src.Var $ strV $1)) $3 }
   | exp '(' args ')'          %shift { buildApp (mergeAreas (getArea $1) (tokenToArea $4)) $1 $3 }
   | '(' exp ')' '(' args ')'  %shift { buildApp (mergeAreas (tokenToArea $1) (tokenToArea $6)) $2 $5 }
   | '(' params ')' '=>' exp   %shift { buildAbs (mergeAreas (tokenToArea $1) (getArea $5)) $2 $5 }
@@ -321,13 +322,34 @@ operation :: { Src.Exp }
                       $3)
                    }
   | '!' exp  { Meta emptyInfos (mergeAreas (tokenToArea $1) (getArea $2)) (Src.App (Meta emptyInfos (tokenToArea $1) (Src.Var "!")) $2) }
-  | exp '|>' exp  { Meta emptyInfos (getArea $1) (Src.App
+  | exp '|>' exp { Meta emptyInfos (getArea $1) (Src.App
                       ((Meta emptyInfos (getArea $1) (Src.App
                          (Meta emptyInfos (tokenToArea $2) (Src.Var "|>")) 
                          $1))) 
                       $3)
                   
                   }
+  | exp '(' '|>' exp ')' %shift { Meta emptyInfos (getArea $1) (Src.App
+                      ((Meta emptyInfos (getArea $1) (Src.App
+                         (Meta emptyInfos (tokenToArea $3) (Src.Var "|>")) 
+                         $1))) 
+                      $4)
+                  
+                  }
+  -- | exp '(' '|>' exp %shift { Meta emptyInfos (getArea $1) (Src.App
+  --                     ((Meta emptyInfos (getArea $1) (Src.App
+  --                        (Meta emptyInfos (tokenToArea $3) (Src.Var "|>")) 
+  --                        $1))) 
+  --                     $4)
+                  
+  --                 }
+  -- | exp '|>' exp ')' %shift { Meta emptyInfos (getArea $1) (Src.App
+  --                     ((Meta emptyInfos (getArea $1) (Src.App
+  --                        (Meta emptyInfos (tokenToArea $2) (Src.Var "|>")) 
+  --                        $1))) 
+  --                     $3)
+                  
+  --                 }
 
 listConstructor :: { Src.Exp }
   : '[' listItems ']' { Meta emptyInfos (tokenToArea $1) (Src.ListConstructor $2) }

@@ -1,4 +1,6 @@
 {
+{-# LANGUAGE NamedFieldPuns                 #-}
+{-# LANGUAGE FlexibleContexts                 #-}
 {-# LANGUAGE OverloadedStrings                 #-}
 {-# LANGUAGE NoMonomorphismRestriction          #-}
 {-# LANGUAGE CPP                                #-}
@@ -25,19 +27,23 @@ module Parse.Lexer
   )
 where
 
+import           Control.Monad.State
 import           System.Exit
 import           Debug.Trace
 import qualified Data.Text     as T
 import           Explain.Location
 }
 
-%wrapper "monad"
+%wrapper "monadUserState"
 
 $digit = 0-9                    -- digits
 $alpha = [a-zA-Z]               -- alphabetic characters
 $empty =  [\ \t\f\v\r]          -- equivalent to $white but without line return
 
 tokens :-
+  \°\-\°                                { mapToken (\_ -> TokenRightParen) }
+  \°\-\°\(                              { mapToken (\_ -> TokenLeftParen) }
+  \°\-\°\)                              { mapToken (\_ -> TokenRightParen) }
   import                                { mapToken (\_ -> TokenImport) }
   export                                { mapToken (\_ -> TokenExport) }
   from                                  { mapToken (\_ -> TokenFrom) }
@@ -66,6 +72,7 @@ tokens :-
   \=\>                                  { mapToken (\_ -> TokenFatArrow) }
   \|                                    { mapToken (\_ -> TokenPipe) }
   \;                                    { mapToken (\_ -> TokenSemiColon) }
+  \n[\ ]*                               { updateIndent }
   [\n]                                  { mapToken (\_ -> TokenReturn) }
   [$alpha \_] [$alpha $digit \_ \']*    { mapToken (\s -> TokenName s) }
   [\n \ ]*\+                            { mapToken (\_ -> TokenPlus) }
@@ -74,7 +81,7 @@ tokens :-
   \n[\ ]*\-                             { mapToken (\_ -> TokenDash) }
   [\n \ ]*\*                            { mapToken (\_ -> TokenStar) }
   [\n \ ]*\/                            { mapToken (\_ -> TokenSlash) }
-  [\n \ ]*\|\>                          { mapToken (\_ -> TokenPipeOperator) }
+  \|\>                                  { mapToken (\_ -> TokenPipeOperator) }
   \.\.\.                                { mapToken (\_ -> TokenSpreadOperator) }
   \.\.\.                                { mapToken (\_ -> TokenSpreadOperator) }
   \&\&                                  { mapToken (\_ -> TokenDoubleAmpersand) }
@@ -91,6 +98,11 @@ tokens :-
   $empty+                               ;
 
 {
+data AlexUserState = AlexUserState [Int] deriving(Eq, Show)
+
+alexInitUserState :: AlexUserState
+alexInitUserState = AlexUserState []
+
 sanitizeStr :: String -> String
 sanitizeStr = tail . init
 
@@ -99,11 +111,68 @@ sanitizeJSBlock = strip . tail . tail . init . init
 
 strip  = T.unpack . T.strip . T.pack
 
---type AlexAction result = AlexInput -> Int -> Alex result
+
+updateIndent :: AlexInput -> Int -> Alex Token
+updateIndent input len = do
+  let currentIndent = len - 1
+  (AlexUserState indentStack) <- Alex $ \s@AlexState{alex_ust=ust} -> Right (s, ust)
+  let previousIndent = if length indentStack > 0 then last indentStack else 0
+
+  shouldAdd <- if length indentStack == 0
+    then Alex $ \s -> Right (s { alex_ust = AlexUserState [currentIndent] }, True)
+    else Alex $ \s -> Right (s, False)
+
+  if shouldAdd
+  then
+    Alex $ \s@AlexState{alex_ust=ust, alex_inp, alex_pos = AlexPn a l c} -> Right (s { alex_inp = "°-°(" <> alex_inp,  alex_pos = AlexPn (a - 4) l (c - 4) }, ())
+  else
+    if currentIndent > previousIndent
+    then do
+      Alex $ \s@AlexState{alex_ust=ust} -> Right (s { alex_ust = AlexUserState $ indentStack <> [currentIndent] }, ())
+      Alex $ \s@AlexState{alex_ust=ust, alex_inp, alex_pos = AlexPn a l c} -> Right (s { alex_inp = "°-°(" <> alex_inp,  alex_pos = AlexPn (a - 4) l (c - 4) }, ())
+    else
+      if currentIndent < previousIndent
+      then do
+        popIndents currentIndent
+      else
+        Alex $ \s -> Right (s, ())
+  
+  alexMonadScan
+
+
+popIndents :: Int -> Alex ()
+popIndents currentIndent = do
+  (AlexUserState indentStack) <- Alex $ \s@AlexState{alex_ust=ust} -> Right (s, ust)
+  let previousIndent = last indentStack
+
+  if currentIndent < previousIndent && length indentStack > 1
+  then do
+    Alex $ \s@AlexState{alex_inp, alex_pos = AlexPn a l c} -> (Right (s { alex_inp = "°-°)" <> alex_inp,  alex_pos = AlexPn (a - 4) l (c - 4), alex_ust = AlexUserState $ init indentStack }, ()))
+    popIndents currentIndent
+  else do
+    Alex $ \s@AlexState{alex_inp, alex_pos = AlexPn a l c} -> (Right (s { alex_inp = "°-°)" <> alex_inp,  alex_pos = AlexPn (a - 4) l (c - 4), alex_ust = AlexUserState $ init indentStack }, ()))
+    Alex $ \s -> (Right (s, ()))
+
+popAllIndents :: Alex ()
+popAllIndents = do
+  (AlexUserState indentStack) <- Alex $ \s@AlexState{alex_ust=ust} -> Right (s, ust)
+  if length indentStack > 0
+  then do
+    Alex $ \s@AlexState{alex_inp, alex_pos = AlexPn a l c} -> (Right (s { alex_inp = "°-°)" <> alex_inp,  alex_pos = AlexPn (a - 4) l (c - 4), alex_ust = AlexUserState $ init indentStack }, ()))
+    popAllIndents
+  else
+    Alex $ \s -> (Right (s, ()))
+
+
+
 mapToken :: (String -> TokenClass) -> AlexInput -> Int -> Alex Token
-mapToken tokenizer (posn, prevChar, pending, input) len = return $ Token (makeArea posn (take len input)) token
+mapToken tokenizer (posn, prevChar, pending, input) len = do
+  s <- Alex $ \s@AlexState{alex_ust=ust} -> Right (s, ust)
+  -- return $ Token (makeArea posn (take len input)) token
+  return $ Token (makeArea posn (take len input)) (trace (show s) token)
   -- where token = tokenizer (take len input)
   where token = trace (show $ tokenizer (take len input)) (tokenizer (take len input))
+
 
 makeArea :: AlexPosn -> String -> Area
 makeArea (AlexPn a l c) tokenContent =
@@ -181,5 +250,13 @@ strV (Token _ (TokenJSBlock x)) = x
 
 
 alexEOF :: Alex Token
-alexEOF = return (Token (Area (Loc 1 1 1) (Loc 1 1 1)) TokenEOF)
+alexEOF = do
+  (AlexUserState indentStack) <- Alex $ \s@AlexState{alex_ust=ust} -> Right (s, ust)
+
+  if length indentStack > 0
+  then do
+    popAllIndents
+    alexMonadScan
+  else
+    return (Token (Area (Loc 1 1 1) (Loc 1 1 1)) TokenEOF)
 }

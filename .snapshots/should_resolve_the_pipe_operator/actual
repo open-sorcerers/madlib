@@ -39,7 +39,7 @@ Right
                         (TArr
                            (TVar (TV "f"))
                            (TArr (TArr (TVar (TV "f")) (TVar (TV "g"))) (TVar (TV "g"))))
-                        (Area (Loc 20 2 2) (Loc 23 2 5))
+                        (Area (Loc 21 2 3) (Loc 23 2 5))
                         (Var "|>"))
                      (Solved (TCon CNum) (Area (Loc 19 2 1) (Loc 20 2 2)) (LInt "3"))))
                (Solved
