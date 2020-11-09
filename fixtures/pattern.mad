@@ -1,39 +1,6 @@
-import IO from "IO"
-
-data Maybe a = Just a | Nothing
-
-p = Just("just")
-s = Just(p)
-
-where(s) {
-  is Just k        : k
-  is Just (Just x) : x
-  is Just (Nothing): "1"
-}
-
-x = 3 == 5
-
-where(x) {
-  is True: "YOUHOU"
-  is _   : "Not YOUHOU"
-} |> IO.log
-
-w = { x: 4, name: "John" }
-where(w) {
-  is { name: x }: x
-} |> IO.log
+//fn = (x) => x
 
 
-
-data R = R { x :: Num }
-r = R({ x: 42 })
-where(r) {
-  is R { x: x }: x
-} |> IO.log
-
-data User = User String String Num | Anonymous
-u = User("john", "smith", 32)
-
-where(u)
-  is User _ n m: m + 48
-  is Anonymous : 1 |> IO.log
+"ok" 
+  |> (x) => x
+  |> (x) => 3

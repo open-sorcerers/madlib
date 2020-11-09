@@ -1,2 +1,1 @@
-Left
-  (InferError (UnificationError (TCon CNum) (TCon CString)) NoReason)
+Left (InferError (UnboundVariable "") NoReason)

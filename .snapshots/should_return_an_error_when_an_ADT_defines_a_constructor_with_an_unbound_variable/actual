@@ -1,1 +1,1 @@
-Left (InferError (UnboundVariable "b") NoReason)
+Left (InferError (UnboundVariable "") NoReason)
