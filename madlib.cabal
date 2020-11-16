@@ -4,10 +4,10 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 4ef8091f2550fac7e777b74f2e5e42cef979c476b77f7517403618ecc3e37cc6
+-- hash: 0237b9bbfae6f340e85521bbadfa11eb8c3f1834a45a824511e42e01893c348a
 
 name:           madlib
-version:        0.0.1
+version:        0.0.2
 description:    Please see the README on GitHub at <https://github.com/githubuser/madlib#readme>
 homepage:       https://github.com/githubuser/madlib#readme
 bug-reports:    https://github.com/githubuser/madlib/issues
@@ -68,6 +68,7 @@ library
     , monad-validate ==1.2.0.0
     , mtl
     , pretty-show
+    , process ==1.6.8.0
     , text
     , transformers
   default-language: Haskell2010
@@ -115,6 +116,7 @@ executable madlib
     , monad-validate ==1.2.0.0
     , mtl
     , pretty-show
+    , process ==1.6.8.0
     , text
     , transformers
   default-language: Haskell2010
@@ -147,6 +149,7 @@ test-suite madlib-test
     , monad-validate ==1.2.0.0
     , mtl
     , pretty-show
+    , process ==1.6.8.0
     , text
     , transformers
   default-language: Haskell2010

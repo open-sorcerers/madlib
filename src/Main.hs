@@ -3,7 +3,7 @@ module Main where
 
 import qualified Data.Map                      as M
 import           GHC.IO                         ( )
-import           System.Environment             ( getArgs )
+import           System.Environment             (getEnv,  getArgs )
 import           Text.Show.Pretty               ( ppShow )
 import           Control.Monad.Except           ( runExcept )
 import           Control.Monad.State            ( StateT(runStateT) )
@@ -11,17 +11,17 @@ import           System.FilePath                ( takeDirectory
                                                 , replaceExtension
                                                 )
 import           System.Directory               ( createDirectoryIfMissing )
-
+import           System.Process
 import           Path
 import           AST
 
 import           Infer.Solve
 import           Infer.Infer
-import           Explain.Reason
-import           Error.Error
 import           Compile
 import qualified AST.Solved                    as Slv
 import qualified Explain.Format                as Explain
+import Control.Exception (SomeException, try)
+
 
 main :: IO ()
 main = do
@@ -45,6 +45,42 @@ main = do
       generate table
       putStrLn "compiled JS:"
       putStrLn $ concat $ compile <$> M.elems table
+
+  let bundleName = "bundle.js"
+
+  bundled <- bundle bundleName entrypoint
+  case bundled of
+    Left e -> putStrLn e
+    _      -> return ()
+
+
+bundle :: FilePath -> FilePath -> IO (Either String ())
+bundle dest entrypoint = do
+  rollupPath <- try $ getEnv "ROLLUP_PATH"
+  rollupPathChecked <- case (rollupPath :: Either IOError String) of
+        Left _ -> do
+          r <- try (readProcessWithExitCode "rollup" ["--version"] "") :: IO (Either SomeException (ExitCode, String, String))
+          case r of
+            Left _  -> return $ Left "Rollup was not found"
+            Right _ -> return $ Right "rollup"
+        Right p -> do
+          r <- try (readProcessWithExitCode p ["--version"] "") :: IO (Either SomeException (ExitCode, String, String))
+          case r of
+            Left _ -> do
+              r <- try (readProcessWithExitCode "rollup" ["--version"] "") :: IO (Either SomeException (ExitCode, String, String))
+              case r of
+                Left _ -> return $ Left "Rollup was not found"
+                Right _   -> return $ Right "rollup"
+            Right _ -> return $ Right p
+
+  let entrypointOutputPath = makeOutputPath entrypoint
+  let bundleOutputPath = takeDirectory entrypointOutputPath <> "/" <> dest
+
+  case rollupPathChecked of
+    Right rollup -> do
+      (exitCode, stdout, stderr) <- readProcessWithExitCode rollup [entrypointOutputPath, "--file", bundleOutputPath] ""
+      return $ Right ()
+    Left e -> return $ Left e
 
 
 generate :: Slv.Table -> IO ()
