@@ -21,6 +21,7 @@ import           Compile
 import qualified AST.Solved                    as Slv
 import qualified Explain.Format                as Explain
 import Control.Exception (SomeException, try)
+import GHC.IO.Exception (ExitCode)
 
 
 main :: IO ()
@@ -54,6 +55,12 @@ main = do
     _      -> return ()
 
 
+rollupNotFoundMessage = unlines 
+  [ "Compilation error:"
+  , "Rollup was not found."
+  , "You must have rollup installed in order to use the bundling option. Please visit this page in order to install it: https://rollupjs.org/guide/en/#installation"
+  ]
+
 bundle :: FilePath -> FilePath -> IO (Either String ())
 bundle dest entrypoint = do
   rollupPath <- try $ getEnv "ROLLUP_PATH"
@@ -61,7 +68,7 @@ bundle dest entrypoint = do
         Left _ -> do
           r <- try (readProcessWithExitCode "rollup" ["--version"] "") :: IO (Either SomeException (ExitCode, String, String))
           case r of
-            Left _  -> return $ Left "Rollup was not found"
+            Left _  -> return $ Left rollupNotFoundMessage
             Right _ -> return $ Right "rollup"
         Right p -> do
           r <- try (readProcessWithExitCode p ["--version"] "") :: IO (Either SomeException (ExitCode, String, String))
@@ -69,7 +76,7 @@ bundle dest entrypoint = do
             Left _ -> do
               r <- try (readProcessWithExitCode "rollup" ["--version"] "") :: IO (Either SomeException (ExitCode, String, String))
               case r of
-                Left _ -> return $ Left "Rollup was not found"
+                Left _ -> return $ Left rollupNotFoundMessage
                 Right _   -> return $ Right "rollup"
             Right _ -> return $ Right p
 
