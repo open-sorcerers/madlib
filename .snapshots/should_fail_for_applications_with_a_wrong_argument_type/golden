@@ -1,6 +1,6 @@
 Left
   (InferError
-     (UnificationError (TCon CString) (TCon CNum))
+     (UnificationError (TCon CString) (TCon CNumber))
      (Reason
         (WrongTypeApplied
            (Meta
@@ -18,6 +18,6 @@ Left
            (Meta
               Infos { nthArg = Just 2 , origin = Just (Var "fn") }
               (Area (Loc 32 2 9) (Loc 33 2 10))
-              (LInt "4")))
+              (LNumber "4")))
         "path"
         (Area (Loc 32 2 9) (Loc 33 2 10))))

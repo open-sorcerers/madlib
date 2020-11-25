@@ -39,13 +39,15 @@ Right
                      (TRComp "List" [ TRSingle "a" ])
                      (TRComp "List" [ TRSingle "b" ]))))
         , Solved
-            (TComp "Prelude" "List" [ TComp "Prelude" "List" [ TCon CNum ] ])
+            (TComp
+               "Prelude" "List" [ TComp "Prelude" "List" [ TCon CNumber ] ])
             (Area (Loc 69 3 1) (Loc 85 3 17))
             (App
                (Solved
                   (TArr
                      (TArr
-                        (TComp "Prelude" "List" [ TComp "Prelude" "List" [ TCon CNum ] ])
+                        (TComp
+                           "Prelude" "List" [ TComp "Prelude" "List" [ TCon CNumber ] ])
                         (TVar (TV "i")))
                      (TVar (TV "i")))
                   (Area (Loc 69 3 1) (Loc 85 3 17))
@@ -57,42 +59,49 @@ Right
                         (Area (Loc 85 3 17) (Loc 90 4 4))
                         (Var "|>"))
                      (Solved
-                        (TComp "Prelude" "List" [ TComp "Prelude" "List" [ TCon CNum ] ])
+                        (TComp
+                           "Prelude" "List" [ TComp "Prelude" "List" [ TCon CNumber ] ])
                         (Area (Loc 69 3 1) (Loc 85 3 17))
                         (ListConstructor
                            [ ListItem
                                (Solved
-                                  (TComp "Prelude" "List" [ TCon CNum ])
+                                  (TComp "Prelude" "List" [ TCon CNumber ])
                                   (Area (Loc 70 3 2) (Loc 76 3 8))
                                   (ListConstructor
                                      [ ListItem
                                          (Solved
-                                            (TCon CNum) (Area (Loc 71 3 3) (Loc 72 3 4)) (LInt "1"))
+                                            (TCon CNumber)
+                                            (Area (Loc 71 3 3) (Loc 72 3 4))
+                                            (LNumber "1"))
                                      , ListItem
                                          (Solved
-                                            (TCon CNum) (Area (Loc 74 3 6) (Loc 75 3 7)) (LInt "2"))
+                                            (TCon CNumber)
+                                            (Area (Loc 74 3 6) (Loc 75 3 7))
+                                            (LNumber "2"))
                                      ]))
                            , ListItem
                                (Solved
-                                  (TComp "Prelude" "List" [ TCon CNum ])
+                                  (TComp "Prelude" "List" [ TCon CNumber ])
                                   (Area (Loc 78 3 10) (Loc 84 3 16))
                                   (ListConstructor
                                      [ ListItem
                                          (Solved
-                                            (TCon CNum)
+                                            (TCon CNumber)
                                             (Area (Loc 79 3 11) (Loc 80 3 12))
-                                            (LInt "3"))
+                                            (LNumber "3"))
                                      , ListItem
                                          (Solved
-                                            (TCon CNum)
+                                            (TCon CNumber)
                                             (Area (Loc 82 3 14) (Loc 83 3 15))
-                                            (LInt "4"))
+                                            (LNumber "4"))
                                      ]))
                            ]))))
                (Solved
                   (TArr
-                     (TComp "Prelude" "List" [ TComp "Prelude" "List" [ TCon CNum ] ])
-                     (TComp "Prelude" "List" [ TComp "Prelude" "List" [ TCon CNum ] ]))
+                     (TComp
+                        "Prelude" "List" [ TComp "Prelude" "List" [ TCon CNumber ] ])
+                     (TComp
+                        "Prelude" "List" [ TComp "Prelude" "List" [ TCon CNumber ] ]))
                   (Area (Loc 91 4 6) (Loc 115 4 30))
                   (App
                      (Solved
@@ -105,8 +114,8 @@ Right
                         (Var "map"))
                      (Solved
                         (TArr
-                           (TComp "Prelude" "List" [ TCon CNum ])
-                           (TComp "Prelude" "List" [ TCon CNum ]))
+                           (TComp "Prelude" "List" [ TCon CNumber ])
+                           (TComp "Prelude" "List" [ TCon CNumber ]))
                         (Area (Loc 95 4 10) (Loc 114 4 29))
                         (App
                            (Solved
@@ -118,30 +127,32 @@ Right
                               (Area (Loc 95 4 10) (Loc 98 4 13))
                               (Var "map"))
                            (Solved
-                              (TArr (TCon CNum) (TCon CNum))
+                              (TArr (TCon CNumber) (TCon CNumber))
                               (Area (Loc 99 4 14) (Loc 113 4 28))
                               (Abs
                                  "x"
                                  (Solved
-                                    (TCon CNum)
+                                    (TCon CNumber)
                                     (Area (Loc 107 4 22) (Loc 108 4 23))
                                     (App
                                        (Solved
-                                          (TArr (TCon CNum) (TCon CNum))
+                                          (TArr (TCon CNumber) (TCon CNumber))
                                           (Area (Loc 107 4 22) (Loc 108 4 23))
                                           (App
                                              (Solved
-                                                (TArr (TCon CNum) (TArr (TCon CNum) (TCon CNum)))
+                                                (TArr
+                                                   (TCon CNumber)
+                                                   (TArr (TCon CNumber) (TCon CNumber)))
                                                 (Area (Loc 108 4 23) (Loc 110 4 25))
                                                 (Var "*"))
                                              (Solved
-                                                (TCon CNum)
+                                                (TCon CNumber)
                                                 (Area (Loc 107 4 22) (Loc 108 4 23))
                                                 (Var "x"))))
                                        (Solved
-                                          (TCon CNum)
+                                          (TCon CNumber)
                                           (Area (Loc 111 4 26) (Loc 112 4 27))
-                                          (LInt "2")))))))))))
+                                          (LNumber "2")))))))))))
         ]
     , aadts = []
     , apath = Just "path"

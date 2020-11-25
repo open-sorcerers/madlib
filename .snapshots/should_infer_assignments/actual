@@ -3,52 +3,56 @@ Right
     { aimports = []
     , aexps =
         [ Solved
-            (TArr (TCon CNum) (TArr (TCon CNum) (TCon CNum)))
+            (TArr (TCon CNumber) (TArr (TCon CNumber) (TCon CNumber)))
             (Area (Loc 0 1 1) (Loc 2 1 3))
             (Assignment
                "fn"
                (Solved
-                  (TArr (TCon CNum) (TArr (TCon CNum) (TCon CNum)))
+                  (TArr (TCon CNumber) (TArr (TCon CNumber) (TCon CNumber)))
                   (Area (Loc 5 1 6) (Loc 22 1 23))
                   (Abs
                      "b"
                      (Solved
-                        (TArr (TCon CNum) (TCon CNum))
+                        (TArr (TCon CNumber) (TCon CNumber))
                         (Area (Loc 5 1 6) (Loc 22 1 23))
                         (Abs
                            "c"
                            (Solved
-                              (TCon CNum)
+                              (TCon CNumber)
                               (Area (Loc 16 1 17) (Loc 17 1 18))
                               (App
                                  (Solved
-                                    (TArr (TCon CNum) (TCon CNum))
+                                    (TArr (TCon CNumber) (TCon CNumber))
                                     (Area (Loc 16 1 17) (Loc 17 1 18))
                                     (App
                                        (Solved
-                                          (TArr (TCon CNum) (TArr (TCon CNum) (TCon CNum)))
+                                          (TArr (TCon CNumber) (TArr (TCon CNumber) (TCon CNumber)))
                                           (Area (Loc 17 1 18) (Loc 19 1 20))
                                           (Var "+"))
                                        (Solved
-                                          (TCon CNum)
+                                          (TCon CNumber)
                                           (Area (Loc 16 1 17) (Loc 17 1 18))
                                           (Var "b"))))
                                  (Solved
-                                    (TCon CNum) (Area (Loc 20 1 21) (Loc 21 1 22)) (Var "c")))))))))
+                                    (TCon CNumber)
+                                    (Area (Loc 20 1 21) (Loc 21 1 22))
+                                    (Var "c")))))))))
         , Solved
-            (TCon CNum)
+            (TCon CNumber)
             (Area (Loc 29 2 7) (Loc 30 2 8))
             (App
                (Solved
-                  (TArr (TCon CNum) (TCon CNum))
+                  (TArr (TCon CNumber) (TCon CNumber))
                   (Area (Loc 29 2 7) (Loc 30 2 8))
                   (App
                      (Solved
-                        (TArr (TCon CNum) (TArr (TCon CNum) (TCon CNum)))
+                        (TArr (TCon CNumber) (TArr (TCon CNumber) (TCon CNumber)))
                         (Area (Loc 23 2 1) (Loc 25 2 3))
                         (Var "fn"))
-                     (Solved (TCon CNum) (Area (Loc 26 2 4) (Loc 27 2 5)) (LInt "2"))))
-               (Solved (TCon CNum) (Area (Loc 29 2 7) (Loc 30 2 8)) (LInt "3")))
+                     (Solved
+                        (TCon CNumber) (Area (Loc 26 2 4) (Loc 27 2 5)) (LNumber "2"))))
+               (Solved
+                  (TCon CNumber) (Area (Loc 29 2 7) (Loc 30 2 8)) (LNumber "3")))
         ]
     , aadts = []
     , apath = Just "path"

@@ -3,11 +3,11 @@ Right
     { aimports = []
     , aexps =
         [ Solved
-            (TArr (TCon CNum) (TArr (TCon CNum) (TCon CBool)))
+            (TArr (TCon CNumber) (TArr (TCon CNumber) (TCon CBool)))
             (Area (Loc 0 1 1) (Loc 57 2 24))
             (TypedExp
                (Solved
-                  (TArr (TCon CNum) (TArr (TCon CNum) (TCon CBool)))
+                  (TArr (TCon CNumber) (TArr (TCon CNumber) (TCon CBool)))
                   (Area (Loc 34 2 1) (Loc 57 2 24))
                   (Assignment
                      "fn"
@@ -51,15 +51,17 @@ Right
             (Area (Loc 64 3 7) (Loc 65 3 8))
             (App
                (Solved
-                  (TArr (TCon CNum) (TCon CBool))
+                  (TArr (TCon CNumber) (TCon CBool))
                   (Area (Loc 64 3 7) (Loc 65 3 8))
                   (App
                      (Solved
-                        (TArr (TCon CNum) (TArr (TCon CNum) (TCon CBool)))
+                        (TArr (TCon CNumber) (TArr (TCon CNumber) (TCon CBool)))
                         (Area (Loc 58 3 1) (Loc 60 3 3))
                         (Var "fn"))
-                     (Solved (TCon CNum) (Area (Loc 61 3 4) (Loc 62 3 5)) (LInt "3"))))
-               (Solved (TCon CNum) (Area (Loc 64 3 7) (Loc 65 3 8)) (LInt "4")))
+                     (Solved
+                        (TCon CNumber) (Area (Loc 61 3 4) (Loc 62 3 5)) (LNumber "3"))))
+               (Solved
+                  (TCon CNumber) (Area (Loc 64 3 7) (Loc 65 3 8)) (LNumber "4")))
         ]
     , aadts = []
     , apath = Just "path"
