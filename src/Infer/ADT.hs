@@ -71,7 +71,7 @@ buildADTConstructorReturnType astPath tname tparams =
 -- TODO: This should probably be merged with typingToType somehow
 argToType :: ADTs -> Name -> [Name] -> Typing -> Infer Type
 argToType tadts _ params (Meta _ _ (TRSingle n))
-  | n == "Number" = return $ TCon CNum
+  | n == "Number" = return $ TCon CNumber
   | n == "Boolean" = return $ TCon CBool
   | n == "String" = return $ TCon CString
   | isLower (head n) && (n `elem` params) = return $ TVar $ TV n

@@ -7,7 +7,7 @@ Right
             (Area (Loc 24 1 25) (Loc 25 1 26))
             (App
                (Solved
-                  (TArr (TCon CNum) (TCon CBool))
+                  (TArr (TCon CNumber) (TCon CBool))
                   (Area (Loc 24 1 25) (Loc 25 1 26))
                   (App
                      (Solved
@@ -43,8 +43,9 @@ Right
                                           (Area (Loc 17 1 18) (Loc 18 1 19))
                                           (Var "b"))))))))
                      (Solved
-                        (TCon CNum) (Area (Loc 21 1 22) (Loc 22 1 23)) (LInt "1"))))
-               (Solved (TCon CNum) (Area (Loc 24 1 25) (Loc 25 1 26)) (LInt "3")))
+                        (TCon CNumber) (Area (Loc 21 1 22) (Loc 22 1 23)) (LNumber "1"))))
+               (Solved
+                  (TCon CNumber) (Area (Loc 24 1 25) (Loc 25 1 26)) (LNumber "3")))
         ]
     , aadts = []
     , apath = Just "path"

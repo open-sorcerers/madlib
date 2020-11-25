@@ -1,6 +1,6 @@
 Left
   (InferError
-     (UnificationError (TCon CString) (TCon CNum))
+     (UnificationError (TCon CString) (TCon CNumber))
      (Reason
         (PatternTypeError
            (Meta

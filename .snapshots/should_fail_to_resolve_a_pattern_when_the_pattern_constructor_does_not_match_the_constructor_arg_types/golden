@@ -1,2 +1,3 @@
 Left
-  (InferError (UnificationError (TCon CNum) (TCon CString)) NoReason)
+  (InferError
+     (UnificationError (TCon CNumber) (TCon CString)) NoReason)

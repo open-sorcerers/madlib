@@ -1,6 +1,6 @@
 Left
   (InferError
-     (UnificationError (TCon CString) (TCon CNum))
+     (UnificationError (TCon CString) (TCon CNumber))
      (Reason
         (IfElseBranchTypesDontMatch
            (Meta
@@ -18,10 +18,10 @@ Left
                  (Meta
                     Infos { nthArg = Nothing , origin = Nothing }
                     (Area (Loc 30 5 3) (Loc 31 5 4))
-                    (LInt "1"))))
+                    (LNumber "1"))))
            (Meta
               Infos { nthArg = Nothing , origin = Nothing }
               (Area (Loc 30 5 3) (Loc 31 5 4))
-              (LInt "1")))
+              (LNumber "1")))
         "path"
         (Area (Loc 0 1 1) (Loc 33 6 1))))

@@ -6,19 +6,19 @@ Right
             (TArr
                (TRecord
                   (fromList
-                     [ ( "i" , TCon CNum )
-                     , ( "o" , TCon CNum )
+                     [ ( "i" , TCon CNumber )
+                     , ( "o" , TCon CNumber )
                      , ( "x"
                        , TRecord
                            (fromList
-                              [ ( "y" , TRecord (fromList [ ( "y" , TCon CNum ) ]) True )
-                              , ( "z" , TCon CNum )
+                              [ ( "y" , TRecord (fromList [ ( "y" , TCon CNumber ) ]) True )
+                              , ( "z" , TCon CNumber )
                               ])
                            True
                        )
                      ])
                   True)
-               (TCon CNum))
+               (TCon CNumber))
             (Area (Loc 0 1 1) (Loc 2 1 3))
             (Assignment
                "fn"
@@ -26,38 +26,38 @@ Right
                   (TArr
                      (TRecord
                         (fromList
-                           [ ( "i" , TCon CNum )
-                           , ( "o" , TCon CNum )
+                           [ ( "i" , TCon CNumber )
+                           , ( "o" , TCon CNumber )
                            , ( "x"
                              , TRecord
                                  (fromList
-                                    [ ( "y" , TRecord (fromList [ ( "y" , TCon CNum ) ]) True )
-                                    , ( "z" , TCon CNum )
+                                    [ ( "y" , TRecord (fromList [ ( "y" , TCon CNumber ) ]) True )
+                                    , ( "z" , TCon CNumber )
                                     ])
                                  True
                              )
                            ])
                         True)
-                     (TCon CNum))
+                     (TCon CNumber))
                   (Area (Loc 5 1 6) (Loc 95 5 1))
                   (Abs
                      "r"
                      (Solved
-                        (TCon CNum)
+                        (TCon CNumber)
                         (Area (Loc 16 2 3) (Loc 93 4 3))
                         (Where
                            (Solved
                               (TRecord
                                  (fromList
-                                    [ ( "i" , TCon CNum )
-                                    , ( "o" , TCon CNum )
+                                    [ ( "i" , TCon CNumber )
+                                    , ( "o" , TCon CNumber )
                                     , ( "x"
                                       , TRecord
                                           (fromList
                                              [ ( "y"
-                                               , TRecord (fromList [ ( "y" , TCon CNum ) ]) True
+                                               , TRecord (fromList [ ( "y" , TCon CNumber ) ]) True
                                                )
-                                             , ( "z" , TCon CNum )
+                                             , ( "z" , TCon CNumber )
                                              ])
                                           True
                                       )
@@ -69,21 +69,22 @@ Right
                                (TArr
                                   (TRecord
                                      (fromList
-                                        [ ( "i" , TCon CNum )
-                                        , ( "o" , TCon CNum )
+                                        [ ( "i" , TCon CNumber )
+                                        , ( "o" , TCon CNumber )
                                         , ( "x"
                                           , TRecord
                                               (fromList
                                                  [ ( "y"
-                                                   , TRecord (fromList [ ( "y" , TCon CNum ) ]) True
+                                                   , TRecord
+                                                       (fromList [ ( "y" , TCon CNumber ) ]) True
                                                    )
-                                                 , ( "z" , TCon CNum )
+                                                 , ( "z" , TCon CNumber )
                                                  ])
                                               True
                                           )
                                         ])
                                      True)
-                                  (TCon CNum))
+                                  (TCon CNumber))
                                (Area (Loc 31 3 5) (Loc 71 3 45))
                                (Is
                                   (PRecord
@@ -100,58 +101,62 @@ Right
                                           )
                                         ]))
                                   (Solved
-                                     (TCon CNum)
+                                     (TCon CNumber)
                                      (Area (Loc 70 3 44) (Loc 71 3 45))
                                      (App
                                         (Solved
-                                           (TArr (TCon CNum) (TCon CNum))
+                                           (TArr (TCon CNumber) (TCon CNumber))
                                            (Area (Loc 70 3 44) (Loc 71 3 45))
                                            (App
                                               (Solved
-                                                 (TArr (TCon CNum) (TArr (TCon CNum) (TCon CNum)))
+                                                 (TArr
+                                                    (TCon CNumber)
+                                                    (TArr (TCon CNumber) (TCon CNumber)))
                                                  (Area (Loc 83 3 57) (Loc 85 3 59))
                                                  (Var "+"))
                                               (Solved
-                                                 (TCon CNum)
+                                                 (TCon CNumber)
                                                  (Area (Loc 70 3 44) (Loc 71 3 45))
                                                  (App
                                                     (Solved
-                                                       (TArr (TCon CNum) (TCon CNum))
+                                                       (TArr (TCon CNumber) (TCon CNumber))
                                                        (Area (Loc 70 3 44) (Loc 71 3 45))
                                                        (App
                                                           (Solved
                                                              (TArr
-                                                                (TCon CNum)
-                                                                (TArr (TCon CNum) (TCon CNum)))
+                                                                (TCon CNumber)
+                                                                (TArr
+                                                                   (TCon CNumber) (TCon CNumber)))
                                                              (Area (Loc 77 3 51) (Loc 79 3 53))
                                                              (Var "+"))
                                                           (Solved
-                                                             (TCon CNum)
+                                                             (TCon CNumber)
                                                              (Area (Loc 70 3 44) (Loc 71 3 45))
                                                              (App
                                                                 (Solved
-                                                                   (TArr (TCon CNum) (TCon CNum))
+                                                                   (TArr
+                                                                      (TCon CNumber) (TCon CNumber))
                                                                    (Area
                                                                       (Loc 70 3 44) (Loc 71 3 45))
                                                                    (App
                                                                       (Solved
                                                                          (TArr
-                                                                            (TCon CNum)
+                                                                            (TCon CNumber)
                                                                             (TArr
-                                                                               (TCon CNum)
-                                                                               (TCon CNum)))
+                                                                               (TCon CNumber)
+                                                                               (TCon CNumber)))
                                                                          (Area
                                                                             (Loc 71 3 45)
                                                                             (Loc 73 3 47))
                                                                          (Var "+"))
                                                                       (Solved
-                                                                         (TCon CNum)
+                                                                         (TCon CNumber)
                                                                          (Area
                                                                             (Loc 70 3 44)
                                                                             (Loc 71 3 45))
                                                                          (Var "y"))))
                                                                 (Solved
-                                                                   (TCon CNum)
+                                                                   (TCon CNumber)
                                                                    (Area
                                                                       (Loc 74 3 48) (Loc 77 3 51))
                                                                    (FieldAccess
@@ -177,7 +182,7 @@ Right
                                                                             (Loc 77 3 51))
                                                                          (Var ".z"))))))))
                                                     (Solved
-                                                       (TCon CNum)
+                                                       (TCon CNumber)
                                                        (Area (Loc 80 3 54) (Loc 83 3 57))
                                                        (FieldAccess
                                                           (Solved
@@ -194,7 +199,7 @@ Right
                                                              (Area (Loc 82 3 56) (Loc 83 3 57))
                                                              (Var ".o"))))))))
                                         (Solved
-                                           (TCon CNum)
+                                           (TCon CNumber)
                                            (Area (Loc 86 3 60) (Loc 89 3 63))
                                            (FieldAccess
                                               (Solved

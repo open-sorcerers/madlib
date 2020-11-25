@@ -20,12 +20,13 @@ import           Explain.Meta
 %lexer { lexerWrap } { Token _ TokenEOF }
 
 %token
-  int      { Token _ (TokenInt _) }
+  number   { Token _ (TokenNumber _) }
   str      { Token _ (TokenStr _) }
   name     { Token _ (TokenName _) }
   js       { Token _ (TokenJSBlock _) }
   'ret'    { Token _ TokenReturn }
   '='      { Token _ TokenEq }
+  '%'      { Token _ TokenPercentage }
   '+'      { Token _ TokenPlus }
   '-'      { Token _ TokenDash }
   '*'      { Token _ TokenStar }
@@ -71,7 +72,7 @@ import           Explain.Meta
 %left '|>'
 %left '>' '<' '>=' '<=' '=='
 %left '+' '-' '||'
-%left '*' '/' '&&'
+%left '*' '/' '%' '&&'
 %left ','
 %nonassoc '(' ')' '=' '=>' '::' where is 'ret' '{' '}' '[' ']'
 %right '!'
@@ -224,7 +225,7 @@ pattern :: { Src.Pattern }
 
 nonCompositePattern :: { Src.Pattern }
   : name             { nameToPattern (tokenToArea $1) (strV $1) }
-  | int              { Meta emptyInfos (tokenToArea $1) (Src.PNum $ strV $1) }
+  | number           { Meta emptyInfos (tokenToArea $1) (Src.PNumber $ strV $1) }
   | str              { Meta emptyInfos (tokenToArea $1) (Src.PStr $ strV $1) }
   | true             { Meta emptyInfos (tokenToArea $1) (Src.PBool $ strV $1) }
   | false            { Meta emptyInfos (tokenToArea $1) (Src.PBool $ strV $1) }
@@ -302,56 +303,63 @@ operation :: { Src.Exp }
                          $1))) 
                       $3)
                  }
-  | exp '==' exp  { Meta emptyInfos (getArea $1) (Src.App
+  | exp '%' exp  { Meta emptyInfos (getArea $1) (Src.App
+                      ((Meta emptyInfos (getArea $1) (Src.App
+                         (Meta emptyInfos (tokenToArea $2) (Src.Var "%")) 
+                         $1))) 
+                      $3)
+                 }
+  | exp '==' exp { Meta emptyInfos (getArea $1) (Src.App
                       ((Meta emptyInfos (getArea $1) (Src.App
                          (Meta emptyInfos (tokenToArea $2) (Src.Var "==")) 
                          $1))) 
                       $3)
-                   }
-  | exp '&&' exp  { Meta emptyInfos (getArea $1) (Src.App
+                 }
+  | exp '&&' exp { Meta emptyInfos (getArea $1) (Src.App
                       ((Meta emptyInfos (getArea $1) (Src.App
                          (Meta emptyInfos (tokenToArea $2) (Src.Var "&&")) 
                          $1))) 
                       $3)
-                   }
-  | exp '||' exp  { Meta emptyInfos (getArea $1) (Src.App
+                 }
+  | exp '||' exp { Meta emptyInfos (getArea $1) (Src.App
                       ((Meta emptyInfos (getArea $1) (Src.App
                          (Meta emptyInfos (tokenToArea $2) (Src.Var "||")) 
                          $1))) 
                       $3)
-                   }
+                 }
   | exp '>' exp  { Meta emptyInfos (getArea $1) (Src.App
                       ((Meta emptyInfos (getArea $1) (Src.App
                          (Meta emptyInfos (tokenToArea $2) (Src.Var ">")) 
                          $1))) 
                       $3)
-                   }
+                 }
   | exp '<' exp  { Meta emptyInfos (getArea $1) (Src.App
                       ((Meta emptyInfos (getArea $1) (Src.App
                          (Meta emptyInfos (tokenToArea $2) (Src.Var "<")) 
                          $1))) 
                       $3)
-                   }
-  | exp '>=' exp  { Meta emptyInfos (getArea $1) (Src.App
+                 }
+  | exp '>=' exp { Meta emptyInfos (getArea $1) (Src.App
                       ((Meta emptyInfos (getArea $1) (Src.App
                          (Meta emptyInfos (tokenToArea $2) (Src.Var ">=")) 
                          $1))) 
                       $3)
-                   }
-  | exp '<=' exp  { Meta emptyInfos (getArea $1) (Src.App
+                 }
+  | exp '<=' exp { Meta emptyInfos (getArea $1) (Src.App
                       ((Meta emptyInfos (getArea $1) (Src.App
                          (Meta emptyInfos (tokenToArea $2) (Src.Var "<=")) 
                          $1))) 
                       $3)
-                   }
-  | '!' exp  { Meta emptyInfos (mergeAreas (tokenToArea $1) (getArea $2)) (Src.App (Meta emptyInfos (tokenToArea $1) (Src.Var "!")) $2) }
-  | exp '|>' exp  { Meta emptyInfos (getArea $1) (Src.App
+                 }
+  | '!' exp      { Meta emptyInfos (mergeAreas (tokenToArea $1) (getArea $2)) (Src.App (Meta emptyInfos (tokenToArea $1) (Src.Var "!")) $2)
+                 }
+  | exp '|>' exp { Meta emptyInfos (getArea $1) (Src.App
                       ((Meta emptyInfos (getArea $1) (Src.App
                          (Meta emptyInfos (tokenToArea $2) (Src.Var "|>")) 
                          $1))) 
                       $3)
                   
-                  }
+                 }
 
 listConstructor :: { Src.Exp }
   : '[' rets listItems rets ']' { Meta emptyInfos (mergeAreas (tokenToArea $1) (tokenToArea $5)) (Src.ListConstructor $3) }
@@ -365,7 +373,7 @@ listItems :: { [Src.ListItem] }
   | {- empty -}                 { [] }
 
 literal :: { Src.Exp }
-  : int                       { Meta emptyInfos (tokenToArea $1) (Src.LInt $ strV $1) }
+  : number                    { Meta emptyInfos (tokenToArea $1) (Src.LNumber $ strV $1) }
   | str                       { Meta emptyInfos (tokenToArea $1) (Src.LStr $ strV $1) }
   | true                      { Meta emptyInfos (tokenToArea $1) (Src.LBool $ strV $1) }
   | false                     { Meta emptyInfos (tokenToArea $1) (Src.LBool $ strV $1) }
