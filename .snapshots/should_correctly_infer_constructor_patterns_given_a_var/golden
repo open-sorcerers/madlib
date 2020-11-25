@@ -29,7 +29,7 @@ Right
                                      (TVar (TV "c")) (Area (Loc 74 4 16) (Loc 75 4 17)) (Var "x")))
                            ])))))
         , Solved
-            (TCon CNumber)
+            (TCon CNum)
             (Area (Loc 82 7 1) (Loc 93 7 12))
             (App
                (Solved
@@ -37,7 +37,7 @@ Right
                   (Area (Loc 82 7 1) (Loc 84 7 3))
                   (Var "fn"))
                (Solved
-                  (TComp "path" "Maybe" [ TCon CNumber ])
+                  (TComp "path" "Maybe" [ TCon CNum ])
                   (Area (Loc 85 7 4) (Loc 92 7 11))
                   (App
                      (Solved
@@ -45,7 +45,7 @@ Right
                         (Area (Loc 85 7 4) (Loc 89 7 8))
                         (Var "Just"))
                      (Solved
-                        (TCon CNumber) (Area (Loc 90 7 9) (Loc 91 7 10)) (LNumber "3")))))
+                        (TCon CNum) (Area (Loc 90 7 9) (Loc 91 7 10)) (LNum "3")))))
         ]
     , aadts =
         [ ADT

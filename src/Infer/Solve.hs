@@ -31,7 +31,7 @@ infer :: Env -> Src.Exp -> Infer (Substitution, Type, Slv.Exp)
 infer env lexp =
   let (Meta _ area exp) = lexp
   in  case exp of
-        Src.LNumber _ -> return (M.empty, number, applyLitSolve lexp number)
+        Src.LNum _ -> return (M.empty, number, applyLitSolve lexp number)
         Src.LStr    _         -> return (M.empty, str, applyLitSolve lexp str)
         Src.LBool   _         -> return (M.empty, bool, applyLitSolve lexp bool)
 
@@ -54,7 +54,7 @@ infer env lexp =
 -- TODO: Should probably just take a Loc instead of the old Expression !
 applyLitSolve :: Src.Exp -> Type -> Slv.Exp
 applyLitSolve (Meta _ area exp) t = case exp of
-  Src.LNumber v -> Slv.Solved t area $ Slv.LNumber v
+  Src.LNum v -> Slv.Solved t area $ Slv.LNum v
   Src.LStr    v -> Slv.Solved t area $ Slv.LStr v
   Src.LBool   v -> Slv.Solved t area $ Slv.LBool v
 
@@ -79,7 +79,7 @@ updatePattern (Meta _ _ p) = case p of
 
   Src.PCtor name patterns -> Slv.PCtor name (updatePattern <$> patterns)
 
-  Src.PNumber n           -> Slv.PNumber n
+  Src.PNum n           -> Slv.PNum n
   Src.PStr    n           -> Slv.PStr n
   Src.PBool   n           -> Slv.PBool n
 
@@ -435,11 +435,11 @@ inferWhere env whereExp@(Meta _ loc (Src.Where exp iss)) = do
 
     Src.PCon    "String"  -> return $ TCon CString
     Src.PCon    "Boolean" -> return $ TCon CBool
-    Src.PCon    "Number"  -> return $ TCon CNumber
+    Src.PCon    "Number"  -> return $ TCon CNum
 
     Src.PStr    _         -> return $ TCon CString
     Src.PBool   _         -> return $ TCon CBool
-    Src.PNumber _         -> return $ TCon CNumber
+    Src.PNum _         -> return $ TCon CNum
 
     Src.PAny              -> newTVar
 
@@ -639,7 +639,7 @@ inferTypedExp env (Meta _ area (Src.TypedExp exp typing)) = do
 
 typingToType :: Env -> Src.Typing -> Infer Type
 typingToType env (Meta _ _ (Src.TRSingle t))
-  | t == "Number" = return $ TCon CNumber
+  | t == "Number" = return $ TCon CNum
   | t == "Boolean" = return $ TCon CBool
   | t == "String" = return $ TCon CString
   | t == "Void" = return $ TCon CVoid

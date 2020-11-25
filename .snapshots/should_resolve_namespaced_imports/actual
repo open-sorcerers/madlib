@@ -38,7 +38,7 @@ Right
            { aimports = [ DefaultImport "L" "./ModuleA" "./ModuleA" ]
            , aexps =
                [ Solved
-                   (TComp "Prelude" "List" [ TCon CNumber ])
+                   (TComp "Prelude" "List" [ TCon CNum ])
                    (Area (Loc 26 2 1) (Loc 27 2 2))
                    (App
                       (Solved
@@ -63,8 +63,7 @@ Right
                                   (TVar (TV "c")))
                                (Area (Loc 28 2 3) (Loc 37 2 12))
                                (Var ".singleton"))))
-                      (Solved
-                         (TCon CNumber) (Area (Loc 38 2 13) (Loc 39 2 14)) (LNumber "3")))
+                      (Solved (TCon CNum) (Area (Loc 38 2 13) (Loc 39 2 14)) (LNum "3")))
                ]
            , aadts = []
            , apath = Just "./ModuleB"

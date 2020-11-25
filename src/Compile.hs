@@ -29,7 +29,7 @@ class Compilable a where
 
 instance Compilable Exp where
   compile astPath outputPath (Solved _ _ exp) = case exp of
-    LNumber v   -> v
+    LNum v   -> v
     LStr    v   -> "\"" <> v <> "\""
     LBool   v   -> v
 
@@ -127,7 +127,7 @@ instance Compilable Exp where
       compilePattern :: String -> Pattern -> String
       compilePattern _     (PVar _)    = "true"
       compilePattern _     PAny        = "true"
-      compilePattern scope (PNumber n) = scope <> " === " <> n
+      compilePattern scope (PNum n) = scope <> " === " <> n
       compilePattern scope (PStr    n) = scope <> " === \"" <> n <> "\""
       compilePattern scope (PBool   n) = scope <> " === " <> n
       compilePattern scope (PCon n)

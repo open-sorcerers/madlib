@@ -12,15 +12,14 @@ Right
                         [ ( "fulfilled" , TCon CBool )
                         , ( "job" , TCon CString )
                         , ( "name" , TCon CString )
-                        , ( "x" , TCon CNumber )
+                        , ( "x" , TCon CNum )
                         ])
                      False)
                   (Area (Loc 6 1 7) (Loc 65 1 66))
                   (Record
                      [ Field
                          ( "x"
-                         , Solved
-                             (TCon CNumber) (Area (Loc 11 1 12) (Loc 12 1 13)) (LNumber "4")
+                         , Solved (TCon CNum) (Area (Loc 11 1 12) (Loc 12 1 13)) (LNum "4")
                          )
                      , Field
                          ( "name"
@@ -47,7 +46,7 @@ Right
                             [ ( "fulfilled" , TCon CBool )
                             , ( "job" , TCon CString )
                             , ( "name" , TCon CString )
-                            , ( "x" , TCon CNumber )
+                            , ( "x" , TCon CNum )
                             ])
                          False)
                       (TCon CString))
@@ -63,7 +62,7 @@ Right
                             [ ( "fulfilled" , TCon CBool )
                             , ( "job" , TCon CString )
                             , ( "name" , TCon CString )
-                            , ( "x" , TCon CNumber )
+                            , ( "x" , TCon CNum )
                             ])
                          False)
                       (TCon CString))

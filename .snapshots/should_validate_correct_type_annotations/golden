@@ -3,46 +3,43 @@ Right
     { aimports = []
     , aexps =
         [ Solved
-            (TArr (TCon CNumber) (TCon CNumber))
+            (TArr (TCon CNum) (TCon CNum))
             (Area (Loc 0 1 1) (Loc 44 2 21))
             (TypedExp
                (Solved
-                  (TArr (TCon CNumber) (TCon CNumber))
+                  (TArr (TCon CNum) (TCon CNum))
                   (Area (Loc 24 2 1) (Loc 44 2 21))
                   (Assignment
                      "inc"
                      (Solved
-                        (TArr (TCon CNumber) (TCon CNumber))
+                        (TArr (TCon CNum) (TCon CNum))
                         (Area (Loc 30 2 7) (Loc 44 2 21))
                         (Abs
                            "a"
                            (Solved
-                              (TCon CNumber)
+                              (TCon CNum)
                               (Area (Loc 38 2 15) (Loc 39 2 16))
                               (App
                                  (Solved
-                                    (TArr (TCon CNumber) (TCon CNumber))
+                                    (TArr (TCon CNum) (TCon CNum))
                                     (Area (Loc 38 2 15) (Loc 39 2 16))
                                     (App
                                        (Solved
-                                          (TArr (TCon CNumber) (TArr (TCon CNumber) (TCon CNumber)))
+                                          (TArr (TCon CNum) (TArr (TCon CNum) (TCon CNum)))
                                           (Area (Loc 39 2 16) (Loc 41 2 18))
                                           (Var "+"))
                                        (Solved
-                                          (TCon CNumber)
+                                          (TCon CNum)
                                           (Area (Loc 38 2 15) (Loc 39 2 16))
                                           (Var "a"))))
                                  (Solved
-                                    (TCon CNumber)
-                                    (Area (Loc 42 2 19) (Loc 43 2 20))
-                                    (LNumber "1"))))))))
+                                    (TCon CNum) (Area (Loc 42 2 19) (Loc 43 2 20)) (LNum "1"))))))))
                (TRArr (TRSingle "Number") (TRSingle "Number")))
         , Solved
-            (TCon CNumber)
+            (TCon CNum)
             (Area (Loc 46 3 2) (Loc 57 3 13))
             (TypedExp
-               (Solved
-                  (TCon CNumber) (Area (Loc 46 3 2) (Loc 47 3 3)) (LNumber "3"))
+               (Solved (TCon CNum) (Area (Loc 46 3 2) (Loc 47 3 3)) (LNum "3"))
                (TRSingle "Number"))
         , Solved
             (TComp "path" "Maybe" [ TVar (TV "a") ])
@@ -54,11 +51,11 @@ Right
                   (Var "Nothing"))
                (TRComp "Maybe" [ TRSingle "a" ]))
         , Solved
-            (TComp "path" "Maybe" [ TCon CNumber ])
+            (TComp "path" "Maybe" [ TCon CNum ])
             (Area (Loc 113 6 2) (Loc 136 6 25))
             (TypedExp
                (Solved
-                  (TComp "path" "Maybe" [ TCon CNumber ])
+                  (TComp "path" "Maybe" [ TCon CNum ])
                   (Area (Loc 113 6 2) (Loc 120 6 9))
                   (App
                      (Solved
@@ -66,7 +63,7 @@ Right
                         (Area (Loc 113 6 2) (Loc 117 6 6))
                         (Var "Just"))
                      (Solved
-                        (TCon CNumber) (Area (Loc 118 6 7) (Loc 119 6 8)) (LNumber "3"))))
+                        (TCon CNum) (Area (Loc 118 6 7) (Loc 119 6 8)) (LNum "3"))))
                (TRComp "Maybe" [ TRSingle "Number" ]))
         ]
     , aadts =

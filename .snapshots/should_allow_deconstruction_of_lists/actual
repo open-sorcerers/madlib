@@ -3,36 +3,31 @@ Right
     { aimports = []
     , aexps =
         [ Solved
-            (TCon CNumber)
+            (TCon CNum)
             (Area (Loc 0 1 1) (Loc 53 3 1))
             (Where
                (Solved
-                  (TComp "Prelude" "List" [ TCon CNumber ])
+                  (TComp "Prelude" "List" [ TCon CNum ])
                   (Area (Loc 6 1 7) (Loc 21 1 22))
                   (ListConstructor
                      [ ListItem
-                         (Solved
-                            (TCon CNumber) (Area (Loc 7 1 8) (Loc 8 1 9)) (LNumber "1"))
+                         (Solved (TCon CNum) (Area (Loc 7 1 8) (Loc 8 1 9)) (LNum "1"))
                      , ListItem
-                         (Solved
-                            (TCon CNumber) (Area (Loc 10 1 11) (Loc 11 1 12)) (LNumber "2"))
+                         (Solved (TCon CNum) (Area (Loc 10 1 11) (Loc 11 1 12)) (LNum "2"))
                      , ListItem
-                         (Solved
-                            (TCon CNumber) (Area (Loc 13 1 14) (Loc 14 1 15)) (LNumber "3"))
+                         (Solved (TCon CNum) (Area (Loc 13 1 14) (Loc 14 1 15)) (LNum "3"))
                      , ListItem
-                         (Solved
-                            (TCon CNumber) (Area (Loc 16 1 17) (Loc 17 1 18)) (LNumber "5"))
+                         (Solved (TCon CNum) (Area (Loc 16 1 17) (Loc 17 1 18)) (LNum "5"))
                      , ListItem
-                         (Solved
-                            (TCon CNumber) (Area (Loc 19 1 20) (Loc 20 1 21)) (LNumber "8"))
+                         (Solved (TCon CNum) (Area (Loc 19 1 20) (Loc 20 1 21)) (LNum "8"))
                      ]))
                [ Solved
-                   (TArr (TComp "Prelude" "List" [ TCon CNumber ]) (TCon CNumber))
+                   (TArr (TComp "Prelude" "List" [ TCon CNum ]) (TCon CNum))
                    (Area (Loc 27 2 3) (Loc 51 2 27))
                    (Is
-                      (PList [ PNumber "1" , PNumber "2" , PSpread (PVar "rest") ])
+                      (PList [ PNum "1" , PNum "2" , PSpread (PVar "rest") ])
                       (Solved
-                         (TCon CNumber) (Area (Loc 47 2 23) (Loc 51 2 27)) (Var "rest")))
+                         (TCon CNum) (Area (Loc 47 2 23) (Loc 51 2 27)) (Var "rest")))
                ])
         ]
     , aadts = []

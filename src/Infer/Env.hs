@@ -62,10 +62,10 @@ initialEnv = Env
     , ( "<="
       , Forall [TV "a"] $ TVar (TV "a") `TArr` TVar (TV "a") `TArr` TCon CBool
       )
-    , ("+", Forall [] $ TCon CNumber `TArr` TCon CNumber `TArr` TCon CNumber)
-    , ("-", Forall [] $ TCon CNumber `TArr` TCon CNumber `TArr` TCon CNumber)
-    , ("*", Forall [] $ TCon CNumber `TArr` TCon CNumber `TArr` TCon CNumber)
-    , ("/", Forall [] $ TCon CNumber `TArr` TCon CNumber `TArr` TCon CNumber)
+    , ("+", Forall [] $ TCon CNum `TArr` TCon CNum `TArr` TCon CNum)
+    , ("-", Forall [] $ TCon CNum `TArr` TCon CNum `TArr` TCon CNum)
+    , ("*", Forall [] $ TCon CNum `TArr` TCon CNum `TArr` TCon CNum)
+    , ("/", Forall [] $ TCon CNum `TArr` TCon CNum `TArr` TCon CNum)
     , ( "|>"
       , Forall [TV "a", TV "b"]
       $      TVar (TV "a")

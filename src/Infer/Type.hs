@@ -34,14 +34,14 @@ data Type
 
 data TCon
   = CString
-  | CNumber
+  | CNum
   | CBool
   | CVoid
   | CUserDef String -- Is this one an Alias ? Or should it just go ?
   deriving (Show, Eq, Ord)
 
 number :: Type
-number = TCon CNumber
+number = TCon CNum
 
 bool :: Type
 bool = TCon CBool

@@ -224,7 +224,7 @@ pattern :: { Src.Pattern }
 
 nonCompositePattern :: { Src.Pattern }
   : name             { nameToPattern (tokenToArea $1) (strV $1) }
-  | number           { Meta emptyInfos (tokenToArea $1) (Src.PNumber $ strV $1) }
+  | number           { Meta emptyInfos (tokenToArea $1) (Src.PNum $ strV $1) }
   | str              { Meta emptyInfos (tokenToArea $1) (Src.PStr $ strV $1) }
   | true             { Meta emptyInfos (tokenToArea $1) (Src.PBool $ strV $1) }
   | false            { Meta emptyInfos (tokenToArea $1) (Src.PBool $ strV $1) }
@@ -365,7 +365,7 @@ listItems :: { [Src.ListItem] }
   | {- empty -}                 { [] }
 
 literal :: { Src.Exp }
-  : number                    { Meta emptyInfos (tokenToArea $1) (Src.LNumber $ strV $1) }
+  : number                    { Meta emptyInfos (tokenToArea $1) (Src.LNum $ strV $1) }
   | str                       { Meta emptyInfos (tokenToArea $1) (Src.LStr $ strV $1) }
   | true                      { Meta emptyInfos (tokenToArea $1) (Src.LBool $ strV $1) }
   | false                     { Meta emptyInfos (tokenToArea $1) (Src.LBool $ strV $1) }

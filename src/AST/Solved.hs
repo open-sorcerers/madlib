@@ -55,7 +55,7 @@ data Pattern
   = PVar Name
   | PAny
   | PCtor Name [Pattern]
-  | PNumber String
+  | PNum String
   | PStr String
   | PBool String
   | PCon Name
@@ -76,7 +76,7 @@ data ListItem
 
 type Exp = Solved Exp_
 
-data Exp_ = LNumber String
+data Exp_ = LNum String
           | LStr String
           | LBool String
           | JSExp String

@@ -3,58 +3,54 @@ Right
     { aimports = []
     , aexps =
         [ Solved
-            (TCon CNumber)
+            (TCon CNum)
             (Area (Loc 0 1 1) (Loc 62 3 1))
             (Where
                (Solved
                   (TRecord
                      (fromList
-                        [ ( "x" , TCon CNumber )
-                        , ( "y" , TCon CNumber )
-                        , ( "z" , TCon CNumber )
+                        [ ( "x" , TCon CNum )
+                        , ( "y" , TCon CNum )
+                        , ( "z" , TCon CNum )
                         ])
                      False)
                   (Area (Loc 6 1 7) (Loc 26 1 27))
                   (Record
                      [ Field
                          ( "x"
-                         , Solved
-                             (TCon CNumber) (Area (Loc 11 1 12) (Loc 12 1 13)) (LNumber "1")
+                         , Solved (TCon CNum) (Area (Loc 11 1 12) (Loc 12 1 13)) (LNum "1")
                          )
                      , Field
                          ( "y"
-                         , Solved
-                             (TCon CNumber) (Area (Loc 17 1 18) (Loc 18 1 19)) (LNumber "2")
+                         , Solved (TCon CNum) (Area (Loc 17 1 18) (Loc 18 1 19)) (LNum "2")
                          )
                      , Field
                          ( "z"
-                         , Solved
-                             (TCon CNumber) (Area (Loc 23 1 24) (Loc 24 1 25)) (LNumber "3")
+                         , Solved (TCon CNum) (Area (Loc 23 1 24) (Loc 24 1 25)) (LNum "3")
                          )
                      ]))
                [ Solved
                    (TArr
                       (TRecord
                          (fromList
-                            [ ( "x" , TCon CNumber )
-                            , ( "y" , TCon CNumber )
-                            , ( "z" , TCon CNumber )
+                            [ ( "x" , TCon CNum )
+                            , ( "y" , TCon CNum )
+                            , ( "z" , TCon CNum )
                             ])
                          False)
-                      (TCon CNumber))
+                      (TCon CNum))
                    (Area (Loc 32 2 3) (Loc 60 2 31))
                    (Is
                       (PRecord
                          (fromList
-                            [ ( "..." , PSpread (PVar "rest") ) , ( "x" , PNumber "1" ) ]))
+                            [ ( "..." , PSpread (PVar "rest") ) , ( "x" , PNum "1" ) ]))
                       (Solved
-                         (TCon CNumber)
+                         (TCon CNum)
                          (Area (Loc 54 2 25) (Loc 60 2 31))
                          (FieldAccess
                             (Solved
                                (TRecord
-                                  (fromList [ ( "y" , TCon CNumber ) , ( "z" , TCon CNumber ) ])
-                                  False)
+                                  (fromList [ ( "y" , TCon CNum ) , ( "z" , TCon CNum ) ]) False)
                                (Area (Loc 54 2 25) (Loc 58 2 29))
                                (Var "rest"))
                             (Solved

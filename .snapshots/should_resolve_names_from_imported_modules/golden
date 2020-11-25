@@ -5,41 +5,39 @@ Right
            { aimports = []
            , aexps =
                [ Solved
-                   (TArr (TCon CNumber) (TCon CNumber))
+                   (TArr (TCon CNum) (TCon CNum))
                    (Area (Loc 0 1 1) (Loc 6 1 7))
                    (Export
                       (Solved
-                         (TArr (TCon CNumber) (TCon CNumber))
+                         (TArr (TCon CNum) (TCon CNum))
                          (Area (Loc 7 1 8) (Loc 10 1 11))
                          (Assignment
                             "inc"
                             (Solved
-                               (TArr (TCon CNumber) (TCon CNumber))
+                               (TArr (TCon CNum) (TCon CNum))
                                (Area (Loc 13 1 14) (Loc 27 1 28))
                                (Abs
                                   "a"
                                   (Solved
-                                     (TCon CNumber)
+                                     (TCon CNum)
                                      (Area (Loc 21 1 22) (Loc 22 1 23))
                                      (App
                                         (Solved
-                                           (TArr (TCon CNumber) (TCon CNumber))
+                                           (TArr (TCon CNum) (TCon CNum))
                                            (Area (Loc 21 1 22) (Loc 22 1 23))
                                            (App
                                               (Solved
-                                                 (TArr
-                                                    (TCon CNumber)
-                                                    (TArr (TCon CNumber) (TCon CNumber)))
+                                                 (TArr (TCon CNum) (TArr (TCon CNum) (TCon CNum)))
                                                  (Area (Loc 22 1 23) (Loc 24 1 25))
                                                  (Var "+"))
                                               (Solved
-                                                 (TCon CNumber)
+                                                 (TCon CNum)
                                                  (Area (Loc 21 1 22) (Loc 22 1 23))
                                                  (Var "a"))))
                                         (Solved
-                                           (TCon CNumber)
+                                           (TCon CNum)
                                            (Area (Loc 25 1 26) (Loc 26 1 27))
-                                           (LNumber "1")))))))))
+                                           (LNum "1")))))))))
                ]
            , aadts = []
            , apath = Just "./ModuleA"
@@ -50,15 +48,14 @@ Right
            { aimports = [ NamedImport [ "inc" ] "./ModuleA" "./ModuleA" ]
            , aexps =
                [ Solved
-                   (TCon CNumber)
+                   (TCon CNum)
                    (Area (Loc 32 2 1) (Loc 38 2 7))
                    (App
                       (Solved
-                         (TArr (TCon CNumber) (TCon CNumber))
+                         (TArr (TCon CNum) (TCon CNum))
                          (Area (Loc 32 2 1) (Loc 35 2 4))
                          (Var "inc"))
-                      (Solved
-                         (TCon CNumber) (Area (Loc 36 2 5) (Loc 37 2 6)) (LNumber "3")))
+                      (Solved (TCon CNum) (Area (Loc 36 2 5) (Loc 37 2 6)) (LNum "3")))
                ]
            , aadts = []
            , apath = Just "./ModuleB"

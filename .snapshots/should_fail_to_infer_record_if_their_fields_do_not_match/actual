@@ -2,8 +2,7 @@ Left
   (InferError
      (UnificationError
         (TRecord
-           (fromList [ ( "x" , TCon CNumber ) , ( "y" , TCon CNumber ) ])
-           False)
+           (fromList [ ( "x" , TCon CNum ) , ( "y" , TCon CNum ) ]) False)
         (TRecord (fromList [ ( "name" , TCon CString ) ]) False))
      (Reason
         (WrongTypeApplied
@@ -24,14 +23,14 @@ Left
                            , Meta
                                Infos { nthArg = Nothing , origin = Nothing }
                                (Area (Loc 5 1 6) (Loc 6 1 7))
-                               (LNumber "3")
+                               (LNum "3")
                            )
                        , Field
                            ( "y"
                            , Meta
                                Infos { nthArg = Nothing , origin = Nothing }
                                (Area (Loc 11 1 12) (Loc 12 1 13))
-                               (LNumber "5")
+                               (LNum "5")
                            )
                        ]))))
            (Meta
