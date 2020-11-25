@@ -66,6 +66,7 @@ initialEnv = Env
     , ("-", Forall [] $ TCon CNumber `TArr` TCon CNumber `TArr` TCon CNumber)
     , ("*", Forall [] $ TCon CNumber `TArr` TCon CNumber `TArr` TCon CNumber)
     , ("/", Forall [] $ TCon CNumber `TArr` TCon CNumber `TArr` TCon CNumber)
+    , ("%", Forall [] $ TCon CNumber `TArr` TCon CNumber `TArr` TCon CNumber)
     , ( "|>"
       , Forall [TV "a", TV "b"]
       $      TVar (TV "a")

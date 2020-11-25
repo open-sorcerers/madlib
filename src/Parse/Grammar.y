@@ -26,6 +26,7 @@ import           Explain.Meta
   js       { Token _ (TokenJSBlock _) }
   'ret'    { Token _ TokenReturn }
   '='      { Token _ TokenEq }
+  '%'      { Token _ TokenPercentage }
   '+'      { Token _ TokenPlus }
   '-'      { Token _ TokenDash }
   '*'      { Token _ TokenStar }
@@ -71,7 +72,7 @@ import           Explain.Meta
 %left '|>'
 %left '>' '<' '>=' '<=' '=='
 %left '+' '-' '||'
-%left '*' '/' '&&'
+%left '*' '/' '%' '&&'
 %left ','
 %nonassoc '(' ')' '=' '=>' '::' where is 'ret' '{' '}' '[' ']'
 %right '!'
@@ -302,56 +303,63 @@ operation :: { Src.Exp }
                          $1))) 
                       $3)
                  }
-  | exp '==' exp  { Meta emptyInfos (getArea $1) (Src.App
+  | exp '%' exp  { Meta emptyInfos (getArea $1) (Src.App
+                      ((Meta emptyInfos (getArea $1) (Src.App
+                         (Meta emptyInfos (tokenToArea $2) (Src.Var "%")) 
+                         $1))) 
+                      $3)
+                 }
+  | exp '==' exp { Meta emptyInfos (getArea $1) (Src.App
                       ((Meta emptyInfos (getArea $1) (Src.App
                          (Meta emptyInfos (tokenToArea $2) (Src.Var "==")) 
                          $1))) 
                       $3)
-                   }
-  | exp '&&' exp  { Meta emptyInfos (getArea $1) (Src.App
+                 }
+  | exp '&&' exp { Meta emptyInfos (getArea $1) (Src.App
                       ((Meta emptyInfos (getArea $1) (Src.App
                          (Meta emptyInfos (tokenToArea $2) (Src.Var "&&")) 
                          $1))) 
                       $3)
-                   }
-  | exp '||' exp  { Meta emptyInfos (getArea $1) (Src.App
+                 }
+  | exp '||' exp { Meta emptyInfos (getArea $1) (Src.App
                       ((Meta emptyInfos (getArea $1) (Src.App
                          (Meta emptyInfos (tokenToArea $2) (Src.Var "||")) 
                          $1))) 
                       $3)
-                   }
+                 }
   | exp '>' exp  { Meta emptyInfos (getArea $1) (Src.App
                       ((Meta emptyInfos (getArea $1) (Src.App
                          (Meta emptyInfos (tokenToArea $2) (Src.Var ">")) 
                          $1))) 
                       $3)
-                   }
+                 }
   | exp '<' exp  { Meta emptyInfos (getArea $1) (Src.App
                       ((Meta emptyInfos (getArea $1) (Src.App
                          (Meta emptyInfos (tokenToArea $2) (Src.Var "<")) 
                          $1))) 
                       $3)
-                   }
-  | exp '>=' exp  { Meta emptyInfos (getArea $1) (Src.App
+                 }
+  | exp '>=' exp { Meta emptyInfos (getArea $1) (Src.App
                       ((Meta emptyInfos (getArea $1) (Src.App
                          (Meta emptyInfos (tokenToArea $2) (Src.Var ">=")) 
                          $1))) 
                       $3)
-                   }
-  | exp '<=' exp  { Meta emptyInfos (getArea $1) (Src.App
+                 }
+  | exp '<=' exp { Meta emptyInfos (getArea $1) (Src.App
                       ((Meta emptyInfos (getArea $1) (Src.App
                          (Meta emptyInfos (tokenToArea $2) (Src.Var "<=")) 
                          $1))) 
                       $3)
-                   }
-  | '!' exp  { Meta emptyInfos (mergeAreas (tokenToArea $1) (getArea $2)) (Src.App (Meta emptyInfos (tokenToArea $1) (Src.Var "!")) $2) }
-  | exp '|>' exp  { Meta emptyInfos (getArea $1) (Src.App
+                 }
+  | '!' exp      { Meta emptyInfos (mergeAreas (tokenToArea $1) (getArea $2)) (Src.App (Meta emptyInfos (tokenToArea $1) (Src.Var "!")) $2)
+                 }
+  | exp '|>' exp { Meta emptyInfos (getArea $1) (Src.App
                       ((Meta emptyInfos (getArea $1) (Src.App
                          (Meta emptyInfos (tokenToArea $2) (Src.Var "|>")) 
                          $1))) 
                       $3)
                   
-                  }
+                 }
 
 listConstructor :: { Src.Exp }
   : '[' rets listItems rets ']' { Meta emptyInfos (mergeAreas (tokenToArea $1) (tokenToArea $5)) (Src.ListConstructor $3) }

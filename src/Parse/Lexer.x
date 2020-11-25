@@ -91,6 +91,7 @@ tokens :-
   \>\=                                  { mapToken (\_ -> TokenRightChevronEq) }
   \<\=                                  { mapToken (\_ -> TokenLeftChevronEq) }
   \!                                    { mapToken (\_ -> TokenExclamationMark) }
+  \%                                    { mapToken (\_ -> TokenPercentage) }
   \"($printable # \")+\"                { mapToken (\s -> TokenStr (sanitizeStr s)) }
   '($printable # ')+'                   { mapToken (\s -> TokenStr (sanitizeStr s)) }
   `($printable # `)+`                   { mapToken (\s -> TokenStr (sanitizeStr s)) }
@@ -145,6 +146,7 @@ data TokenClass
  | TokenEq
  | TokenPlus
  | TokenDash
+ | TokenPercentage
  | TokenStar
  | TokenSlash
  | TokenDoubleEq

@@ -38,6 +38,7 @@ instance Compilable Exp where
       Solved _ _ (Var "-") -> "(" <> compile astPath outputPath arg <> ") - "
       Solved _ _ (Var "*") -> "(" <> compile astPath outputPath arg <> ") * "
       Solved _ _ (Var "/") -> "(" <> compile astPath outputPath arg <> ") / "
+      Solved _ _ (Var "%") -> "(" <> compile astPath outputPath arg <> ") % "
       Solved _ _ (Var "==") ->
         "(" <> compile astPath outputPath arg <> ") === "
       Solved _ _ (Var "&&") -> "(" <> compile astPath outputPath arg <> ") && "
