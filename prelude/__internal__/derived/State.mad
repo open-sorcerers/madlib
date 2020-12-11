@@ -1,5 +1,5 @@
-import T from "Tuple"
-import IO from "IO"
+import T from "./Tuple"
+import IO from "../atomic/IO"
 
 // State Monad
 // Example usage:

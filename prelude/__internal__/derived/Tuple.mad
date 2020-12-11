@@ -1,3 +1,8 @@
+import L from './List'
+
+pair :: a -> b -> <a, b>
+export pair = (key, val) => <key, val>
+
 fst :: <a, b> -> a
 export fst = (tuple) => (where(tuple)
   is <a, _>: a

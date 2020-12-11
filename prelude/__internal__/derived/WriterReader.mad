@@ -1,6 +1,6 @@
-import T from "Tuple"
-import L from "List"
-import IO from "IO"
+import T from "./Tuple"
+import L from "./List"
+import IO from "../atomic/IO"
 
 // Monad combining Reader and Writer
 // Example usage:

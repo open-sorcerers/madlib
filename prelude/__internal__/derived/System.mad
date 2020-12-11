@@ -1,5 +1,4 @@
-import W from "Wish"
-
+import W from "../atomic/Wish"
 
 export data CommandError = CommandError Number String
 

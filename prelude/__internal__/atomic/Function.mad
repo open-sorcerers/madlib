@@ -21,3 +21,9 @@ export when = (predicate, truthy, value) =>
 
 not :: Boolean -> Boolean
 export not = (b) => !b
+
+flip :: (a -> b -> c) -> (b -> a -> c)
+export flip = (fn) => (
+  (b, a) => (fn(a, b))
+)
+

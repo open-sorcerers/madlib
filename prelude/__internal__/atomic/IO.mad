@@ -8,7 +8,7 @@ err :: a -> a
 export err = (e) => (#- { console.log(e); return e; } -#)
 
 warn :: a -> a
-export warn = (w) => (#- { console.warn(w); return w; } -#)
+export warn = (w) => (#- { console.log(w); return w; } -#)
 
 export alias Row = { id :: String, cols :: List <String, String> }
 table :: List Row -> a -> a

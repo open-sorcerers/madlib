@@ -1,0 +1,62 @@
+import M from "../atomic/Maybe"
+import L from "./List"
+import F from "../atomic/Function"
+import T from "../atomic/Tuple"
+
+propOrWrappedDefault :: w -> z -> String -> x -> y
+export propOrWrappedDefault = (Wrap, def, px, ob) => ( #- {
+  return (
+    !!ob[px] ?
+    M.Just(ob[px]) :
+    def && Wrap ? Wrap(def) : Wrap
+  )
+} -# )
+
+export prop = propOrWrappedDefault(M.Nothing, false)
+export propOr = propOrWrappedDefault(M.Just)
+
+propEq :: e -> String -> o -> Boolean
+export propEq = (xx, px, ob) => (
+  M.fromMaybe(false, prop(px, ob))
+)
+
+objOf :: String -> x -> y
+export objOf = (px, x) => (#-{ return { [px]: x } }-#)
+
+merge :: a -> b -> c
+export merge = (a, b) => (#- Object.assign({}, a, b) -#) 
+
+mergeLeft :: b -> a -> c
+export mergeLeft = F.flip(merge)
+
+values :: x -> List String
+export values = (x) => (#- Object.values(x) -#)
+
+keys :: x -> List String
+export keys = (x) => (#- Object.keys(x) -#)
+
+entries :: x -> List y
+export entries = (x) => (#- Object.entries(x) -#)
+
+toPairs :: x -> List <String, x>
+export toPairs = (y) => pipe(
+  keys,
+  L.map((key) => (<key, (#- y[key] -#) >))
+)(y)
+
+// fromPairs :: List <String, x> -> y
+export fromPairs = L.reduceL(
+  (agg, px) => merge(
+    agg,
+    objOf(T.fst(px), T.snd(px))
+  ),
+  {}
+)
+
+map :: (a -> b) -> c -> d
+export map = (fn, x) => pipe(
+  entries,
+  L.map((px) => < (#- px[0] -#), (#- fn(px[1]) -#) >),
+  fromPairs
+)(x)
+

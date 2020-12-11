@@ -1,0 +1,23 @@
+import Maybe from "../atomic/Maybe"
+import List from "./List"
+
+fromString :: String -> Maybe.Maybe Number
+export fromString = (str) => (#- {
+  const n = parseFloat(str)
+  return isNaN(n) ? Maybe.Nothing() : Maybe.Just(n)
+} -#)
+
+formatDecimal :: Number -> Number -> String
+export formatDecimal = (a, x) => (#- x.toFixed(a) -#)
+
+range :: Number -> Number -> List Number
+export range = (a, b) => (#- {
+  const diff = Math.abs(b - a) - 1
+  const r = new Array(diff)
+  let x = diff
+  while (x >= 0) {
+    r[x] = x
+    x--
+  }
+  return r
+} -#)

@@ -1,5 +1,11 @@
-import Fun from "Function"
-import Maybe from "Maybe"
+import Fun from "../atomic/Function"
+import Maybe from "../atomic/Maybe"
+
+of :: x -> List x
+export of = (x) => (#- [x] -#)
+
+join :: String -> List a -> String
+export join = (del, x) => (#- x.join(del) -#)
 
 map :: (a -> b) -> List a -> List b
 export map = (f, xs) => (#- xs.map((x) => f(x)) -#)
@@ -27,11 +33,18 @@ export nth = (i, xs) => (#- {
     : Maybe.Just(x);
 } -#)
 
+unsafeNth :: Number -> List a -> b
+export unsafeNth =  (i, xs) => pipe(
+  nth(i),
+  Maybe.fromMaybe
+)(xs)
+
 reduceR :: (a -> b -> a) -> a -> List b -> a
 export reduceR = (f, initial, xs) => (#- xs.reduceRight(f, initial) -#)
 
 reduceL :: (a -> b -> a) -> a -> List b -> a
 export reduceL = (f, initial, xs) => (#- xs.reduce(f, initial) -#)
+export reduce = reduceL
 
 filter :: (a -> Boolean) -> List a -> List a
 export filter = (predicate, xs) => (#- xs.filter(predicate) -#)
@@ -67,3 +80,26 @@ export uniqueBy = (f, xs) => where(xs)
       is Maybe.Nothing: [curr, ...uniqueBy(f, tail)]
     }
   is [last]: [last]
+
+times :: (a -> b) -> Number -> List b
+export times = (fn, x) => (#- {
+  let y = x - 1
+  const list = new Array(x)
+  while (y >= 0) {
+    list[y] = fn(y) 
+    y--
+  }
+  return list
+} -#)
+
+ap :: List (a -> b) -> List a -> List b
+export ap = (fns, xs) => reduce(
+  (agg, fn) => pipe(
+    map(fn),
+    concat(agg)
+  )(xs),
+  [],
+  fns
+)
+
+

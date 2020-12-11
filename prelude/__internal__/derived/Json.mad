@@ -1,6 +1,6 @@
-import IO from "IO"
-import E from "Either"
-import M from "Map"
+import IO from "../atomic/IO"
+import E from "../atomic/Either"
+import M from "./Map"
 
 
 string :: a -> E.Either String String
