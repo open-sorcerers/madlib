@@ -19,11 +19,12 @@ newTVar :: Infer Type
 newTVar = do
   s <- get
   put s { count = count s + 1 }
-  return $ TVar $ TV (letters !! count s)
+  return $ TVar [] $ TV (letters !! count s)
 
 
 instantiate :: Scheme -> Infer Type
 instantiate (Forall as t) = do
   as' <- mapM (const newTVar) as
   let s = M.fromList $ zip as as'
-  return $ apply s t
+  return $ apply Env {} s t
+  -- return $ apply Env { envvars = M.empty, envtypes = M.empty, envimports = M.empty, envinterfaces = [], envinstances = [], envcurrentpath = ""} s t

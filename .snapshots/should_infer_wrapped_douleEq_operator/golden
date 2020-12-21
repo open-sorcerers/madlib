@@ -11,12 +11,12 @@ Right
                   (Area (Loc 0 1 1) (Loc 26 1 27))
                   (App
                      (Solved
-                        (TArr (TVar (TV "d")) (TArr (TVar (TV "d")) (TCon CBool)))
+                        (TArr (TVar [] (TV "d")) (TArr (TVar [] (TV "d")) (TCon CBool)))
                         (Area (Loc 1 1 2) (Loc 19 1 20))
                         (Abs
                            "a"
                            [ Solved
-                               (TArr (TVar (TV "d")) (TCon CBool))
+                               (TArr (TVar [] (TV "d")) (TCon CBool))
                                (Area (Loc 1 1 2) (Loc 19 1 20))
                                (Abs
                                   "b"
@@ -25,22 +25,22 @@ Right
                                       (Area (Loc 12 1 13) (Loc 13 1 14))
                                       (App
                                          (Solved
-                                            (TArr (TVar (TV "c")) (TCon CBool))
+                                            (TArr (TVar [] (TV "c")) (TCon CBool))
                                             (Area (Loc 12 1 13) (Loc 13 1 14))
                                             (App
                                                (Solved
                                                   (TArr
-                                                     (TVar (TV "g"))
-                                                     (TArr (TVar (TV "g")) (TCon CBool)))
+                                                     (TVar [] (TV "g"))
+                                                     (TArr (TVar [] (TV "g")) (TCon CBool)))
                                                   (Area (Loc 14 1 15) (Loc 16 1 17))
                                                   (Var "=="))
                                                (Solved
-                                                  (TVar (TV "c"))
+                                                  (TVar [] (TV "c"))
                                                   (Area (Loc 12 1 13) (Loc 13 1 14))
                                                   (Var "a"))
                                                False))
                                          (Solved
-                                            (TVar (TV "d"))
+                                            (TVar [] (TV "d"))
                                             (Area (Loc 17 1 18) (Loc 18 1 19))
                                             (Var "b"))
                                          True)

@@ -29,13 +29,14 @@ Right
                          (Area (Loc 26 2 1) (Loc 28 2 3))
                          (Export
                             (Solved
-                               (TArr (TComp "./ModuleA" "Maybe" [ TVar (TV "f") ]) (TCon CNum))
+                               (TArr (TComp "./ModuleA" "Maybe" [ TVar [] (TV "f") ]) (TCon CNum))
                                (Area (Loc 57 3 1) (Loc 63 3 7))
                                (Assignment
                                   "fn"
                                   (Solved
                                      (TArr
-                                        (TComp "./ModuleA" "Maybe" [ TVar (TV "f") ]) (TCon CNum))
+                                        (TComp "./ModuleA" "Maybe" [ TVar [] (TV "f") ])
+                                        (TCon CNum))
                                      (Area (Loc 69 3 13) (Loc 137 8 1))
                                      (Abs
                                         "x"
@@ -44,23 +45,25 @@ Right
                                             (Area (Loc 80 4 3) (Loc 135 7 3))
                                             (Where
                                                (Solved
-                                                  (TComp "./ModuleA" "Maybe" [ TVar (TV "f") ])
+                                                  (TComp "./ModuleA" "Maybe" [ TVar [] (TV "f") ])
                                                   (Area (Loc 86 4 9) (Loc 87 4 10))
                                                   (Var "x"))
                                                [ Solved
                                                    (TArr
-                                                      (TComp "./ModuleA" "Maybe" [ TVar (TV "f") ])
+                                                      (TComp
+                                                         "./ModuleA" "Maybe" [ TVar [] (TV "f") ])
                                                       (TCon CNum))
                                                    (Area (Loc 95 5 5) (Loc 110 5 20))
                                                    (Is
                                                       (PCtor "M.Just" [ PVar "a" ])
                                                       (Solved
-                                                         (TVar (TV "e"))
+                                                         (TVar [] (TV "e"))
                                                          (Area (Loc 109 5 19) (Loc 110 5 20))
                                                          (Var "a")))
                                                , Solved
                                                    (TArr
-                                                      (TComp "./ModuleA" "Maybe" [ TVar (TV "f") ])
+                                                      (TComp
+                                                         "./ModuleA" "Maybe" [ TVar [] (TV "f") ])
                                                       (TCon CNum))
                                                    (Area (Loc 115 6 5) (Loc 131 6 21))
                                                    (Is

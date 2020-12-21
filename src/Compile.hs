@@ -10,7 +10,7 @@ import           Data.List                      ( sort
                                                 , intercalate
                                                 )
 
-import           AST.Solved
+import           AST.Solved                     as Slv
 import           Utils.Path                     ( cleanRelativePath
                                                 , computeTargetPath
                                                 , makeRelativeEx
@@ -20,6 +20,9 @@ import           System.FilePath                ( replaceExtension
                                                 , joinPath
                                                 )
 import           Explain.Location
+import Infer.Type
+import Debug.Trace (trace)
+import Text.Show.Pretty (ppShow)
 
 
 hpWrapLine :: Bool -> FilePath -> Int -> String -> String
@@ -212,11 +215,35 @@ instance Compilable Exp where
                     compileApp finals args abs' arg' final'
                   _ ->
                     let finalized = zip args finals
-                    in  compile config abs
+                    in  buildAbs config abs arg
                           <> "("
                           <> buildParams finalized
                           <> ")"
             in  hpWrapLine coverage astPath (getStartLine abs) next
+
+          buildAbs :: CompilationConfig -> Exp -> Exp -> String
+          buildAbs config abs arg = case methodClass (trace ("ABS: "<>ppShow abs) abs) of
+            Nothing -> compile config abs
+            Just n  -> n <> showArgType arg <> "." <> compile config abs
+
+          showArgType :: Exp -> String
+          showArgType exp = case exp of
+            Solved t _ _ -> case t of
+              TCon CNum    -> "Number"
+              TCon CString -> "String"
+
+          methodClass :: Exp -> Maybe String
+          methodClass exp = case exp of
+            Solved t _ (Var _) ->
+              let hasConstraint = \case
+                    TVar constraints _ -> if null constraints then Nothing else Just $ head constraints
+                    TArr l r -> case (hasConstraint l, hasConstraint r) of
+                      (Just n, _) -> Just n
+                      (_, Just n) -> Just n
+                      _           -> Nothing
+                    _ -> Nothing
+              in hasConstraint t
+            _ -> Nothing  
 
           buildParams :: [(String, Bool)] -> String
           buildParams []                    = ""
@@ -591,6 +618,22 @@ buildImportPath config absPath =
 updateASTPath :: FilePath -> CompilationConfig -> CompilationConfig
 updateASTPath astPath config = config { ccastPath = astPath }
 
+instance Compilable Slv.Instance where
+  compile config inst = case inst of
+    Slv.Instance interface ty dict ->
+      "const "
+      <> interface
+      <> typingToStr ty
+      <> " = {\n"
+      <> intercalate ",\n" (uncurry compileMethod <$> M.toList dict)
+      <> "\n};\n"
+    where
+      compileMethod :: Name -> Exp -> String
+      compileMethod n exp = "  " <> n <> ": " <> compile config exp
+
+typingToStr :: Typing -> String
+typingToStr t = case t of
+  TRSingle n -> n
 
 instance Compilable AST where
   compile config ast =
@@ -600,6 +643,7 @@ instance Compilable AST where
       typeDecls         = atypedecls ast
       path              = apath ast
       imports           = aimports ast
+      instances         = ainstances ast
 
 
       astPath           = fromMaybe "Unknown" path
@@ -611,6 +655,9 @@ instance Compilable AST where
         then "\n" <> hpFnWrap <> "\n" <> hpLineWrap
         else ""
 
+      compiledInstances = case instances of
+        [] -> ""
+        x -> foldr1 (<>) (compile configWithASTPath <$> x)
       compiledAdts = case typeDecls of
         [] -> ""
         x  -> foldr1 (<>) (compile configWithASTPath <$> x)
@@ -627,6 +674,7 @@ instance Compilable AST where
       infoComment
       <> compiledImports
       <> helpers
+      <> compiledInstances
       <> compiledAdts
       <> compiledExps
       <> defaultExport

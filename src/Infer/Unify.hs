@@ -9,44 +9,52 @@ import qualified Data.Set                      as S
 import           Infer.Type
 import           Infer.Substitute
 import           Error.Error
+import Infer.Env (lookupInstance)
 
 
 occursCheck :: Substitutable a => TVar -> a -> Bool
 occursCheck a t = S.member a $ ftv t
 
 
-bind :: TVar -> Type -> Either TypeError Substitution
-bind a t | t == TVar a     = return M.empty
-         | occursCheck a t = throwError $ InfiniteType a t
-         | otherwise       = return $ M.singleton a t
+bind :: Env -> [String] -> TVar -> Type -> Either TypeError Substitution
+bind env constraints a t | t == TVar [] a  = return M.empty
+                         | occursCheck a t = throwError $ InfiniteType a t
+                         | otherwise       =
+  if null constraints
+    then return $ M.singleton a t
+    else
+      let inst = lookupInstance env (head constraints) t
+      in  case inst of
+        Just _ -> return $ M.singleton a t
+        _ -> throwError $ NoInstanceFound (head constraints) t
 
 
 cleanTCompMain :: String -> String
 cleanTCompMain = reverse . takeWhile (/= '.') . reverse
 
-unify :: Type -> Type -> Either TypeError Substitution
-unify (l `TArr` r) (l' `TArr` r') = do
-  s1 <- unify l l'
-  s2 <- unify (apply s1 r) (apply s1 r')
-  return (s2 `compose` s1)
+unify :: Env -> Type -> Type -> Either TypeError Substitution
+unify env (l `TArr` r) (l' `TArr` r') = do
+  s1 <- unify env l l'
+  s2 <- unify env (apply env s1 r) (apply env s1 r')
+  return $ compose env s1 s2
 
-unify (TTuple elems) (TTuple elems') = do
+unify env (TTuple elems) (TTuple elems') = do
   if length elems == length elems'
-    then unifyVars M.empty (zip elems elems')
+    then unifyVars env M.empty (zip elems elems')
     else throwError $ UnificationError (TTuple elems) (TTuple elems')
 
-unify (TComp astPath main vars) (TComp astPath' main' vars')
+unify env (TComp astPath main vars) (TComp astPath' main' vars')
   | (cleanTCompMain main == cleanTCompMain main')
     && astPath
     == astPath'
     && length vars
     == length vars'
-  = let z = zip vars vars' in unifyVars M.empty z
+  = let z = zip vars vars' in unifyVars env M.empty z
   | otherwise
   = throwError
     $ UnificationError (TComp astPath main vars) (TComp astPath' main' vars')
 
-unify (TRecord fields open) (TRecord fields' open')
+unify env (TRecord fields open) (TRecord fields' open')
   | open || open' = do
     let extraFields    = M.difference fields fields'
         extraFields'   = M.difference fields' fields
@@ -55,32 +63,32 @@ unify (TRecord fields open) (TRecord fields' open')
         types          = M.elems updatedFields
         types'         = M.elems updatedFields'
         z              = zip types types'
-    unifyVars M.empty z
+    unifyVars env M.empty z
   | M.difference fields fields' /= M.empty = throwError
   $ UnificationError (TRecord fields open) (TRecord fields' open')
   | otherwise = do
     let types  = M.elems fields
         types' = M.elems fields'
         z      = zip types types'
-    unifyVars M.empty z
+    unifyVars env M.empty z
 
-unify (TVar a) t                 = bind a t
-unify t        (TVar a)          = bind a t
-unify (TCon a) (TCon b) | a == b = return M.empty
-unify t1 t2                      = throwError $ UnificationError t1 t2
-
-
-unifyVars :: Substitution -> [(Type, Type)] -> Either TypeError Substitution
-unifyVars s ((tp, tp') : xs) = do
-  s1 <- unify tp tp'
-  unifyVars (s1 `compose` s) xs
-unifyVars s _ = return s
+unify env (TVar constraints tv) t               = bind env constraints tv t
+unify env t        (TVar constraints tv)        = bind env constraints tv t
+unify env (TCon a) (TCon b) | a == b = return M.empty
+unify env t1 t2                      = throwError $ UnificationError t1 t2
 
 
-unifyElems :: Type -> [Type] -> Either TypeError Substitution
-unifyElems _ []        = return M.empty
-unifyElems t [t'     ] = unify t t'
-unifyElems t (t' : xs) = do
-  s1 <- unify t t'
-  s2 <- unifyElems t xs
-  return $ s1 `compose` s2
+unifyVars :: Env -> Substitution -> [(Type, Type)] -> Either TypeError Substitution
+unifyVars env s ((tp, tp') : xs) = do
+  s1 <- unify env tp tp'
+  unifyVars env (compose env s1 s) xs
+unifyVars _ s _ = return s
+
+
+unifyElems :: Env -> Type -> [Type] -> Either TypeError Substitution
+unifyElems _ _ []          = return M.empty
+unifyElems env t [t'     ] = unify env t t'
+unifyElems env t (t' : xs) = do
+  s1 <- unify env t t'
+  s2 <- unifyElems env t xs
+  return $ compose env s1 s2

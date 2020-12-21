@@ -41,8 +41,8 @@ Right
                                (App
                                   (Solved
                                      (TArr
-                                        (TVar (TV "f"))
-                                        (TComp "./ModuleA" "Maybe" [ TVar (TV "f") ]))
+                                        (TVar [] (TV "f"))
+                                        (TComp "./ModuleA" "Maybe" [ TVar [] (TV "f") ]))
                                      (Area (Loc 75 3 12) (Loc 76 3 13))
                                      (FieldAccess
                                         (Solved
@@ -50,11 +50,12 @@ Right
                                               (fromList
                                                  [ ( "Just"
                                                    , TArr
-                                                       (TVar (TV "a"))
-                                                       (TComp "./ModuleA" "Maybe" [ TVar (TV "a") ])
+                                                       (TVar [] (TV "a"))
+                                                       (TComp
+                                                          "./ModuleA" "Maybe" [ TVar [] (TV "a") ])
                                                    )
                                                  , ( "Nothing"
-                                                   , TComp "./ModuleA" "Maybe" [ TVar (TV "b") ]
+                                                   , TComp "./ModuleA" "Maybe" [ TVar [] (TV "b") ]
                                                    )
                                                  ])
                                               False)
@@ -63,8 +64,8 @@ Right
                                         (Solved
                                            (TArr
                                               (TRecord
-                                                 (fromList [ ( "Just" , TVar (TV "e") ) ]) True)
-                                              (TVar (TV "e")))
+                                                 (fromList [ ( "Just" , TVar [] (TV "e") ) ]) True)
+                                              (TVar [] (TV "e")))
                                            (Area (Loc 77 3 14) (Loc 81 3 18))
                                            (Var ".Just"))))
                                   (Solved

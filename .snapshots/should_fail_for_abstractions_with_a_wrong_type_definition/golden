@@ -63,6 +63,6 @@ Left
                           (Area (Loc 26 1 27) (Loc 33 1 34))
                           (TRSingle "Boolean"))))))
            (TArr (TCon CString) (TArr (TCon CNum) (TCon CBool)))
-           (TArr (TVar (TV "b")) (TArr (TVar (TV "b")) (TCon CBool))))
+           (TArr (TVar [] (TV "b")) (TArr (TVar [] (TV "b")) (TCon CBool))))
         "path"
         (Area (Loc 0 1 1) (Loc 57 2 24))))

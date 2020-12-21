@@ -32,17 +32,17 @@ Right
                          (Area (Loc 26 2 1) (Loc 28 2 3))
                          (Export
                             (Solved
-                               (TArr (TVar (TV "a")) (TVar (TV "a")))
+                               (TArr (TVar [] (TV "a")) (TVar [] (TV "a")))
                                (Area (Loc 59 3 1) (Loc 65 3 7))
                                (Assignment
                                   "fn"
                                   (Solved
-                                     (TArr (TVar (TV "a")) (TVar (TV "a")))
+                                     (TArr (TVar [] (TV "a")) (TVar [] (TV "a")))
                                      (Area (Loc 71 3 13) (Loc 81 3 23))
                                      (Abs
                                         "x"
                                         [ Solved
-                                            (TVar (TV "a"))
+                                            (TVar [] (TV "a"))
                                             (Area (Loc 79 3 21) (Loc 80 3 22))
                                             (Var "x")
                                         ]))))))

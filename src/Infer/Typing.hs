@@ -12,8 +12,6 @@ import           Control.Monad.Except           ( MonadError(throwError) )
 import           Error.Error
 import           Explain.Reason
 import           Infer.Substitute
-import           Infer.Instantiate
-import qualified Data.Set                      as S
 
 
 typingToType :: Env -> Src.Typing -> Infer Type
@@ -22,7 +20,7 @@ typingToType env (Meta _ _ (Src.TRSingle t))
   | t == "Boolean" = return $ TCon CBool
   | t == "String" = return $ TCon CString
   | t == "()" = return $ TCon CUnit
-  | isLower $ head t = return $ TVar $ TV t
+  | isLower $ head t = return $ TVar [] $ TV t
   | otherwise = do
     h <- lookupADT env t
     case h of
@@ -43,7 +41,7 @@ typingToType env (Meta _ _ (Src.TRComp t ts)) = do
     (TAlias _ _ vars t) -> do
       params <- mapM (typingToType env) ts
       let subst = M.fromList $ zip vars params
-      return $ apply subst t
+      return $ apply env subst t
 
 typingToType env (Meta _ _ (Src.TRArr l r)) = do
   l' <- typingToType env l

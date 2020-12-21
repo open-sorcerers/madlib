@@ -3,12 +3,12 @@ module AST.Solved where
 
 import qualified Data.Map                      as M
 
-import           Infer.Type
+import qualified Infer.Type as Ty
 import           Explain.Location
 
-data Solved a = Solved Type Area a deriving(Eq, Show)
+data Solved a = Solved Ty.Type Area a deriving(Eq, Show)
 
-getType :: Exp -> Type
+getType :: Exp -> Ty.Type
 getType (Solved t _ _) = t
 
 extractExp :: Exp -> Exp_
@@ -16,10 +16,11 @@ extractExp (Solved _ (Area _ _) e) = e
 
 data AST =
   AST
-    { aimports   :: [Import]
-    , aexps      :: [Exp]
-    , atypedecls :: [TypeDecl]
-    , apath      :: Maybe FilePath
+    { aimports    :: [Import]
+    , aexps       :: [Exp]
+    , atypedecls  :: [TypeDecl]
+    , ainstances  :: [Instance]
+    , apath       :: Maybe FilePath
     }
     deriving(Eq, Show)
 
@@ -27,6 +28,8 @@ data Import
   = NamedImport [Name] FilePath FilePath
   | DefaultImport Name FilePath FilePath
   deriving(Eq, Show)
+
+data Instance = Instance Name Typing (M.Map Name Exp) deriving(Eq, Show)
 
 data TypeDecl
   = ADT

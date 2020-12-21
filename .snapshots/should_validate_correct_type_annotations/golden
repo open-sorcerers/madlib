@@ -42,11 +42,11 @@ Right
                (Solved (TCon CNum) (Area (Loc 46 3 2) (Loc 47 3 3)) (LNum "3"))
                (TRSingle "Number"))
         , Solved
-            (TComp "path" "Maybe" [ TVar (TV "d") ])
+            (TComp "path" "Maybe" [ TVar [] (TV "d") ])
             (Area (Loc 92 5 2) (Loc 110 5 20))
             (TypedExp
                (Solved
-                  (TComp "path" "Maybe" [ TVar (TV "d") ])
+                  (TComp "path" "Maybe" [ TVar [] (TV "d") ])
                   (Area (Loc 92 5 2) (Loc 99 5 9))
                   (Var "Nothing"))
                (TRComp "Maybe" [ TRSingle "a" ]))
@@ -59,7 +59,8 @@ Right
                   (Area (Loc 113 6 2) (Loc 120 6 9))
                   (App
                      (Solved
-                        (TArr (TVar (TV "g")) (TComp "path" "Maybe" [ TVar (TV "g") ]))
+                        (TArr
+                           (TVar [] (TV "g")) (TComp "path" "Maybe" [ TVar [] (TV "g") ]))
                         (Area (Loc 113 6 2) (Loc 117 6 6))
                         (Var "Just"))
                      (Solved (TCon CNum) (Area (Loc 118 6 7) (Loc 119 6 8)) (LNum "3"))

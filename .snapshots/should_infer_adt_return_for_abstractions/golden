@@ -12,7 +12,8 @@ Right
                   (Area (Loc 44 2 11) (Loc 63 2 30))
                   (App
                      (Solved
-                        (TArr (TVar (TV "b")) (TComp "path" "Result" [ TVar (TV "b") ]))
+                        (TArr
+                           (TVar [] (TV "b")) (TComp "path" "Result" [ TVar [] (TV "b") ]))
                         (Area (Loc 44 2 11) (Loc 51 2 18))
                         (Var "Success"))
                      (Solved
@@ -21,12 +22,12 @@ Right
                         (LStr "response"))
                      True)))
         , Solved
-            (TComp "path" "Result" [ TVar (TV "c") ])
+            (TComp "path" "Result" [ TVar [] (TV "c") ])
             (Area (Loc 64 3 1) (Loc 71 3 8))
             (Assignment
                "result2"
                (Solved
-                  (TComp "path" "Result" [ TVar (TV "c") ])
+                  (TComp "path" "Result" [ TVar [] (TV "c") ])
                   (Area (Loc 74 3 11) (Loc 79 3 16))
                   (Var "Error")))
         , Solved
@@ -38,12 +39,12 @@ Right
                   (Area (Loc 80 4 1) (Loc 118 4 39))
                   (App
                      (Solved
-                        (TArr (TVar (TV "g")) (TArr (TVar (TV "g")) (TCon CBool)))
+                        (TArr (TVar [] (TV "g")) (TArr (TVar [] (TV "g")) (TCon CBool)))
                         (Area (Loc 81 4 2) (Loc 99 4 20))
                         (Abs
                            "a"
                            [ Solved
-                               (TArr (TVar (TV "g")) (TCon CBool))
+                               (TArr (TVar [] (TV "g")) (TCon CBool))
                                (Area (Loc 81 4 2) (Loc 99 4 20))
                                (Abs
                                   "b"
@@ -52,22 +53,22 @@ Right
                                       (Area (Loc 92 4 13) (Loc 93 4 14))
                                       (App
                                          (Solved
-                                            (TArr (TVar (TV "f")) (TCon CBool))
+                                            (TArr (TVar [] (TV "f")) (TCon CBool))
                                             (Area (Loc 92 4 13) (Loc 93 4 14))
                                             (App
                                                (Solved
                                                   (TArr
-                                                     (TVar (TV "j"))
-                                                     (TArr (TVar (TV "j")) (TCon CBool)))
+                                                     (TVar [] (TV "j"))
+                                                     (TArr (TVar [] (TV "j")) (TCon CBool)))
                                                   (Area (Loc 94 4 15) (Loc 96 4 17))
                                                   (Var "=="))
                                                (Solved
-                                                  (TVar (TV "f"))
+                                                  (TVar [] (TV "f"))
                                                   (Area (Loc 92 4 13) (Loc 93 4 14))
                                                   (Var "a"))
                                                False))
                                          (Solved
-                                            (TVar (TV "g"))
+                                            (TVar [] (TV "g"))
                                             (Area (Loc 97 4 18) (Loc 98 4 19))
                                             (Var "b"))
                                          True)

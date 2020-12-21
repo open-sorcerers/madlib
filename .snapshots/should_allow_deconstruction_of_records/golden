@@ -55,8 +55,8 @@ Right
                                (Var "rest"))
                             (Solved
                                (TArr
-                                  (TRecord (fromList [ ( "z" , TVar (TV "a") ) ]) True)
-                                  (TVar (TV "a")))
+                                  (TRecord (fromList [ ( "z" , TVar [] (TV "a") ) ]) True)
+                                  (TVar [] (TV "a")))
                                (Area (Loc 59 2 30) (Loc 60 2 31))
                                (Var ".z")))))
                ])

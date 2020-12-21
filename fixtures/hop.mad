@@ -1,5 +1,16 @@
-data Response = Success Number { body :: Number }
+import IO from "IO"
 
-where(Success(1, { body: 3 }))
-  Success 1 _ -> 3
-  Success 2 _ -> 3
+interface Show a {
+  show :: a -> String
+}
+
+instance Show Number {
+  show = (num) => #- "Number: " + num.toString() -#
+}
+
+instance Show String {
+  show = (s) => "String: " ++ s
+}
+
+show(3) |> IO.log
+show("3") |> IO.log

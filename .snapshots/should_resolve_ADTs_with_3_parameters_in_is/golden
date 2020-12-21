@@ -12,34 +12,34 @@ Right
                   (App
                      (Solved
                         (TArr
-                           (TVar (TV "f"))
-                           (TComp "path" "Wish" [ TCon CNum , TCon CNum , TVar (TV "f") ]))
+                           (TVar [] (TV "f"))
+                           (TComp "path" "Wish" [ TCon CNum , TCon CNum , TVar [] (TV "f") ]))
                         (Area (Loc 50 2 15) (Loc 51 2 16))
                         (App
                            (Solved
                               (TArr
-                                 (TVar (TV "e"))
+                                 (TVar [] (TV "e"))
                                  (TArr
-                                    (TVar (TV "f"))
+                                    (TVar [] (TV "f"))
                                     (TComp
                                        "path"
                                        "Wish"
-                                       [ TCon CNum , TVar (TV "e") , TVar (TV "f") ])))
+                                       [ TCon CNum , TVar [] (TV "e") , TVar [] (TV "f") ])))
                               (Area (Loc 42 2 7) (Loc 55 2 20))
                               (App
                                  (Solved
                                     (TArr
-                                       (TVar (TV "d"))
+                                       (TVar [] (TV "d"))
                                        (TArr
-                                          (TVar (TV "e"))
+                                          (TVar [] (TV "e"))
                                           (TArr
-                                             (TVar (TV "f"))
+                                             (TVar [] (TV "f"))
                                              (TComp
                                                 "path"
                                                 "Wish"
-                                                [ TVar (TV "d")
-                                                , TVar (TV "e")
-                                                , TVar (TV "f")
+                                                [ TVar [] (TV "d")
+                                                , TVar [] (TV "e")
+                                                , TVar [] (TV "f")
                                                 ]))))
                                     (Area (Loc 42 2 7) (Loc 46 2 11))
                                     (Var "Wish"))

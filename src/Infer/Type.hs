@@ -3,17 +3,32 @@
 module Infer.Type where
 
 import qualified Data.Map                      as M
+import AST.Source (Exp)
 
 
 type Vars = M.Map String Scheme
 type TypeDecls = M.Map String Type
 type Imports = M.Map String Type
 
+-- Instance:
+--   Type:           type the instance handles
+--   String:         The class it instantiates
+--   Map String Exp: The dictionary of exps from the instance
+--   [String]:       The constraints on the instance ? Not clear yet.
+data Instance = Instance Type String (M.Map String Exp) [String] deriving(Eq, Show)
+type Instances = [Instance]
+
+data Interface = Interface String String (M.Map String Type) deriving(Eq, Show)
+type Interfaces = [Interface]
+
+
 data Env
   = Env
-    { envvars :: Vars
-    , envtypes :: TypeDecls
-    , envimports :: Imports
+    { envvars        :: Vars
+    , envtypes       :: TypeDecls
+    , envimports     :: Imports
+    , envinterfaces  :: Interfaces
+    , envinstances   :: Instances
     , envcurrentpath :: FilePath
     }
     deriving(Eq, Show)
@@ -24,7 +39,7 @@ newtype TVar = TV String
 
 
 data Type
-  = TVar TVar                   -- Variable type
+  = TVar [String] TVar          -- Variable type
   | TCon TCon                   -- Constant type
   | TArr Type Type              -- Arrow type
   | TComp FilePath String [Type]         -- Composite type

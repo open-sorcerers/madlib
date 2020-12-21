@@ -12,7 +12,8 @@ Right
                   (Area (Loc 42 2 11) (Loc 49 2 18))
                   (App
                      (Solved
-                        (TArr (TVar (TV "b")) (TComp "path" "Maybe" [ TVar (TV "b") ]))
+                        (TArr
+                           (TVar [] (TV "b")) (TComp "path" "Maybe" [ TVar [] (TV "b") ]))
                         (Area (Loc 42 2 11) (Loc 46 2 15))
                         (Var "Just"))
                      (Solved (TCon CNum) (Area (Loc 47 2 16) (Loc 48 2 17)) (LNum "4"))

@@ -1,4 +1,3 @@
-{-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE RankNTypes #-}
 module Infer.ADT where
@@ -38,7 +37,7 @@ buildTypeDecl _ astPath typeDecls adt@ADT{} =
   case M.lookup (adtname adt) typeDecls of
     Just t  -> throwError $ InferError (ADTAlreadyDefined t) NoReason
     Nothing -> return
-      (adtname adt, TComp astPath (adtname adt) (TVar . TV <$> adtparams adt))
+      (adtname adt, TComp astPath (adtname adt) (TVar [] . TV <$> adtparams adt))
 buildTypeDecl priorEnv astPath typeDecls alias@Alias{} = do
   let name   = aliasname alias
   let params = TV <$> aliasparams alias
@@ -82,7 +81,7 @@ resolveADTConstructor priorEnv astPath typeDecls n params (Constructor cname cpa
 
 buildADTConstructorReturnType :: FilePath -> Name -> [Name] -> Type
 buildADTConstructorReturnType astPath tname tparams =
-  TComp astPath tname $ TVar . TV <$> tparams
+  TComp astPath tname $ TVar [] . TV <$> tparams
 
 
 -- TODO: This should probably be merged with typingToType somehow
@@ -91,7 +90,7 @@ argToType _ typeDecls _ params (Meta _ _ (TRSingle n))
   | n == "Number" = return $ TCon CNum
   | n == "Boolean" = return $ TCon CBool
   | n == "String" = return $ TCon CString
-  | isLower (head n) && (n `elem` params) = return $ TVar $ TV n
+  | isLower (head n) && (n `elem` params) = return $ TVar [] $ TV n
   | isLower (head n) = newTVar
   | -- A free var that is not in type params
     otherwise = case M.lookup n typeDecls of

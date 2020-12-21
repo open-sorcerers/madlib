@@ -20,56 +20,58 @@ import           Explain.Meta
 %lexer { lexerWrap } { Token _ TokenEOF }
 
 %token
-  number   { Token _ (TokenNumber _) }
-  str      { Token _ (TokenStr _) }
-  name     { Token _ (TokenName _) }
-  js       { Token _ (TokenJSBlock _) }
-  'ret'    { Token _ TokenReturn }
-  '='      { Token _ TokenEq }
-  '+'      { Token _ TokenPlus }
-  '++'     { Token _ TokenDoublePlus }
-  '-'      { Token _ TokenDash }
-  '*'      { Token _ TokenStar }
-  '/'      { Token _ TokenSlash }
-  '%'      { Token _ TokenPercent }
-  '::'     { Token _ TokenDoubleColon }
-  ':'      { Token _ TokenColon }
-  '?'      { Token _ TokenQuestionMark }
-  '->'     { Token _ TokenArrow }
-  '=>'     { Token _ TokenFatArrow }
-  '.'      { Token _ TokenDot }
-  ','      { Token _ TokenComma }
-  '('      { Token _ TokenLeftParen }
-  ')'      { Token _ TokenRightParen }
-  '{'      { Token _ TokenLeftCurly }
-  '}'      { Token _ TokenRightCurly }
-  '['      { Token _ TokenLeftSquaredBracket }
-  ']'      { Token _ TokenRightSquaredBracket }
-  'if'     { Token _ TokenIf }
-  'else'   { Token _ TokenElse }
-  'where'  { Token _ TokenWhere }
-  'is'     { Token _ TokenIs }
-  'return'  { Token _ TokenReturnKeyword }
-  '=='     { Token _ TokenDoubleEq }
-  false    { Token _ (TokenBool _) }
-  true     { Token _ (TokenBool _) }
-  'import' { Token _ TokenImport }
-  'export' { Token _ TokenExport }
-  'from'   { Token _ TokenFrom }
-  '|'      { Token _ TokenPipe }
-  'pipe'   { Token _ TokenPipeKeyword }
-  '|>'     { Token _ TokenPipeOperator }
-  '...'    { Token _ TokenSpreadOperator }
-  'data'   { Token _ TokenData }
-  'alias'  { Token _ TokenAlias }
-  '&&'     { Token _ TokenDoubleAmpersand }
-  '||'     { Token _ TokenDoublePipe }
-  '>'      { Token _ TokenRightChevron }
-  '<'      { Token _ TokenLeftChevron }
-  'tuple>' { Token _ TokenTupleEnd }
-  '>='     { Token _ TokenRightChevronEq }
-  '<='     { Token _ TokenLeftChevronEq }
-  '!'      { Token _ TokenExclamationMark }
+  number      { Token _ (TokenNumber _) }
+  str         { Token _ (TokenStr _) }
+  name        { Token _ (TokenName _) }
+  js          { Token _ (TokenJSBlock _) }
+  'ret'       { Token _ TokenReturn }
+  '='         { Token _ TokenEq }
+  '+'         { Token _ TokenPlus }
+  '++'        { Token _ TokenDoublePlus }
+  '-'         { Token _ TokenDash }
+  '*'         { Token _ TokenStar }
+  '/'         { Token _ TokenSlash }
+  '%'         { Token _ TokenPercent }
+  '::'        { Token _ TokenDoubleColon }
+  ':'         { Token _ TokenColon }
+  '?'         { Token _ TokenQuestionMark }
+  '->'        { Token _ TokenArrow }
+  '=>'        { Token _ TokenFatArrow }
+  '.'         { Token _ TokenDot }
+  ','         { Token _ TokenComma }
+  '('         { Token _ TokenLeftParen }
+  ')'         { Token _ TokenRightParen }
+  '{'         { Token _ TokenLeftCurly }
+  '}'         { Token _ TokenRightCurly }
+  '['         { Token _ TokenLeftSquaredBracket }
+  ']'         { Token _ TokenRightSquaredBracket }
+  'if'        { Token _ TokenIf }
+  'else'      { Token _ TokenElse }
+  'interface' { Token _ TokenInterface }
+  'instance'  { Token _ TokenInstance }
+  'where'     { Token _ TokenWhere }
+  'is'        { Token _ TokenIs }
+  'return'    { Token _ TokenReturnKeyword }
+  '=='        { Token _ TokenDoubleEq }
+  false       { Token _ (TokenBool _) }
+  true        { Token _ (TokenBool _) }
+  'import'    { Token _ TokenImport }
+  'export'    { Token _ TokenExport }
+  'from'      { Token _ TokenFrom }
+  '|'         { Token _ TokenPipe }
+  'pipe'      { Token _ TokenPipeKeyword }
+  '|>'        { Token _ TokenPipeOperator }
+  '...'       { Token _ TokenSpreadOperator }
+  'data'      { Token _ TokenData }
+  'alias'     { Token _ TokenAlias }
+  '&&'        { Token _ TokenDoubleAmpersand }
+  '||'        { Token _ TokenDoublePipe }
+  '>'         { Token _ TokenRightChevron }
+  '<'         { Token _ TokenLeftChevron }
+  'tuple>'    { Token _ TokenTupleEnd }
+  '>='        { Token _ TokenRightChevronEq }
+  '<='        { Token _ TokenLeftChevronEq }
+  '!'         { Token _ TokenExclamationMark }
 
 
 %nonassoc LOWEST
@@ -89,8 +91,10 @@ ast :: { Src.AST }
   : typedecl ast     %shift { $2 { Src.atypedecls =  [$1] <> Src.atypedecls $2 } }
   | exp ast          %shift { $2 { Src.aexps = [$1] <> Src.aexps $2 } }
   | importDecls ast  %shift { $2 { Src.aimports = $1, Src.apath = Nothing } }
-  | {- empty -}      %shift { Src.AST { Src.aimports = [], Src.aexps = [], Src.atypedecls = [], Src.apath = Nothing } }
-  | 'ret'            %shift { Src.AST { Src.aimports = [], Src.aexps = [], Src.atypedecls = [], Src.apath = Nothing } }
+  | interface ast    %shift { $2 { Src.ainterfaces = [$1] <> (Src.ainterfaces $2), Src.apath = Nothing } }
+  | instance ast     %shift { $2 { Src.ainstances = [$1] <> (Src.ainstances $2), Src.apath = Nothing } }
+  | {- empty -}      %shift { Src.AST { Src.aimports = [], Src.aexps = [], Src.atypedecls = [], Src.ainterfaces = [], Src.ainstances = [], Src.apath = Nothing } }
+  | 'ret'            %shift { Src.AST { Src.aimports = [], Src.aexps = [], Src.atypedecls = [], Src.ainterfaces = [], Src.ainstances = [], Src.apath = Nothing } }
   | 'ret' ast        %shift { $2 }
   | 'export' name '=' exp ast %shift { $5 { Src.aexps = (Meta emptyInfos (tokenToArea $1) (Src.Export (Meta emptyInfos (tokenToArea $2) (Src.Assignment (strV $2) $4)))) : Src.aexps $5 } }
   | name '::' typings maybeRet 'export' name '=' exp ast
@@ -108,6 +112,20 @@ importNames :: { [Src.Name] }
   : importNames ',' name %shift { $1 <> [strV $3] }
   | name                 %shift { [strV $1] }
 
+
+interface :: { Src.Interface }
+  : 'interface' name name '{' rets methodDefs rets '}' { Src.Interface (strV $2) (strV $3) $6 }
+
+methodDefs :: { M.Map Src.Name Src.Typing }
+  : name '::' typings            { M.fromList [(strV $1, $3)] }
+  | methodDefs name '::' typings { M.union (M.fromList [(strV $2, $4)]) $1 }
+
+instance :: { Src.Instance }
+  : 'instance' name name '{' rets methodImpls rets '}' { Src.Instance (strV $2) (Meta emptyInfos (tokenToArea $3) (Src.TRSingle $ strV $3)) $6 }
+
+methodImpls :: { M.Map Src.Name Src.Exp }
+  : name '=' exp { M.fromList [(strV $1, $3)] }
+  | methodImpls name '=' exp { M.union (M.fromList [(strV $2, $4)]) $1 }
 
 rets :: { [TokenClass] }
   : 'ret'       %shift{ [] }

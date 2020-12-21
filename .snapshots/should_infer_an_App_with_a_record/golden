@@ -55,13 +55,14 @@ Right
                                      (Area (Loc 36 2 18) (Loc 39 2 21))
                                      (FieldAccess
                                         (Solved
-                                           (TRecord (fromList [ ( "x" , TVar (TV "e") ) ]) True)
+                                           (TRecord (fromList [ ( "x" , TVar [] (TV "e") ) ]) True)
                                            (Area (Loc 36 2 18) (Loc 37 2 19))
                                            (Var "r"))
                                         (Solved
                                            (TArr
-                                              (TRecord (fromList [ ( "x" , TVar (TV "d") ) ]) True)
-                                              (TVar (TV "d")))
+                                              (TRecord
+                                                 (fromList [ ( "x" , TVar [] (TV "d") ) ]) True)
+                                              (TVar [] (TV "d")))
                                            (Area (Loc 38 2 20) (Loc 39 2 21))
                                            (Var ".x"))))
                                   False))
@@ -70,13 +71,13 @@ Right
                                (Area (Loc 42 2 24) (Loc 45 2 27))
                                (FieldAccess
                                   (Solved
-                                     (TRecord (fromList [ ( "y" , TVar (TV "g") ) ]) True)
+                                     (TRecord (fromList [ ( "y" , TVar [] (TV "g") ) ]) True)
                                      (Area (Loc 42 2 24) (Loc 43 2 25))
                                      (Var "r"))
                                   (Solved
                                      (TArr
-                                        (TRecord (fromList [ ( "y" , TVar (TV "f") ) ]) True)
-                                        (TVar (TV "f")))
+                                        (TRecord (fromList [ ( "y" , TVar [] (TV "f") ) ]) True)
+                                        (TVar [] (TV "f")))
                                      (Area (Loc 44 2 26) (Loc 45 2 27))
                                      (Var ".y"))))
                             True)

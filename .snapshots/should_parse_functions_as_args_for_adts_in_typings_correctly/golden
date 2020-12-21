@@ -4,33 +4,34 @@ Right
     , aexps =
         [ Solved
             (TArr
-               (TArr (TVar (TV "a")) (TVar (TV "b")))
+               (TArr (TVar [] (TV "a")) (TVar [] (TV "b")))
                (TArr
-                  (TComp "Prelude" "List" [ TVar (TV "a") ])
-                  (TComp "Prelude" "List" [ TVar (TV "b") ])))
+                  (TComp "Prelude" "List" [ TVar [] (TV "a") ])
+                  (TComp "Prelude" "List" [ TVar [] (TV "b") ])))
             (Area (Loc 0 1 1) (Loc 68 2 33))
             (TypedExp
                (Solved
                   (TArr
-                     (TArr (TVar (TV "a")) (TVar (TV "b")))
+                     (TArr (TVar [] (TV "a")) (TVar [] (TV "b")))
                      (TArr
-                        (TComp "Prelude" "List" [ TVar (TV "a") ])
-                        (TComp "Prelude" "List" [ TVar (TV "b") ])))
+                        (TComp "Prelude" "List" [ TVar [] (TV "a") ])
+                        (TComp "Prelude" "List" [ TVar [] (TV "b") ])))
                   (Area (Loc 36 2 1) (Loc 68 2 33))
                   (Assignment
                      "map"
                      (Solved
-                        (TArr (TVar (TV "c")) (TArr (TVar (TV "d")) (TVar (TV "e"))))
+                        (TArr
+                           (TVar [] (TV "c")) (TArr (TVar [] (TV "d")) (TVar [] (TV "e"))))
                         (Area (Loc 42 2 7) (Loc 68 2 33))
                         (Abs
                            "f"
                            [ Solved
-                               (TArr (TVar (TV "d")) (TVar (TV "e")))
+                               (TArr (TVar [] (TV "d")) (TVar [] (TV "e")))
                                (Area (Loc 42 2 7) (Loc 68 2 33))
                                (Abs
                                   "xs"
                                   [ Solved
-                                      (TVar (TV "e"))
+                                      (TVar [] (TV "e"))
                                       (Area (Loc 54 2 19) (Loc 67 2 32))
                                       (JSExp "some JS")
                                   ])
@@ -42,37 +43,39 @@ Right
                      (TRComp "List" [ TRSingle "b" ]))))
         , Solved
             (TArr
-               (TComp "Prelude" "List" [ TVar (TV "f") ])
+               (TComp "Prelude" "List" [ TVar [] (TV "f") ])
                (TArr
-                  (TComp "Prelude" "List" [ TVar (TV "f") ])
-                  (TComp "Prelude" "List" [ TVar (TV "f") ])))
+                  (TComp "Prelude" "List" [ TVar [] (TV "f") ])
+                  (TComp "Prelude" "List" [ TVar [] (TV "f") ])))
             (Area (Loc 69 3 1) (Loc 159 4 54))
             (TypedExp
                (Solved
                   (TArr
-                     (TComp "Prelude" "List" [ TVar (TV "f") ])
+                     (TComp "Prelude" "List" [ TVar [] (TV "f") ])
                      (TArr
-                        (TComp "Prelude" "List" [ TVar (TV "f") ])
-                        (TComp "Prelude" "List" [ TVar (TV "f") ])))
+                        (TComp "Prelude" "List" [ TVar [] (TV "f") ])
+                        (TComp "Prelude" "List" [ TVar [] (TV "f") ])))
                   (Area (Loc 69 3 1) (Loc 75 3 7))
                   (Export
                      (Solved
-                        (TArr (TVar (TV "g")) (TArr (TVar (TV "h")) (TVar (TV "i"))))
+                        (TArr
+                           (TVar [] (TV "g")) (TArr (TVar [] (TV "h")) (TVar [] (TV "i"))))
                         (Area (Loc 106 4 1) (Loc 112 4 7))
                         (Assignment
                            "concat"
                            (Solved
-                              (TArr (TVar (TV "g")) (TArr (TVar (TV "h")) (TVar (TV "i"))))
+                              (TArr
+                                 (TVar [] (TV "g")) (TArr (TVar [] (TV "h")) (TVar [] (TV "i"))))
                               (Area (Loc 122 4 17) (Loc 159 4 54))
                               (Abs
                                  "xs1"
                                  [ Solved
-                                     (TArr (TVar (TV "h")) (TVar (TV "i")))
+                                     (TArr (TVar [] (TV "h")) (TVar [] (TV "i")))
                                      (Area (Loc 122 4 17) (Loc 159 4 54))
                                      (Abs
                                         "xs2"
                                         [ Solved
-                                            (TVar (TV "i"))
+                                            (TVar [] (TV "i"))
                                             (Area (Loc 137 4 32) (Loc 158 4 53))
                                             (JSExp "xs1.concat(xs2)")
                                         ])
@@ -84,46 +87,55 @@ Right
                      (TRComp "List" [ TRSingle "a" ]))))
         , Solved
             (TArr
-               (TArr (TVar (TV "j")) (TArr (TVar (TV "k")) (TVar (TV "j"))))
                (TArr
-                  (TVar (TV "j"))
-                  (TArr (TComp "Prelude" "List" [ TVar (TV "k") ]) (TVar (TV "j")))))
+                  (TVar [] (TV "j")) (TArr (TVar [] (TV "k")) (TVar [] (TV "j"))))
+               (TArr
+                  (TVar [] (TV "j"))
+                  (TArr
+                     (TComp "Prelude" "List" [ TVar [] (TV "k") ]) (TVar [] (TV "j")))))
             (Area (Loc 160 5 1) (Loc 269 6 66))
             (TypedExp
                (Solved
                   (TArr
-                     (TArr (TVar (TV "j")) (TArr (TVar (TV "k")) (TVar (TV "j"))))
                      (TArr
-                        (TVar (TV "j"))
-                        (TArr (TComp "Prelude" "List" [ TVar (TV "k") ]) (TVar (TV "j")))))
+                        (TVar [] (TV "j")) (TArr (TVar [] (TV "k")) (TVar [] (TV "j"))))
+                     (TArr
+                        (TVar [] (TV "j"))
+                        (TArr
+                           (TComp "Prelude" "List" [ TVar [] (TV "k") ]) (TVar [] (TV "j")))))
                   (Area (Loc 160 5 1) (Loc 166 5 7))
                   (Export
                      (Solved
                         (TArr
-                           (TVar (TV "l"))
-                           (TArr (TVar (TV "m")) (TArr (TVar (TV "n")) (TVar (TV "o")))))
+                           (TVar [] (TV "l"))
+                           (TArr
+                              (TVar [] (TV "m")) (TArr (TVar [] (TV "n")) (TVar [] (TV "o")))))
                         (Area (Loc 204 6 1) (Loc 210 6 7))
                         (Assignment
                            "reduce"
                            (Solved
                               (TArr
-                                 (TVar (TV "l"))
-                                 (TArr (TVar (TV "m")) (TArr (TVar (TV "n")) (TVar (TV "o")))))
+                                 (TVar [] (TV "l"))
+                                 (TArr
+                                    (TVar [] (TV "m"))
+                                    (TArr (TVar [] (TV "n")) (TVar [] (TV "o")))))
                               (Area (Loc 220 6 17) (Loc 269 6 66))
                               (Abs
                                  "f"
                                  [ Solved
-                                     (TArr (TVar (TV "m")) (TArr (TVar (TV "n")) (TVar (TV "o"))))
+                                     (TArr
+                                        (TVar [] (TV "m"))
+                                        (TArr (TVar [] (TV "n")) (TVar [] (TV "o"))))
                                      (Area (Loc 220 6 17) (Loc 269 6 66))
                                      (Abs
                                         "initial"
                                         [ Solved
-                                            (TArr (TVar (TV "n")) (TVar (TV "o")))
+                                            (TArr (TVar [] (TV "n")) (TVar [] (TV "o")))
                                             (Area (Loc 220 6 17) (Loc 269 6 66))
                                             (Abs
                                                "xs"
                                                [ Solved
-                                                   (TVar (TV "o"))
+                                                   (TVar [] (TV "o"))
                                                    (Area (Loc 241 6 38) (Loc 268 6 65))
                                                    (JSExp "xs.reduce(f, initial)")
                                                ])
@@ -136,47 +148,53 @@ Right
                      (TRArr (TRComp "List" [ TRSingle "b" ]) (TRSingle "a")))))
         , Solved
             (TArr
-               (TComp "Prelude" "List" [ TArr (TVar (TV "p")) (TVar (TV "q")) ])
+               (TComp
+                  "Prelude" "List" [ TArr (TVar [] (TV "p")) (TVar [] (TV "q")) ])
                (TArr
-                  (TComp "Prelude" "List" [ TVar (TV "p") ])
-                  (TComp "Prelude" "List" [ TVar (TV "q") ])))
+                  (TComp "Prelude" "List" [ TVar [] (TV "p") ])
+                  (TComp "Prelude" "List" [ TVar [] (TV "q") ])))
             (Area (Loc 271 8 1) (Loc 414 15 6))
             (TypedExp
                (Solved
                   (TArr
-                     (TComp "Prelude" "List" [ TArr (TVar (TV "p")) (TVar (TV "q")) ])
+                     (TComp
+                        "Prelude" "List" [ TArr (TVar [] (TV "p")) (TVar [] (TV "q")) ])
                      (TArr
-                        (TComp "Prelude" "List" [ TVar (TV "p") ])
-                        (TComp "Prelude" "List" [ TVar (TV "q") ])))
+                        (TComp "Prelude" "List" [ TVar [] (TV "p") ])
+                        (TComp "Prelude" "List" [ TVar [] (TV "q") ])))
                   (Area (Loc 271 8 1) (Loc 273 8 3))
                   (Export
                      (Solved
                         (TArr
-                           (TComp "Prelude" "List" [ TArr (TVar (TV "al")) (TVar (TV "a")) ])
+                           (TComp
+                              "Prelude" "List" [ TArr (TVar [] (TV "al")) (TVar [] (TV "a")) ])
                            (TArr
-                              (TComp "Prelude" "List" [ TVar (TV "al") ])
-                              (TComp "Prelude" "List" [ TVar (TV "a") ])))
+                              (TComp "Prelude" "List" [ TVar [] (TV "al") ])
+                              (TComp "Prelude" "List" [ TVar [] (TV "a") ])))
                         (Area (Loc 311 9 1) (Loc 317 9 7))
                         (Assignment
                            "ap"
                            (Solved
                               (TArr
-                                 (TComp "Prelude" "List" [ TArr (TVar (TV "al")) (TVar (TV "a")) ])
+                                 (TComp
+                                    "Prelude"
+                                    "List"
+                                    [ TArr (TVar [] (TV "al")) (TVar [] (TV "a")) ])
                                  (TArr
-                                    (TComp "Prelude" "List" [ TVar (TV "al") ])
-                                    (TComp "Prelude" "List" [ TVar (TV "a") ])))
+                                    (TComp "Prelude" "List" [ TVar [] (TV "al") ])
+                                    (TComp "Prelude" "List" [ TVar [] (TV "a") ])))
                               (Area (Loc 323 9 13) (Loc 414 15 6))
                               (Abs
                                  "fns"
                                  [ Solved
                                      (TArr
-                                        (TComp "Prelude" "List" [ TVar (TV "al") ])
-                                        (TComp "Prelude" "List" [ TVar (TV "a") ]))
+                                        (TComp "Prelude" "List" [ TVar [] (TV "al") ])
+                                        (TComp "Prelude" "List" [ TVar [] (TV "a") ]))
                                      (Area (Loc 323 9 13) (Loc 414 15 6))
                                      (Abs
                                         "xs"
                                         [ Solved
-                                            (TComp "Prelude" "List" [ TVar (TV "a") ])
+                                            (TComp "Prelude" "List" [ TVar [] (TV "a") ])
                                             (Area (Loc 411 15 3) (Loc 414 15 6))
                                             (App
                                                (Solved
@@ -184,43 +202,47 @@ Right
                                                      (TComp
                                                         "Prelude"
                                                         "List"
-                                                        [ TArr (TVar (TV "al")) (TVar (TV "a")) ])
-                                                     (TComp "Prelude" "List" [ TVar (TV "a") ]))
+                                                        [ TArr
+                                                            (TVar [] (TV "al")) (TVar [] (TV "a"))
+                                                        ])
+                                                     (TComp "Prelude" "List" [ TVar [] (TV "a") ]))
                                                   (Area (Loc 405 14 3) (Loc 407 14 5))
                                                   (App
                                                      (Solved
                                                         (TArr
                                                            (TComp
-                                                              "Prelude" "List" [ TVar (TV "ao") ])
+                                                              "Prelude"
+                                                              "List"
+                                                              [ TVar [] (TV "ao") ])
                                                            (TArr
                                                               (TComp
                                                                  "Prelude"
                                                                  "List"
                                                                  [ TArr
-                                                                     (TVar (TV "al"))
-                                                                     (TVar (TV "ao"))
+                                                                     (TVar [] (TV "al"))
+                                                                     (TVar [] (TV "ao"))
                                                                  ])
                                                               (TComp
                                                                  "Prelude"
                                                                  "List"
-                                                                 [ TVar (TV "ao") ])))
+                                                                 [ TVar [] (TV "ao") ])))
                                                         (Area (Loc 336 9 26) (Loc 416 16 1))
                                                         (App
                                                            (Solved
                                                               (TArr
                                                                  (TArr
-                                                                    (TVar (TV "w"))
+                                                                    (TVar [] (TV "w"))
                                                                     (TArr
-                                                                       (TVar (TV "x"))
-                                                                       (TVar (TV "w"))))
+                                                                       (TVar [] (TV "x"))
+                                                                       (TVar [] (TV "w"))))
                                                                  (TArr
-                                                                    (TVar (TV "w"))
+                                                                    (TVar [] (TV "w"))
                                                                     (TArr
                                                                        (TComp
                                                                           "Prelude"
                                                                           "List"
-                                                                          [ TVar (TV "x") ])
-                                                                       (TVar (TV "w")))))
+                                                                          [ TVar [] (TV "x") ])
+                                                                       (TVar [] (TV "w")))))
                                                               (Area (Loc 336 9 26) (Loc 342 9 32))
                                                               (Var "reduce"))
                                                            (Solved
@@ -228,27 +250,27 @@ Right
                                                                  (TComp
                                                                     "Prelude"
                                                                     "List"
-                                                                    [ TVar (TV "ao") ])
+                                                                    [ TVar [] (TV "ao") ])
                                                                  (TArr
                                                                     (TArr
-                                                                       (TVar (TV "al"))
-                                                                       (TVar (TV "ao")))
+                                                                       (TVar [] (TV "al"))
+                                                                       (TVar [] (TV "ao")))
                                                                     (TComp
                                                                        "Prelude"
                                                                        "List"
-                                                                       [ TVar (TV "ao") ])))
+                                                                       [ TVar [] (TV "ao") ])))
                                                               (Area (Loc 346 10 3) (Loc 401 13 8))
                                                               (Abs
                                                                  "agg"
                                                                  [ Solved
                                                                      (TArr
                                                                         (TArr
-                                                                           (TVar (TV "al"))
-                                                                           (TVar (TV "ao")))
+                                                                           (TVar [] (TV "al"))
+                                                                           (TVar [] (TV "ao")))
                                                                         (TComp
                                                                            "Prelude"
                                                                            "List"
-                                                                           [ TVar (TV "ao") ]))
+                                                                           [ TVar [] (TV "ao") ]))
                                                                      (Area
                                                                         (Loc 346 10 3)
                                                                         (Loc 401 13 8))
@@ -258,7 +280,8 @@ Right
                                                                             (TComp
                                                                                "Prelude"
                                                                                "List"
-                                                                               [ TVar (TV "ao") ])
+                                                                               [ TVar [] (TV "ao")
+                                                                               ])
                                                                             (Area
                                                                                (Loc 359 10 16)
                                                                                (Loc 401 13 8))
@@ -269,6 +292,7 @@ Right
                                                                                         "Prelude"
                                                                                         "List"
                                                                                         [ TVar
+                                                                                            []
                                                                                             (TV
                                                                                                "al")
                                                                                         ])
@@ -276,6 +300,7 @@ Right
                                                                                         "Prelude"
                                                                                         "List"
                                                                                         [ TVar
+                                                                                            []
                                                                                             (TV
                                                                                                "ao")
                                                                                         ]))
@@ -289,6 +314,7 @@ Right
                                                                                             "Prelude"
                                                                                             "List"
                                                                                             [ TVar
+                                                                                                []
                                                                                                 (TV
                                                                                                    "ao")
                                                                                             ])
@@ -309,13 +335,16 @@ Right
                                                                                                         "Prelude"
                                                                                                         "List"
                                                                                                         [ TVar
+                                                                                                            []
                                                                                                             (TV
                                                                                                                "am")
                                                                                                         ])
                                                                                                      (TVar
+                                                                                                        []
                                                                                                         (TV
                                                                                                            "af")))
                                                                                                   (TVar
+                                                                                                     []
                                                                                                      (TV
                                                                                                         "af")))
                                                                                                (Area
@@ -331,17 +360,21 @@ Right
                                                                                                   (Solved
                                                                                                      (TArr
                                                                                                         (TVar
+                                                                                                           []
                                                                                                            (TV
                                                                                                               "ae"))
                                                                                                         (TArr
                                                                                                            (TArr
                                                                                                               (TVar
+                                                                                                                 []
                                                                                                                  (TV
                                                                                                                     "ae"))
                                                                                                               (TVar
+                                                                                                                 []
                                                                                                                  (TV
                                                                                                                     "af")))
                                                                                                            (TVar
+                                                                                                              []
                                                                                                               (TV
                                                                                                                  "af"))))
                                                                                                      (Area
@@ -360,6 +393,7 @@ Right
                                                                                                         "Prelude"
                                                                                                         "List"
                                                                                                         [ TVar
+                                                                                                            []
                                                                                                             (TV
                                                                                                                "am")
                                                                                                         ])
@@ -377,12 +411,15 @@ Right
                                                                                                            (TArr
                                                                                                               (TArr
                                                                                                                  (TVar
+                                                                                                                    []
                                                                                                                     (TV
                                                                                                                        "ab"))
                                                                                                                  (TVar
+                                                                                                                    []
                                                                                                                     (TV
                                                                                                                        "aj")))
                                                                                                               (TVar
+                                                                                                                 []
                                                                                                                  (TV
                                                                                                                     "aj")))
                                                                                                            (Area
@@ -398,17 +435,21 @@ Right
                                                                                                               (Solved
                                                                                                                  (TArr
                                                                                                                     (TVar
+                                                                                                                       []
                                                                                                                        (TV
                                                                                                                           "ai"))
                                                                                                                     (TArr
                                                                                                                        (TArr
                                                                                                                           (TVar
+                                                                                                                             []
                                                                                                                              (TV
                                                                                                                                 "ai"))
                                                                                                                           (TVar
+                                                                                                                             []
                                                                                                                              (TV
                                                                                                                                 "aj")))
                                                                                                                        (TVar
+                                                                                                                          []
                                                                                                                           (TV
                                                                                                                              "aj"))))
                                                                                                                  (Area
@@ -424,6 +465,7 @@ Right
                                                                                                                     "|>"))
                                                                                                               (Solved
                                                                                                                  (TVar
+                                                                                                                    []
                                                                                                                     (TV
                                                                                                                        "ab"))
                                                                                                                  (Area
@@ -444,6 +486,7 @@ Right
                                                                                                                  "Prelude"
                                                                                                                  "List"
                                                                                                                  [ TVar
+                                                                                                                     []
                                                                                                                      (TV
                                                                                                                         "al")
                                                                                                                  ])
@@ -451,6 +494,7 @@ Right
                                                                                                                  "Prelude"
                                                                                                                  "List"
                                                                                                                  [ TVar
+                                                                                                                     []
                                                                                                                      (TV
                                                                                                                         "am")
                                                                                                                  ]))
@@ -468,9 +512,11 @@ Right
                                                                                                                  (TArr
                                                                                                                     (TArr
                                                                                                                        (TVar
+                                                                                                                          []
                                                                                                                           (TV
                                                                                                                              "al"))
                                                                                                                        (TVar
+                                                                                                                          []
                                                                                                                           (TV
                                                                                                                              "am")))
                                                                                                                     (TArr
@@ -478,6 +524,7 @@ Right
                                                                                                                           "Prelude"
                                                                                                                           "List"
                                                                                                                           [ TVar
+                                                                                                                              []
                                                                                                                               (TV
                                                                                                                                  "al")
                                                                                                                           ])
@@ -485,6 +532,7 @@ Right
                                                                                                                           "Prelude"
                                                                                                                           "List"
                                                                                                                           [ TVar
+                                                                                                                              []
                                                                                                                               (TV
                                                                                                                                  "am")
                                                                                                                           ])))
@@ -502,9 +550,11 @@ Right
                                                                                                               (Solved
                                                                                                                  (TArr
                                                                                                                     (TVar
+                                                                                                                       []
                                                                                                                        (TV
                                                                                                                           "al"))
                                                                                                                     (TVar
+                                                                                                                       []
                                                                                                                        (TV
                                                                                                                           "am")))
                                                                                                                  (Area
@@ -527,6 +577,7 @@ Right
                                                                                                      "Prelude"
                                                                                                      "List"
                                                                                                      [ TVar
+                                                                                                         []
                                                                                                          (TV
                                                                                                             "ao")
                                                                                                      ])
@@ -534,6 +585,7 @@ Right
                                                                                                      "Prelude"
                                                                                                      "List"
                                                                                                      [ TVar
+                                                                                                         []
                                                                                                          (TV
                                                                                                             "ao")
                                                                                                      ]))
@@ -553,6 +605,7 @@ Right
                                                                                                            "Prelude"
                                                                                                            "List"
                                                                                                            [ TVar
+                                                                                                               []
                                                                                                                (TV
                                                                                                                   "ao")
                                                                                                            ])
@@ -561,6 +614,7 @@ Right
                                                                                                               "Prelude"
                                                                                                               "List"
                                                                                                               [ TVar
+                                                                                                                  []
                                                                                                                   (TV
                                                                                                                      "ao")
                                                                                                               ])
@@ -568,6 +622,7 @@ Right
                                                                                                               "Prelude"
                                                                                                               "List"
                                                                                                               [ TVar
+                                                                                                                  []
                                                                                                                   (TV
                                                                                                                      "ao")
                                                                                                               ])))
@@ -587,6 +642,7 @@ Right
                                                                                                         "Prelude"
                                                                                                         "List"
                                                                                                         [ TVar
+                                                                                                            []
                                                                                                             (TV
                                                                                                                "ao")
                                                                                                         ])
@@ -609,6 +665,7 @@ Right
                                                                                      "Prelude"
                                                                                      "List"
                                                                                      [ TVar
+                                                                                         []
                                                                                          (TV "al")
                                                                                      ])
                                                                                   (Area
@@ -620,7 +677,8 @@ Right
                                                                  ]))
                                                            False))
                                                      (Solved
-                                                        (TComp "Prelude" "List" [ TVar (TV "a") ])
+                                                        (TComp
+                                                           "Prelude" "List" [ TVar [] (TV "a") ])
                                                         (Area (Loc 405 14 3) (Loc 407 14 5))
                                                         (ListConstructor []))
                                                      False))
@@ -628,7 +686,8 @@ Right
                                                   (TComp
                                                      "Prelude"
                                                      "List"
-                                                     [ TArr (TVar (TV "al")) (TVar (TV "a")) ])
+                                                     [ TArr (TVar [] (TV "al")) (TVar [] (TV "a"))
+                                                     ])
                                                   (Area (Loc 411 15 3) (Loc 414 15 6))
                                                   (Var "fns"))
                                                True)

@@ -50,8 +50,8 @@ Right
                                      (Var "P"))
                                   (Solved
                                      (TArr
-                                        (TRecord (fromList [ ( "Point" , TVar (TV "b") ) ]) True)
-                                        (TVar (TV "b")))
+                                        (TRecord (fromList [ ( "Point" , TVar [] (TV "b") ) ]) True)
+                                        (TVar [] (TV "b")))
                                      (Area (Loc 32 2 7) (Loc 37 2 12))
                                      (Var ".Point"))))
                             (Solved

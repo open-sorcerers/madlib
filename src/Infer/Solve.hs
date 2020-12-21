@@ -113,14 +113,22 @@ inferVar env exp =
   in  case n of
         ('.' : name) -> do
           let s = Forall [TV "a"] $ TArr
-                (TRecord (M.fromList [(name, TVar $ TV "a")]) True)
-                (TVar $ TV "a")
+                (TRecord (M.fromList [(name, TVar [] $ TV "a")]) True)
+                (TVar [] $ TV "a")
           t <- instantiate s
           return (M.empty, t, Slv.Solved t area $ Slv.Var n)
 
         _ -> do
           (s, t) <- catchError (lookupVar env n) (enhanceVarError env exp area)
+          -- (s, t) <- catchError (lookupVar env n) (checkMethod env n)
+
           return (s, t, Slv.Solved t area $ Slv.Var n)
+
+-- checkMethod :: Env -> String -> InferError -> Infer (Substitution, Type)
+-- checkMethod env n _ = do
+--   method <- lookupInstanceMethod env n
+--   (s, t, e) <- infer env method
+--   return (s, t)
 
 enhanceVarError
   :: Env -> Src.Exp -> Area -> InferError -> Infer (Substitution, Type)
@@ -136,7 +144,7 @@ inferAbs env l@(Meta _ _ (Src.Abs param body)) = do
   tv <- newTVar
   let env' = extendVars env (param, Forall [] tv)
   (s1, t1, es) <- inferBody env' body
-  let t = apply s1 (tv `TArr` t1)
+  let t = apply env s1 (tv `TArr` t1)
   return (s1, t, applyAbsSolve l param es t)
 
 
@@ -155,7 +163,7 @@ inferBody env (e : xs) = do
 
         _ -> env
 
-  (\(sb, tb, eb) -> (s `compose` sb, tb, e' : eb)) <$> inferBody env' xs
+  (\(sb, tb, eb) -> (compose env s sb, tb, e' : eb)) <$> inferBody env' xs
 
 
 -- INFER APP
@@ -164,18 +172,22 @@ inferApp :: Env -> Src.Exp -> Infer (Substitution, Type, Slv.Exp)
 inferApp env (Meta _ area (Src.App abs arg final)) = do
   tv             <- newTVar
   (s1, t1, eabs) <- infer env abs
-  (s2, t2, earg) <- infer (apply (removeRecordTypes s1) env) arg
+  (s2, t2, earg) <- infer (apply env (removeRecordTypes s1) env) arg
 
-  s3             <- case unify (apply s2 t1) (TArr t2 tv) of
+  s3             <- case unify env (apply env s2 t1) (TArr t2 tv) of
     Right s -> return s
     Left  e -> throwError $ InferError e $ Reason (WrongTypeApplied abs arg)
                                                   (envcurrentpath env)
                                                   (getArea arg)
-  let t = apply s3 tv
+  let t = apply env s3 tv
   let solved =
-        Slv.Solved t area $ Slv.App eabs (updateType earg $ apply s3 t2) final
+        Slv.Solved t area $ Slv.App eabs (updateType earg $ apply env s3 t2) final
 
-  return (s3 `compose` s2 `compose` s1, t, solved)
+  return ( -- s3 `compose` s2 `compose` s1
+           compose env s3 (compose env s2 s1)
+         , t
+         , solved
+         )
 
 
 
@@ -183,7 +195,7 @@ inferApp env (Meta _ area (Src.App abs arg final)) = do
 
 inferAssignment :: Env -> Src.Exp -> Infer (Substitution, Type, Slv.Exp)
 inferAssignment env e@(Meta _ _ (Src.Assignment name exp)) = do
-  let env' = extendVars env (name, Forall [TV "a"] $ TVar $ TV "a")
+  let env' = extendVars env (name, Forall [TV "a"] $ TVar [] $ TV "a")
   (s1, t1, e1) <- infer env' exp
   return (s1, t1, applyAssignmentSolve e name e1 t1)
 
@@ -204,7 +216,7 @@ inferListConstructor :: Env -> Src.Exp -> Infer (Substitution, Type, Slv.Exp)
 inferListConstructor env (Meta _ area (Src.ListConstructor elems)) =
   case elems of
     [] ->
-      let t = TComp "Prelude" "List" [TVar $ TV "a"]
+      let t = TComp "Prelude" "List" [TVar [] $ TV "a"]
       in  return (M.empty, t, Slv.Solved t area (Slv.ListConstructor []))
 
     elems -> do
@@ -212,7 +224,7 @@ inferListConstructor env (Meta _ area (Src.ListConstructor elems)) =
       let (_, t1, _) = head inferred
       let t          = TComp "Prelude" "List" [t1]
       -- TODO: Error should be handled
-      s <- unifyToInfer env $ unifyElems t1 (mid <$> inferred)
+      s <- unifyToInfer env $ unifyElems env t1 (mid <$> inferred)
       return (s, t, Slv.Solved t area (Slv.ListConstructor (lst <$> inferred)))
 
 
@@ -227,7 +239,7 @@ inferListItem env li = case li of
     case t of
       TComp "Prelude" "List" [t'] -> return (s, t', Slv.ListSpread e)
 
-      TVar _ -> return (s, t, Slv.ListSpread e)
+      TVar _ _ -> return (s, t, Slv.ListSpread e)
 
       _ -> throwError $ InferError (WrongSpreadType $ show t) NoReason
 
@@ -242,7 +254,7 @@ inferTupleConstructor env (Meta _ area (Src.TupleConstructor elems)) = do
   let elemTypes  = mid <$> inferredElems
   let elemEXPS   = lst <$> inferredElems
 
-  let s          = foldr compose M.empty elemSubsts
+  let s          = foldr (compose env) M.empty elemSubsts
   let t          = TTuple elemTypes
 
   return (s, t, Slv.Solved t area (Slv.TupleConstructor elemEXPS))
@@ -258,7 +270,7 @@ inferRecord env exp = do
   inferred <- mapM (inferRecordField env) fields
   open     <- shouldBeOpen env fields
   let inferredFields = lst <$> inferred
-      subst          = foldr compose M.empty (beg <$> inferred)
+      subst          = foldr (compose env) M.empty (beg <$> inferred)
       recordType     = TRecord (M.fromList $ concat $ mid <$> inferred) open
   return
     (subst, recordType, Slv.Solved recordType area (Slv.Record inferredFields))
@@ -276,7 +288,7 @@ inferRecordField env field = case field of
       TRecord tfields _ -> return (s, M.toList tfields, Slv.FieldSpread e)
 
       -- TODO: When we get here we should make it open !!
-      TVar _ -> return (s, [], Slv.FieldSpread e)
+      TVar _ _ -> return (s, [], Slv.FieldSpread e)
 
       -- TODO: This needs to be a new error type maybe ?
       _ -> throwError $ InferError (WrongSpreadType $ show t) NoReason
@@ -288,8 +300,8 @@ shouldBeOpen env = foldrM
     Src.FieldSpread e -> do
       (_, t, _) <- infer env e
       case t of
-        TRecord _ _ -> return $ False || r
-        TVar _      -> return $ True || r
+        TRecord _ _   -> return $ False || r
+        TVar _ _      -> return $ True || r
   )
   False
 
@@ -318,17 +330,21 @@ inferFieldAccess env (Meta _ area (Src.FieldAccess rec@(Meta _ _ re) abs@(Meta _
           throwError $ InferError (FieldNotExisting name) (AreaReason area)
         _ -> do
           tv <- newTVar
-          s3 <- case unify (apply recordSubst fieldType) (TArr recordType tv) of
+          s3 <- case unify env (apply env recordSubst fieldType) (TArr recordType tv) of
             Right s -> return s
             Left  e -> throwError $ InferError e NoReason
 
-          let t          = apply s3 tv
+          let t          = apply env s3 tv
           let rs         = recordSubstForVar re fieldType
 
-          let recordExp' = updateType recordExp (apply s3 recordType)
+          let recordExp' = updateType recordExp (apply env s3 recordType)
           let solved = Slv.Solved t area (Slv.FieldAccess recordExp' fieldExp)
 
-          return (s3 `compose` rs `compose` recordSubst, t, solved)
+          return ( -- s3 `compose` rs `compose` recordSubst
+                   compose env s3 (compose env rs recordSubst)
+                 , t
+                 , solved
+                 )
 
 recordSubstForVar :: Src.Exp_ -> Type -> Substitution
 recordSubstForVar (Src.Var n) fieldType =
@@ -345,15 +361,16 @@ inferIf env exp@(Meta _ area (Src.If cond truthy falsy)) = do
   (s2, ttruthy, etruthy) <- infer env truthy
   (s3, tfalsy , efalsy ) <- infer env falsy
 
-  s4 <- catchError (unifyToInfer env $ unify (TCon CBool) tcond)
+  s4 <- catchError (unifyToInfer env $ unify env (TCon CBool) tcond)
                    (addConditionReason env exp cond area)
-  s5 <- catchError (unifyToInfer env $ unify ttruthy tfalsy)
+  s5 <- catchError (unifyToInfer env $ unify env ttruthy tfalsy)
                    (addBranchReason env exp falsy area)
 
-  let t = apply s5 ttruthy
+  let t = apply env s5 ttruthy
 
   return
-    ( s1 `compose` s2 `compose` s3 `compose` s4 `compose` s5
+    ( --s1 `compose` s2 `compose` s3 `compose` s4 `compose` s5
+      compose env s1 (compose env s2 (compose env s3 (compose env s4 s5)))
     , t
     , Slv.Solved t area (Slv.If econd etruthy efalsy)
     )
@@ -383,31 +400,31 @@ inferWhere env whereExp@(Meta _ loc (Src.Where exp iss)) = do
   (se, te, ee) <- infer env exp
 
   inferredIss  <- mapM (inferIs env te) iss
-  let issSubstitution = foldr1 compose $ se : (beg <$> inferredIss)
+  let issSubstitution = foldr1 (compose env) $ se : (beg <$> inferredIss)
   let issTypes        = mid <$> inferredIss
   let iss             = lst <$> inferredIss
 
   let typeMatrix      = (, issTypes) <$> issTypes
   s <-
-    foldr1 compose
+    foldr1 (compose env)
       <$> mapM
             (\(t, ts) ->
               -- TODO: Error should be handled
-              unifyToInfer env $ unifyElems (apply issSubstitution t) ts
+              unifyToInfer env $ unifyElems env (apply env issSubstitution t) ts
             )
             typeMatrix
 
   let updatedIss =
-        (\(t, (Slv.Solved _ a e)) -> Slv.Solved (apply (s `compose` se) t) a e)
+        (\(t, (Slv.Solved _ a e)) -> Slv.Solved (apply env (compose env s se) t) a e)
           <$> zip issTypes iss
 
-  let (TArr _ whereType) = (apply s . head) issTypes
+  let (TArr _ whereType) = (apply env s . head) issTypes
 
   return
-    ( s `compose` se
-    , apply se whereType
+    ( compose env s se
+    , apply env se whereType
     , Slv.Solved whereType loc
-      $ Slv.Where (updateType ee (apply s te)) updatedIss
+      $ Slv.Where (updateType ee (apply env s te)) updatedIss
     )
 
  where
@@ -415,8 +432,8 @@ inferWhere env whereExp@(Meta _ loc (Src.Where exp iss)) = do
   inferIs e tinput c@(Meta _ area (Src.Is pattern exp)) = do
     tp   <- buildPatternType e pattern
     env' <- case tinput of
-      TVar _ -> generateIsEnv tp e pattern
-      _      -> generateIsEnv tinput e pattern
+      TVar _ _ -> generateIsEnv tp e pattern
+      _        -> generateIsEnv tinput e pattern
 
     (se, te, ee) <- infer env' exp
 
@@ -424,25 +441,25 @@ inferWhere env whereExp@(Meta _ loc (Src.Where exp iss)) = do
     -- are currently implemented.
     let newTP = completePatternType tp pattern se
 
-    let tarr  = TArr (apply se tinput) te
-    let tarr' = TArr (apply se newTP) te
-    su <- catchError (unifyToInfer env' $ unify tarr tarr')
+    let tarr  = TArr (apply env se tinput) te
+    let tarr' = TArr (apply env se newTP) te
+    su <- catchError (unifyToInfer env' $ unify env tarr tarr')
                      (addPatternReason e whereExp pattern area)
 
-    let sf = su `compose` se
+    let sf = compose env su se
 
     return
       ( sf
       , tarr
       , Slv.Solved tarr area
-        $ Slv.Is (updatePattern pattern) (updateType ee $ apply sf te)
+        $ Slv.Is (updatePattern pattern) (updateType ee $ apply env sf te)
       )
 
 
   completePatternType :: Type -> Src.Pattern -> Substitution -> Type
   completePatternType tp pattern se =
     let step1   = findSpreadTypes tp pattern se
-        applied = apply se step1
+        applied = apply env se step1
         step2   = spreadSpreads applied
     in  step2
 
@@ -455,7 +472,7 @@ inferWhere env whereExp@(Meta _ loc (Src.Where exp iss)) = do
   findSpreadTypes tp _ _ = tp
 
   assignSpreadType ff' se key field = case field of
-    (Meta _ _ (Src.PSpread (Meta _ _ (Src.PVar n)))) -> TVar $ TV n
+    (Meta _ _ (Src.PSpread (Meta _ _ (Src.PVar n)))) -> TVar [] $ TV n
 
     (Meta _ _ (Src.PRecord _                      )) -> case M.lookup key ff' of
       Just x -> findSpreadTypes x field se
@@ -464,7 +481,7 @@ inferWhere env whereExp@(Meta _ loc (Src.Where exp iss)) = do
     _ -> case M.lookup key ff' of
       Just x -> x
       -- TODO: Put a number to be sure it's unique, but it should use newTVar
-      _      -> TVar $ TV "a0"
+      _      -> TVar [] $ TV "a0"
 
   spreadSpreads :: Type -> Type
   spreadSpreads (TRecord fields open) =
@@ -516,8 +533,8 @@ inferWhere env whereExp@(Meta _ loc (Src.Where exp iss)) = do
       ctor'  <- argPatternsToArrowType rt as
       ctor'' <- instantiate $ Forall fv ctor
       -- TODO: Error should be handled
-      s      <- unifyToInfer env $ unify ctor' ctor''
-      return $ apply s rt
+      s      <- unifyToInfer env $ unify env ctor' ctor''
+      return $ apply env s rt
 
      where
       argPatternsToArrowType :: Type -> [Src.Pattern] -> Infer Type
@@ -530,7 +547,7 @@ inferWhere env whereExp@(Meta _ loc (Src.Where exp iss)) = do
     Src.PSpread pattern -> buildPatternType env pattern
 
     -- TODO: Need to iterate through items and unify them
-    Src.PList   []      -> return $ TComp "Prelude" "List" [TVar $ TV "a"]
+    Src.PList   []      -> return $ TComp "Prelude" "List" [TVar [] $ TV "a"]
     Src.PList patterns ->
       TComp "Prelude" "List" . (: []) <$> buildPatternType e (head patterns)
 
@@ -545,11 +562,11 @@ inferWhere env whereExp@(Meta _ loc (Src.Where exp iss)) = do
 
     (Src.PRecord fields, t') -> do
       let (fields', open) = case t' of
-            TVar _                -> (M.empty, True)
+            TVar _ _              -> (M.empty, True)
             TRecord fields' open' -> (fields', open')
 
-      let fieldsWithoutSpread = M.filterWithKey (\k v -> k /= "...") fields
-      let spreadField = snd <$> find (\(k, v) -> k == "...") (M.toList fields)
+      let fieldsWithoutSpread = M.filterWithKey (\k _ -> k /= "...") fields
+      let spreadField = snd <$> find (\(k, _) -> k == "...") (M.toList fields)
 
       declaredFields <- mapM (\(k, pat) -> (pat, ) <$> lookupType k fields')
                              (M.toList fieldsWithoutSpread)
@@ -594,13 +611,13 @@ inferWhere env whereExp@(Meta _ loc (Src.Where exp iss)) = do
         else instantiate =<< findConstructor e pattern whereExp cname
 
       let adtT = arrowReturnType ctor
-      s <- case unify adtT t of
+      s <- case unify env adtT t of
         Right a -> return a
         Left  e -> throwError $ InferError
           e
           (Reason (PatternTypeError whereExp pattern) (envcurrentpath env) area)
 
-      case (apply s ctor, as) of
+      case (apply env s ctor, as) of
         (TArr a _, [a']) -> do
           generateIsEnv a e a'
 
@@ -676,7 +693,7 @@ inferTypedExp env (Meta _ area (Src.TypedExp exp typing)) = do
   t'           <- instantiate $ Forall (S.toList freevars) t
 
   (s1, t1, e1) <- infer env exp
-  s2           <- case unify t' t1 of
+  s2           <- case unify env t' t1 of
     Right solved -> return solved
 
     Left  err    -> throwError $ InferError
@@ -685,7 +702,7 @@ inferTypedExp env (Meta _ area (Src.TypedExp exp typing)) = do
       )
 
   return
-    ( s1 `compose` s2
+    ( compose env s1 s2
     , t'
     , Slv.Solved t' area (Slv.TypedExp (updateType e1 t') (updateTyping typing))
     )
@@ -735,6 +752,8 @@ solveTable' table ast@Src.AST { Src.aimports } = do
   let importEnv = Env { envimports     = imports
                       , envtypes       = adts
                       , envvars        = vars
+                      , envinterfaces  = []
+                      , envinstances   = []
                       , envcurrentpath = fromMaybe "" (Src.apath ast)
                       }
   -- Then we infer the ast
@@ -862,14 +881,22 @@ mergeTypeDecl namespace absPath adts key = case M.lookup key adts of
 
 
 inferAST :: Env -> Src.AST -> Infer Slv.AST
-inferAST env Src.AST { Src.aexps, Src.apath, Src.aimports, Src.atypedecls } =
+inferAST env Src.AST { Src.aexps, Src.apath, Src.aimports, Src.atypedecls, Src.ainstances } =
   do
     inferredExps <- inferExps env aexps
+    inferredInstances <- mapM (resolveInstance env) ainstances
     return Slv.AST { Slv.aexps      = inferredExps
                    , Slv.apath      = apath
                    , Slv.atypedecls = updateADT <$> atypedecls
                    , Slv.aimports   = updateImport <$> aimports
+                   , Slv.ainstances = inferredInstances
                    }
+
+resolveInstance :: Env -> Src.Instance -> Infer Slv.Instance
+resolveInstance env (Src.Instance interface ty dict) = do
+  dict' <- mapM (infer env) dict
+  let dict'' = M.map lst dict'
+  return $ Slv.Instance interface (updateTyping ty) dict''
 
 updateImport :: Src.Import -> Slv.Import
 updateImport i = case i of

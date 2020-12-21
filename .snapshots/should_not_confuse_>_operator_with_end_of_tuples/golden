@@ -37,7 +37,7 @@ Right
                          (Area (Loc 44 3 16) (Loc 46 3 18))
                          (App
                             (Solved
-                               (TArr (TVar (TV "c")) (TArr (TVar (TV "c")) (TCon CBool)))
+                               (TArr (TVar [] (TV "c")) (TArr (TVar [] (TV "c")) (TCon CBool)))
                                (Area (Loc 46 3 18) (Loc 47 3 19))
                                (Var ">"))
                             (Solved (TCon CNum) (Area (Loc 44 3 16) (Loc 46 3 18)) (LNum "33"))
@@ -62,7 +62,7 @@ Right
                          (Area (Loc 66 4 16) (Loc 70 4 20))
                          (App
                             (Solved
-                               (TArr (TVar (TV "f")) (TArr (TVar (TV "f")) (TCon CBool)))
+                               (TArr (TVar [] (TV "f")) (TArr (TVar [] (TV "f")) (TCon CBool)))
                                (Area (Loc 70 4 20) (Loc 71 4 21))
                                (Var ">"))
                             (Solved

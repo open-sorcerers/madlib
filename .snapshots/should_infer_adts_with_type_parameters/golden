@@ -12,7 +12,8 @@ Right
                   (Area (Loc 47 4 10) (Loc 60 4 23))
                   (App
                      (Solved
-                        (TArr (TVar (TV "b")) (TComp "path" "Result" [ TVar (TV "b") ]))
+                        (TArr
+                           (TVar [] (TV "b")) (TComp "path" "Result" [ TVar [] (TV "b") ]))
                         (Area (Loc 47 4 10) (Loc 54 4 17))
                         (Var "Success"))
                      (Solved

@@ -63,12 +63,12 @@ Right
                   (Area (Loc 143 4 1) (Loc 181 4 39))
                   (App
                      (Solved
-                        (TArr (TVar (TV "f")) (TArr (TVar (TV "f")) (TCon CBool)))
+                        (TArr (TVar [] (TV "f")) (TArr (TVar [] (TV "f")) (TCon CBool)))
                         (Area (Loc 144 4 2) (Loc 162 4 20))
                         (Abs
                            "a"
                            [ Solved
-                               (TArr (TVar (TV "f")) (TCon CBool))
+                               (TArr (TVar [] (TV "f")) (TCon CBool))
                                (Area (Loc 144 4 2) (Loc 162 4 20))
                                (Abs
                                   "b"
@@ -77,22 +77,22 @@ Right
                                       (Area (Loc 155 4 13) (Loc 156 4 14))
                                       (App
                                          (Solved
-                                            (TArr (TVar (TV "e")) (TCon CBool))
+                                            (TArr (TVar [] (TV "e")) (TCon CBool))
                                             (Area (Loc 155 4 13) (Loc 156 4 14))
                                             (App
                                                (Solved
                                                   (TArr
-                                                     (TVar (TV "i"))
-                                                     (TArr (TVar (TV "i")) (TCon CBool)))
+                                                     (TVar [] (TV "i"))
+                                                     (TArr (TVar [] (TV "i")) (TCon CBool)))
                                                   (Area (Loc 157 4 15) (Loc 159 4 17))
                                                   (Var "=="))
                                                (Solved
-                                                  (TVar (TV "e"))
+                                                  (TVar [] (TV "e"))
                                                   (Area (Loc 155 4 13) (Loc 156 4 14))
                                                   (Var "a"))
                                                False))
                                          (Solved
-                                            (TVar (TV "f"))
+                                            (TVar [] (TV "f"))
                                             (Area (Loc 160 4 18) (Loc 161 4 19))
                                             (Var "b"))
                                          True)

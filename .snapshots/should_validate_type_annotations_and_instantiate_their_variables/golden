@@ -4,33 +4,34 @@ Right
     , aexps =
         [ Solved
             (TArr
-               (TArr (TVar (TV "a")) (TVar (TV "b")))
+               (TArr (TVar [] (TV "a")) (TVar [] (TV "b")))
                (TArr
-                  (TComp "Prelude" "List" [ TVar (TV "a") ])
-                  (TComp "Prelude" "List" [ TVar (TV "b") ])))
+                  (TComp "Prelude" "List" [ TVar [] (TV "a") ])
+                  (TComp "Prelude" "List" [ TVar [] (TV "b") ])))
             (Area (Loc 0 1 1) (Loc 68 2 33))
             (TypedExp
                (Solved
                   (TArr
-                     (TArr (TVar (TV "a")) (TVar (TV "b")))
+                     (TArr (TVar [] (TV "a")) (TVar [] (TV "b")))
                      (TArr
-                        (TComp "Prelude" "List" [ TVar (TV "a") ])
-                        (TComp "Prelude" "List" [ TVar (TV "b") ])))
+                        (TComp "Prelude" "List" [ TVar [] (TV "a") ])
+                        (TComp "Prelude" "List" [ TVar [] (TV "b") ])))
                   (Area (Loc 36 2 1) (Loc 68 2 33))
                   (Assignment
                      "map"
                      (Solved
-                        (TArr (TVar (TV "c")) (TArr (TVar (TV "d")) (TVar (TV "e"))))
+                        (TArr
+                           (TVar [] (TV "c")) (TArr (TVar [] (TV "d")) (TVar [] (TV "e"))))
                         (Area (Loc 42 2 7) (Loc 68 2 33))
                         (Abs
                            "f"
                            [ Solved
-                               (TArr (TVar (TV "d")) (TVar (TV "e")))
+                               (TArr (TVar [] (TV "d")) (TVar [] (TV "e")))
                                (Area (Loc 42 2 7) (Loc 68 2 33))
                                (Abs
                                   "xs"
                                   [ Solved
-                                      (TVar (TV "e"))
+                                      (TVar [] (TV "e"))
                                       (Area (Loc 54 2 19) (Loc 67 2 32))
                                       (JSExp "some JS")
                                   ])
@@ -48,14 +49,15 @@ Right
                   (TArr
                      (TArr
                         (TComp "Prelude" "List" [ TComp "Prelude" "List" [ TCon CNum ] ])
-                        (TVar (TV "i")))
-                     (TVar (TV "i")))
+                        (TVar [] (TV "i")))
+                     (TVar [] (TV "i")))
                   (Area (Loc 69 3 1) (Loc 85 3 17))
                   (App
                      (Solved
                         (TArr
-                           (TVar (TV "h"))
-                           (TArr (TArr (TVar (TV "h")) (TVar (TV "i"))) (TVar (TV "i"))))
+                           (TVar [] (TV "h"))
+                           (TArr
+                              (TArr (TVar [] (TV "h")) (TVar [] (TV "i"))) (TVar [] (TV "i"))))
                         (Area (Loc 85 3 17) (Loc 90 4 4))
                         (Var "|>"))
                      (Solved
@@ -100,10 +102,10 @@ Right
                   (App
                      (Solved
                         (TArr
-                           (TArr (TVar (TV "k")) (TVar (TV "l")))
+                           (TArr (TVar [] (TV "k")) (TVar [] (TV "l")))
                            (TArr
-                              (TComp "Prelude" "List" [ TVar (TV "k") ])
-                              (TComp "Prelude" "List" [ TVar (TV "l") ])))
+                              (TComp "Prelude" "List" [ TVar [] (TV "k") ])
+                              (TComp "Prelude" "List" [ TVar [] (TV "l") ])))
                         (Area (Loc 91 4 6) (Loc 94 4 9))
                         (Var "map"))
                      (Solved
@@ -114,10 +116,10 @@ Right
                         (App
                            (Solved
                               (TArr
-                                 (TArr (TVar (TV "n")) (TVar (TV "o")))
+                                 (TArr (TVar [] (TV "n")) (TVar [] (TV "o")))
                                  (TArr
-                                    (TComp "Prelude" "List" [ TVar (TV "n") ])
-                                    (TComp "Prelude" "List" [ TVar (TV "o") ])))
+                                    (TComp "Prelude" "List" [ TVar [] (TV "n") ])
+                                    (TComp "Prelude" "List" [ TVar [] (TV "o") ])))
                               (Area (Loc 95 4 10) (Loc 98 4 13))
                               (Var "map"))
                            (Solved

@@ -169,11 +169,12 @@ Right
                                                                              (TRecord
                                                                                 (fromList
                                                                                    [ ( "z"
-                                                                                     , TVar (TV "i")
+                                                                                     , TVar
+                                                                                         [] (TV "i")
                                                                                      )
                                                                                    ])
                                                                                 True)
-                                                                             (TVar (TV "i")))
+                                                                             (TVar [] (TV "i")))
                                                                           (Area
                                                                              (Loc 76 3 50)
                                                                              (Loc 77 3 51))
@@ -192,9 +193,10 @@ Right
                                                               (TArr
                                                                  (TRecord
                                                                     (fromList
-                                                                       [ ( "o" , TVar (TV "k") ) ])
+                                                                       [ ( "o" , TVar [] (TV "k") )
+                                                                       ])
                                                                     True)
-                                                                 (TVar (TV "k")))
+                                                                 (TVar [] (TV "k")))
                                                               (Area (Loc 82 3 56) (Loc 83 3 57))
                                                               (Var ".o"))))
                                                      True))
@@ -210,8 +212,9 @@ Right
                                                (Solved
                                                   (TArr
                                                      (TRecord
-                                                        (fromList [ ( "i" , TVar (TV "m") ) ]) True)
-                                                     (TVar (TV "m")))
+                                                        (fromList [ ( "i" , TVar [] (TV "m") ) ])
+                                                        True)
+                                                     (TVar [] (TV "m")))
                                                   (Area (Loc 88 3 62) (Loc 89 3 63))
                                                   (Var ".i"))))
                                          True)))

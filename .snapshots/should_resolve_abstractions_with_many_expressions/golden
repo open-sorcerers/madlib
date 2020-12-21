@@ -65,8 +65,8 @@ Right
                                                   (App
                                                      (Solved
                                                         (TArr
-                                                           (TVar (TV "g"))
-                                                           (TArr (TVar (TV "g")) (TCon CBool)))
+                                                           (TVar [] (TV "g"))
+                                                           (TArr (TVar [] (TV "g")) (TCon CBool)))
                                                         (Area (Loc 85 4 21) (Loc 86 4 22))
                                                         (Var ">"))
                                                      (Solved
@@ -150,8 +150,8 @@ Right
                                             (App
                                                (Solved
                                                   (TArr
-                                                     (TVar (TV "n"))
-                                                     (TArr (TVar (TV "n")) (TCon CBool)))
+                                                     (TVar [] (TV "n"))
+                                                     (TArr (TVar [] (TV "n")) (TCon CBool)))
                                                   (Area (Loc 157 6 23) (Loc 159 6 25))
                                                   (Var "=="))
                                                (Solved

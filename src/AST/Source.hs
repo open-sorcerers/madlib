@@ -1,4 +1,3 @@
-{-# LANGUAGE NamedFieldPuns #-}
 module AST.Source where
 
 import qualified Data.Map                      as M
@@ -8,10 +7,12 @@ import           Explain.Meta
 
 data AST =
   AST
-    { aimports   :: [Import]
-    , aexps      :: [Exp]
-    , atypedecls :: [TypeDecl]
-    , apath      :: Maybe FilePath
+    { aimports    :: [Import]
+    , aexps       :: [Exp]
+    , atypedecls  :: [TypeDecl]
+    , ainterfaces :: [Interface]
+    , ainstances  :: [Instance]
+    , apath       :: Maybe FilePath
     }
     deriving(Eq, Show)
 
@@ -38,6 +39,10 @@ data TypeDecl
       , aliasexported :: Bool
       }
     deriving(Eq, Show)
+
+data Interface = Interface Name Name (M.Map Name Typing) deriving(Eq, Show)
+
+data Instance = Instance Name Typing (M.Map Name Exp) deriving(Eq, Show)
 
 data Constructor
   = Constructor Name [Typing]

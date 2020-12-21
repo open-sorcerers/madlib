@@ -3,7 +3,7 @@ Right
     { aimports = []
     , aexps =
         [ Solved
-            (TComp "Prelude" "List" [ TVar (TV "a") ])
+            (TComp "Prelude" "List" [ TVar [] (TV "a") ])
             (Area (Loc 0 1 1) (Loc 2 1 3))
             (ListConstructor [])
         , Solved

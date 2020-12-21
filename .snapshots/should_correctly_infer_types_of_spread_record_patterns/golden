@@ -86,8 +86,8 @@ Right
                                (Var "b"))
                             (Solved
                                (TArr
-                                  (TRecord (fromList [ ( "name" , TVar (TV "c") ) ]) True)
-                                  (TVar (TV "c")))
+                                  (TRecord (fromList [ ( "name" , TVar [] (TV "c") ) ]) True)
+                                  (TVar [] (TV "c")))
                                (Area (Loc 118 3 24) (Loc 122 3 28))
                                (Var ".name")))))
                ])
