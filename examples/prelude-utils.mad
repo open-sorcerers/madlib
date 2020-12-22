@@ -136,7 +136,8 @@ pipe(
     (x) => x.customer,
     (x) => x.item
   ]),
-  L.map(M.fromMaybe({name: 'unknown'})),
-  (xx) => (#- xx[0].name + ' purchased ' + xx[1].name + ' for $' + xx[1].cost.toFixed(2) -#),
+  L.map(M.fromMaybe({name: 'unknown', cost: -1})),
+  // (xx) => (#- xx[0].name + ' purchased ' + xx[1].name + ' for $' + xx[1].cost.toFixed(2) -#),
+  // (receipt) => P.set('sales', L.concat(receipt), ctx),
   IO.trace('RECEIPT')
 )(0)
