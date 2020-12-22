@@ -1,5 +1,5 @@
 import derivedHttp from "./derived/Http"
 
-
-
+export alias Response = derivedHttp.Response
+export alias Body = derivedHttp.Body
 export get = derivedHttp.get

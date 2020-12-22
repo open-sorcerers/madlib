@@ -1,6 +1,6 @@
 import derivedWriterReader from "./derived/WriterReader"
 
-
+export alias WriterReader = derivedWriterReader.WriterReader
 export run = derivedWriterReader.run
 export of = derivedWriterReader.of
 export chain = derivedWriterReader.chain

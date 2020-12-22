@@ -1,6 +1,6 @@
 import atomicEither from "./atomic/Either"
 
-
+export alias Either = atomicEither.Either
 export map = atomicEither.map
 export mapLeft = atomicEither.mapLeft
 export bind = atomicEither.bind

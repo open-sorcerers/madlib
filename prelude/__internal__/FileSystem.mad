@@ -1,5 +1,5 @@
 import derivedFileSystem from "./derived/FileSystem"
 
-
+export alias Data = derivedFileSystem.Data
 export writeFile = derivedFileSystem.writeFile
 export readFile = derivedFileSystem.readFile

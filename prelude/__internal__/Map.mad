@@ -2,7 +2,7 @@ import derivedMap from "./derived/Map"
 import derivedMapList from "./derived/MapList"
 import derivedMapObject from "./derived/MapObject"
 
-
+export alias Map = derivedMap.Map
 export insert = derivedMap.insert
 export iter = derivedMap.iter
 export keys = derivedMap.keys

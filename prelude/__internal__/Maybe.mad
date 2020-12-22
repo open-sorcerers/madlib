@@ -1,6 +1,6 @@
 import atomicMaybe from "./atomic/Maybe"
 
-
+export alias Maybe = atomicMaybe.Maybe
 export map = atomicMaybe.map
 export chain = atomicMaybe.chain
 export fromMaybe = atomicMaybe.fromMaybe

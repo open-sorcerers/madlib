@@ -1,6 +1,6 @@
 import derivedReader from "./derived/Reader"
 
-
+export alias Reader = derivedReader.Reader
 export run = derivedReader.run
 export map = derivedReader.map
 export chain = derivedReader.chain

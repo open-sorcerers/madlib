@@ -1,6 +1,6 @@
 import derivedSystem from "./derived/System"
 
-
+export alias CommandError = derivedSystem.CommandError
 export exec = derivedSystem.exec
 export spawn = derivedSystem.spawn
 export getArgs = derivedSystem.getArgs
