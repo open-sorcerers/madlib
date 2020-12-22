@@ -1,6 +1,6 @@
 import derivedState from "./derived/State"
 
-export data State = derivedState.State
+
 export run = derivedState.run
 export map = derivedState.map
 export chain = derivedState.chain

@@ -1,0 +1,58 @@
+import L from '../atomic/List'
+import F from '../atomic/Function'
+import T from '../atomic/Tuple'
+import M from '../atomic/Maybe'
+
+import LM from './ListMaybe'
+import P from './Map'
+
+// fromList :: List (<k, v>) -> P.Map k v
+export fromList = (list) => pipe(
+  LM.uniqueBy((a, b) => T.fst(a) == T.fst(b)),
+  P.Map_
+)
+
+export fromPairs = fromList
+
+// empty :: P.Map k v
+export empty = fromList([])
+
+// map :: (v -> w) -> Map k v -> Map k w
+export map = (fn, x) => pipe(
+  P.iter((i) => < T.fst(i), fn(T.snd(i)) >),
+  fromList
+)(x)
+
+get :: k -> P.Map k v -> M.Maybe v
+export get = (k, m) => (where(m)
+  is P.Map_ items: pipe(
+    LM.find(
+      where
+        is <kk, v>: k == kk
+    ),
+    M.map(T.snd)
+  )(items)
+)
+propOr :: d -> p -> P.Map k v -> d
+export propOr = (def, px, m) => (
+  where(m)
+    is P.Map_ items: pipe(
+      LM.find(
+        where
+          is <kk, vv>: px == kk
+      ),
+      M.fromMaybe(def)
+    )(items)
+)
+propEq :: s -> p -> P.Map k v -> Boolean
+export propEq = (ex, px, m) => pipe(
+  propOr("UNSET", px),
+  F.equals(ex)
+)(m)
+pathOr :: d -> List String -> x -> d
+export pathOr = (def, paths, ob) =>
+  L.reduce(
+    (agg, x) => propOr(def, x, agg),
+    ob,
+    paths
+  )

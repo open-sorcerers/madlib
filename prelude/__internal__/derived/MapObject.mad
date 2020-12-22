@@ -1,19 +1,20 @@
-import L from './List'
+import L from '../atomic/List'
 import O from './Object'
 import P from './Map'
+import ML from './MapList'
 
 export toObject = L.reduce(
   (agg, kv) => (
     where (kv)
-      is <k, v>: O.assign(agg, objOf(k, v)) 
+      is <k, v>: O.merge(agg, O.objOf(k, v)) 
   ),
   {}
 )
 
-fromObject :: x -> Map k v
+// fromObject :: x -> P.Map k v
 export fromObject = (o) => pipe(
   O.entries,
   L.map((px) => < (#- px[0] -#), (#- px[1] -#) >),
-  P.fromList
+  ML.fromList
 )(o)
 

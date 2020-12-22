@@ -1,5 +1,5 @@
 import M from "../atomic/Maybe"
-import L from "./List"
+import L from "../atomic/List"
 import F from "../atomic/Function"
 import T from "../atomic/Tuple"
 

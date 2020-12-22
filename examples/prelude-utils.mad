@@ -46,14 +46,14 @@ alias ShopContext = {
 }
 
 // ✨ functions
+idEqual = O.propEq('id')
 
 buySomethingFromShop :: ShopContext -> Number -> Number -> {item :: M.Maybe ShopCustomer, customer :: M.Maybe ShopCustomer }
-
-idEqual = O.propEq('id')
 buySomethingFromShop = (ctx, itemId, customerId) => ({
-  item: L.find(O.propEq(itemId, 'id'), ctx.inventory)
-  customer: L.find(O.propEq(customerId, 'id'), ctx.customers)
+  item: L.find(idEqual(itemId), ctx.inventory),
+  customer: L.find(idEqual(customerId), ctx.customers)
 })
+
 th = F.flip(L.nth)
 stuff = [
   "raygun",

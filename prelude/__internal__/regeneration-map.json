@@ -6,7 +6,11 @@
   "IO": ["./atomic/IO.mad"],
   "Json": ["./derived/Json.mad"],
   "List": ["./atomic/List.mad", "./derived/ListMaybe.mad"],
-  "Map": ["./derived/Map.mad", "./derived/MapObject.mad"],
+  "Map": [
+    "./derived/Map.mad",
+    "./derived/MapList.mad",
+    "./derived/MapObject.mad"
+  ],
   "Math": ["./atomic/Math.mad"],
   "Maybe": ["./atomic/Maybe.mad"],
   "Number": ["./derived/Number.mad"],

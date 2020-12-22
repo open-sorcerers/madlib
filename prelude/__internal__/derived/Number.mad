@@ -1,5 +1,5 @@
 import Maybe from "../atomic/Maybe"
-import List from "./List"
+import List from "../atomic/List"
 
 fromString :: String -> Maybe.Maybe Number
 export fromString = (str) => (#- {

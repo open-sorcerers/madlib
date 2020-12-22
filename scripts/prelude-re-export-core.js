@@ -62,7 +62,8 @@ const printExports = curry((file, raw) =>
       map(
         ifElse(
           pipe(length, equals(2)),
-          ([w, x]) => `export ${w} ${x} = ${name}.${x}`,
+          ([w, x]) =>
+            w !== 'data' ? `export ${w} ${x} = ${name}.${x}` : '',
           x => `export ${x} = ${name}.${x}`
         )
       ),

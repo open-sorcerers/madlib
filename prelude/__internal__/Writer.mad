@@ -1,6 +1,6 @@
 import derivedWriter from "./derived/Writer"
 
-export data Writer = derivedWriter.Writer
+
 export run = derivedWriter.run
 export map = derivedWriter.map
 export chain = derivedWriter.chain

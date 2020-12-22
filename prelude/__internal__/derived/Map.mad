@@ -1,24 +1,15 @@
-import L from "./List"
-import Maybe from "../atomic/Maybe"
-import T from "./Tuple"
+import L from "../atomic/List"
+import M from "../atomic/Maybe"
+import T from "../atomic/Tuple"
 import F from "../atomic/Function"
+import FL from "./FunctionList"
 
 export data Map k v = Map_ (List <k, v>)
-
-fromList :: List (<k, v>) -> Map k v
-export fromList = (list) => pipe(
-  L.uniqueBy((a, b) => T.fst(a) == T.fst(b)),
-  Map_
-)
-export fromPairs = fromList
-
-empty :: Map k v
-export empty = fromList([])
 
 insert :: k -> v -> Map k v -> Map k v
 export insert = (k, v, m) => (where(m)
   is Map_ items: pipe(
-    L.reject(
+    FL.reject(
       where
         is <kk, v>: kk == k
     ),
@@ -27,50 +18,13 @@ export insert = (k, v, m) => (where(m)
  )(items)
 )
 
-
-get :: k -> Map k v -> Maybe.Maybe v
-export get = (k, m) => (where(m)
-  is Map_ items: pipe(
-    L.find(
-      where
-        is <kk, v>: k == kk
-    ),
-    Maybe.map(T.snd)
-  )(items)
-)
-
 trace :: String -> x -> x
 trace = (tag, x) => (#- { console.log(tag, x); return x } -#)
 
-propOr :: d -> p -> Map k v -> d
-export propOr = (def, px, m) => (
-  where(m)
-    is Map_ items: pipe(
-      L.find(
-        where
-          is <kk, vv>: px == kk
-      ),
-      Maybe.fromMaybe(def),
-    )(items)
-)
-
-propEq :: s -> p -> Map k v -> Boolean
-export propEq = (ex, px, m) => pipe(
-  propOr("UNSET", px),
-  F.equals(ex)
-)(m)
-
 iter :: (v -> w) -> Map k v -> List w
-iter = (fn, x) => (where (x)
+export iter = (fn, x) => (where (x)
   is Map_ items: L.map(fn, items)
 )
-
-
-// map :: (v -> w) -> Map k v -> Map k w
-export map = (fn, x) => pipe(
-  iter((i) => < T.fst(i), fn(T.snd(i)) >),
-  fromList
-)(x)
 
 keys :: Map k v -> List k
 export keys = iter(T.fst) 
@@ -84,16 +38,6 @@ export len = pipe(keys, L.len)
 entries :: x -> List y
 entries = (#- Object.entries -#)
 
-fromObject :: x -> Map k v
-export fromObject = (o) => pipe(
-  entries,
-  L.map((px) => < (#- px[0] -#), (#- px[1] -#) >),
-  fromList
-)(o)
-
-assign :: x -> y -> z
-export assign = (a, b) => (#- Object.assign({}, a, b) -#)
-
 objOf :: String -> x -> <String, x>
 export objOf = (kk, vv) => (#- ({ [kk]: vv }) -#)
 
@@ -104,19 +48,3 @@ export merge = (a, b) => L.reduce(
   [a, b]
 )
 
-// toObject :: Map k v -> x
-export toObject = L.reduce(
-  (agg, kv) => (
-    where (kv)
-      is <k, v>: assign(agg, objOf(k, v)) 
-  ),
-  {}
-)
-
-pathOr :: d -> List String -> x -> d
-export pathOr = (def, paths, ob) =>
-  L.reduce(
-    (agg, x) => propOr(def, x, agg),
-    ob,
-    paths
-  )
