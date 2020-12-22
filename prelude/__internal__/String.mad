@@ -1,0 +1,8 @@
+import atomicString from "./atomic/String"
+
+export show = atomicString.show
+export replace = atomicString.replace
+export split = atomicString.split
+export lines = atomicString.lines
+export toUpper = atomicString.toUpper
+export toLower = atomicString.toLower

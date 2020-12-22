@@ -1,0 +1,22 @@
+{
+  "Either": ["./atomic/Either.mad"],
+  "FileSystem": ["./derived/FileSystem.mad"],
+  "Function": ["./atomic/Function.mad", "./derived/FunctionList.mad"],
+  "Http": ["./derived/Http.mad"],
+  "IO": ["./atomic/IO.mad"],
+  "Json": ["./derived/Json.mad"],
+  "List": ["./atomic/List.mad", "./derived/ListMaybe.mad"],
+  "Map": ["./derived/Map.mad", "./derived/MapObject.mad"],
+  "Math": ["./atomic/Math.mad"],
+  "Maybe": ["./atomic/Maybe.mad"],
+  "Number": ["./derived/Number.mad"],
+  "Object": ["./derived/Object.mad"],
+  "Reader": ["./derived/Reader.mad"],
+  "State": ["./derived/State.mad"],
+  "String": ["./atomic/String.mad"],
+  "System": ["./derived/System.mad"],
+  "Tuple": ["./atomic/Tuple.mad"],
+  "Wish": ["./atomic/Wish.mad"],
+  "Writer": ["./derived/Writer.mad"],
+  "WriterReader": ["./derived/WriterReader.mad"]
+}

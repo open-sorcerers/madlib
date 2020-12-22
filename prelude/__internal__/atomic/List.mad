@@ -1,6 +1,3 @@
-import Fun from "../atomic/Function"
-import Maybe from "../atomic/Maybe"
-
 of :: x -> List x
 export of = (x) => (#- [x] -#)
 
@@ -25,20 +22,6 @@ export last = (xs) => (#- xs.slice(-1)[0] -#)
 init :: List a -> List a
 export init = (xs) => (#- xs.slice(0, -1) -#)
 
-nth :: Number -> List a -> Maybe.Maybe a
-export nth = (i, xs) => (#- {
-  const x = xs[i];
-  return x === undefined
-    ? Maybe.Nothing
-    : Maybe.Just(x);
-} -#)
-
-unsafeNth :: Number -> List a -> b
-export unsafeNth =  (i, xs) => pipe(
-  nth(i),
-  Maybe.fromMaybe
-)(xs)
-
 reduceR :: (a -> b -> a) -> a -> List b -> a
 export reduceR = (f, initial, xs) => (#- xs.reduceRight(f, initial) -#)
 
@@ -49,37 +32,15 @@ export reduce = reduceL
 filter :: (a -> Boolean) -> List a -> List a
 export filter = (predicate, xs) => (#- xs.filter(predicate) -#)
 
-find :: (a -> Boolean) -> List a -> Maybe.Maybe a
-export find = (predicate, xs) => (#- {
-  const found = xs.find(predicate);
-  if (found === undefined) {
-    return Maybe.Nothing
-  }
-  else {
-    return Maybe.Just(found)
-  }
-} -#)
 
 len :: List a -> Number
 export len = (xs) => (#- xs.length -#)
-
-reject :: (a -> Boolean) -> List a -> List a
-export reject = (predicate, xs) => (#- xs.filter(Fun.complement(predicate)) -#)
 
 slice :: Number -> Number -> List a -> List a
 export slice = (start, end, xs) => (#- xs.slice(start, end) -#)
 
 isEmpty :: List a -> Boolean
 export isEmpty = (xs) => len(xs) == 0
-
-uniqueBy :: (a -> a -> Boolean) -> List a -> List a
-export uniqueBy = (f, xs) => where(xs)
-  is [curr, ...tail]:
-    where(find(f(curr), tail)) {
-      is Maybe.Just _ : uniqueBy(f, tail)
-      is Maybe.Nothing: [curr, ...uniqueBy(f, tail)]
-    }
-  is [last]: [last]
 
 times :: (a -> b) -> Number -> List b
 export times = (fn, x) => (#- {

@@ -1,0 +1,8 @@
+import atomicEither from "./atomic/Either"
+
+export data Either = atomicEither.Either
+export map = atomicEither.map
+export mapLeft = atomicEither.mapLeft
+export bind = atomicEither.bind
+export isLeft = atomicEither.isLeft
+export fromRight = atomicEither.fromRight

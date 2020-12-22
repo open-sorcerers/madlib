@@ -1,0 +1,7 @@
+import atomicMath from "./atomic/Math"
+
+export add = atomicMath.add
+export substract = atomicMath.substract
+export multiply = atomicMath.multiply
+export divide = atomicMath.divide
+export mod = atomicMath.mod

@@ -1,0 +1,13 @@
+import atomicWish from "./atomic/Wish"
+
+export alias Wish = atomicWish.Wish
+export of = atomicWish.of
+export bad = atomicWish.bad
+export map = atomicWish.map
+export mapRej = atomicWish.mapRej
+export chain = atomicWish.chain
+export chainRej = atomicWish.chainRej
+export andDo = atomicWish.andDo
+export parallel = atomicWish.parallel
+export fulfill = atomicWish.fulfill
+export after = atomicWish.after

@@ -1,0 +1,16 @@
+{
+  "name": "madlib-internal",
+  "version": "0.0.0",
+  "main": "index.js",
+  "repository": "https://github.com/open-sorcerers/madlib.git",
+  "author": "OSS <fpopensorcerers@gmail.com>",
+  "license": "MIT",
+  "private": true,
+  "devDependencies": {
+    "ensorcel": "^0.0.2",
+    "fluture": "11.0.2",
+    "globby": "^11.0.1",
+    "snang": "^0.0.6",
+    "torpor": "^0.0.4"
+  }
+}

@@ -1,0 +1,5 @@
+import atomicTuple from "./atomic/Tuple"
+
+export pair = atomicTuple.pair
+export fst = atomicTuple.fst
+export snd = atomicTuple.snd

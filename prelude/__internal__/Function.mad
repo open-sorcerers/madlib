@@ -1,0 +1,13 @@
+import atomicFunction from "./atomic/Function"
+import derivedFunctionList from "./derived/FunctionList"
+
+export complement = atomicFunction.complement
+export always = atomicFunction.always
+export identity = atomicFunction.identity
+export equals = atomicFunction.equals
+export ifElse = atomicFunction.ifElse
+export when = atomicFunction.when
+export not = atomicFunction.not
+export flip = atomicFunction.flip
+
+export reject = derivedFunctionList.reject

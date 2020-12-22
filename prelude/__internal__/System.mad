@@ -1,0 +1,7 @@
+import derivedSystem from "./derived/System"
+
+export data CommandError = derivedSystem.CommandError
+export exec = derivedSystem.exec
+export spawn = derivedSystem.spawn
+export getArgs = derivedSystem.getArgs
+export getEnv = derivedSystem.getEnv

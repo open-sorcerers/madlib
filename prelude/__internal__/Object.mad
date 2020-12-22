@@ -1,0 +1,15 @@
+import derivedObject from "./derived/Object"
+
+export propOrWrappedDefault = derivedObject.propOrWrappedDefault
+export prop = derivedObject.prop
+export propOr = derivedObject.propOr
+export propEq = derivedObject.propEq
+export objOf = derivedObject.objOf
+export merge = derivedObject.merge
+export mergeLeft = derivedObject.mergeLeft
+export values = derivedObject.values
+export keys = derivedObject.keys
+export entries = derivedObject.entries
+export toPairs = derivedObject.toPairs
+export fromPairs = derivedObject.fromPairs
+export map = derivedObject.map

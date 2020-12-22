@@ -1,0 +1,24 @@
+import derivedMap from "./derived/Map"
+import derivedMapObject from "./derived/MapObject"
+
+export data Map = derivedMap.Map
+export fromList = derivedMap.fromList
+export fromPairs = derivedMap.fromPairs
+export empty = derivedMap.empty
+export insert = derivedMap.insert
+export get = derivedMap.get
+export propOr = derivedMap.propOr
+export propEq = derivedMap.propEq
+export map = derivedMap.map
+export keys = derivedMap.keys
+export values = derivedMap.values
+export len = derivedMap.len
+export fromObject = derivedMap.fromObject
+export assign = derivedMap.assign
+export objOf = derivedMap.objOf
+export merge = derivedMap.merge
+export toObject = derivedMap.toObject
+export pathOr = derivedMap.pathOr
+
+export toObject = derivedMapObject.toObject
+export fromObject = derivedMapObject.fromObject

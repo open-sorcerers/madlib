@@ -1,0 +1,8 @@
+import atomicIO from "./atomic/IO"
+
+export log = atomicIO.log
+export trace = atomicIO.trace
+export err = atomicIO.err
+export warn = atomicIO.warn
+export alias Row = atomicIO.Row
+export table = atomicIO.table

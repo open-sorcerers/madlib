@@ -1,0 +1,5 @@
+import derivedNumber from "./derived/Number"
+
+export fromString = derivedNumber.fromString
+export formatDecimal = derivedNumber.formatDecimal
+export range = derivedNumber.range

@@ -1,0 +1,7 @@
+import derivedJson from "./derived/Json"
+
+export string = derivedJson.string
+export number = derivedJson.number
+export map = derivedJson.map
+export field = derivedJson.field
+export parse = derivedJson.parse
