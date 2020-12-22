@@ -1,11 +1,15 @@
 {
   "Either": ["./atomic/Either.mad"],
   "FileSystem": ["./derived/FileSystem.mad"],
-  "Function": ["./atomic/Function.mad", "./derived/FunctionList.mad"],
+  "Function": ["./atomic/Function.mad", "./derived/Function.mad"],
   "Http": ["./derived/Http.mad"],
   "IO": ["./atomic/IO.mad"],
   "Json": ["./derived/Json.mad"],
-  "List": ["./atomic/List.mad", "./derived/ListMaybe.mad"],
+  "List": [
+    "./atomic/List.mad",
+    "./derived/ListMaybe.mad",
+    "./derived/ListFunction.mad"
+  ],
   "Map": [
     "./derived/Map.mad",
     "./derived/MapList.mad",

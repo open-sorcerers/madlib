@@ -349,6 +349,7 @@ typeToFStr scope ii t = case t of
   TCon CString -> "String"
   TCon CNum    -> "Number"
   TCon CBool   -> "Boolean"
+  TVar (TV a)  -> a
   TArr (TArr t1 t2) t2' ->
     "("
       <> typeToFStr scope ii t1
@@ -370,6 +371,7 @@ typeToFStr scope ii t = case t of
       ++ (scopedIndent scope (ii - 1))
       ++ "}"
   TAlias _ ref _ actual -> (typeToFStr ref ii actual) ++ " (as " ++ ref ++ ")"
+  _                     -> "UnprintableType"
 
 typeToStr = typeToFStr "default" 0
 

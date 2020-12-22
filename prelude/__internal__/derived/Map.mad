@@ -2,14 +2,14 @@ import L from "../atomic/List"
 import M from "../atomic/Maybe"
 import T from "../atomic/Tuple"
 import F from "../atomic/Function"
-import FL from "./FunctionList"
+import LF from "./ListFunction"
 
 export data Map k v = Map_ (List <k, v>)
 
 insert :: k -> v -> Map k v -> Map k v
 export insert = (k, v, m) => (where(m)
   is Map_ items: pipe(
-    FL.reject(
+    LF.reject(
       where
         is <kk, v>: kk == k
     ),

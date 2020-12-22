@@ -1,14 +1,29 @@
 log :: a -> a
 export log = (a) => (#- { console.log(a); return a; } -#)
 
-trace :: String -> a -> a
-export trace = (v, a) => (#- { console.log(v, a); return a; } -#)
-
 err :: a -> a
-export err = (e) => (#- { console.log(e); return e; } -#)
+export err = (e) => (#- { console.error(e); return e; } -#)
 
 warn :: a -> a
-export warn = (w) => (#- { console.log(w); return w; } -#)
+export warn = (w) => (#- { console.warn(w); return w; } -#)
+
+bilog :: a -> b -> ()
+export bilog = (tag, val) => (#- { console.log(tag, val); return; } -#)
+
+binarySideEffect :: (a -> b -> ()) -> a -> b -> b
+export binarySideEffect = (fn, tag, a) => (#- {
+  fn(tag, a)
+  return a
+} -#)
+
+sideEffect :: (a -> ()) -> a -> a
+export sideEffect = (fn, a) => (#- {
+  fn(a)
+  return a
+} -#)
+
+trace :: String -> a -> a
+export trace = binarySideEffect(bilog) 
 
 export alias Row = { id :: String, cols :: List <String, String> }
 table :: List Row -> a -> a

@@ -48,29 +48,34 @@ alias ShopContext = {
 // ✨ functions
 idEqual = O.propEq('id')
 
-buySomethingFromShop :: ShopContext -> Number -> Number -> {item :: M.Maybe ShopCustomer, customer :: M.Maybe ShopCustomer }
+// {item :: M.Maybe ShopCustomer, customer :: M.Maybe ShopCustomer }
+buySomethingFromShop :: ShopContext -> Number -> Number -> x
 buySomethingFromShop = (ctx, itemId, customerId) => ({
   item: L.find(idEqual(itemId), ctx.inventory),
   customer: L.find(idEqual(customerId), ctx.customers)
 })
 
-th = F.flip(L.nth)
+nthItem = F.flip(L.nth)
 stuff = [
   "raygun",
   "baseball",
   "magazine",
   "cigarettes",
   "sports car",
-  "a bit of poo"
+  "knife",
+  "sword",
+  "fireworks",
+  "test tube",
+  "ball of string"
 ]
-thstuff = th(stuff)
+thstuff = nthItem(stuff)
 
 itemFromId = (id) => pipe(
   O.objOf('id'),
   (x) => (
     O.merge({
       description: 'cool shit',
-      cost: (10 * x.id) + 1,
+      cost: 1 / (10 * x.id) + 1,
       discounts: [],
       name: M.fromMaybe("STUFF" ++ x.id, thstuff(x.id))
     },
@@ -83,8 +88,6 @@ inventory = pipe(
   L.map(itemFromId)
 )(10)
 
-inventory |> IO.trace('INVENTORY')
-
 names = [
   "alice",
   "bob",
@@ -95,20 +98,18 @@ names = [
   "georgina",
   "harold",
   "ivy",
-  "jervay",
+  "jervey",
   "kira",
   "leonard",
   "mina"
 ]
 
-
-nameth = th(names)
-
+nthName = nthItem(names)
 
 customerFromId = (id) => ({
   cart: [],
   money: 100,
-  name: M.fromMaybe("CUSTOMER", nameth(id)),
+  name: M.fromMaybe("CUSTOMER", nthName(id)),
   id: id
 })
 
@@ -120,55 +121,22 @@ customers = pipe(
   )
 )(names)
 
-customers |> IO.trace('CUSTOMERS')
-
-
 ctx = {
   inventory: inventory,
   customers: customers,
   sales: []
 }
 
-ctx |> IO.log
-
 grabValuesOffCrap = (x) => (#- x && x.__args && x.__args[0] -#)
 
-receipt = buySomethingFromShop(ctx, 0, 0)
-
-receipt |> IO.trace('RECEIPT')
 pipe(
-  IO.trace('raw'),
+  buySomethingFromShop(ctx, 0),
   L.of,
-  IO.trace('box'),
-  // L.ap([
-  //   // (x) => x.item,
-  //   // (x) => x.customer
-  //   P.propOr(M.Just(itemFromId(0)), 'item'),
-  //   P.propOr(M.Just(customerFromId(0)), 'customer')
-  // ]),
-  IO.trace('end')
-)(receipt)
-
-// L.ap([
-//   S.toLower,
-//   S.toUpper
-// ], ['I Like Pizza', 'I Like Salad']) |> L.join(' -> ') |> IO.trace('ap is cool')
-
-crap = {shit: 'dope', yes: 'awesome'}
-// crap |> O.entries |> IO.trace('Object.entries ')
-// crap |> O.toPairs |> IO.trace('Object.toPairs')
-// crap |> O.map((z) => z ++ ' so cool') |> IO.trace('Object.map')
-// crap |> P.fromObject |> IO.trace('Map.fromObject')
-// crap |> P.fromObject |> P.map((z) => z ++ ' yoy') |> IO.trace('Map.map')
-// crap |> P.fromObject |> P.propEq('dope', 'shit') |> IO.trace('Map.propEq')
-// crap |> P.fromObject |> P.propOr('unfound', 'unreal') |> IO.trace('Map.propOr')
-// crap |> P.fromObject |> P.propEq('shit', 'dope') |> IO.trace('Map.propEq 2')
-
-// crap2 = { yip: 'nip', ship: 'dopesnack' }
-// crap2 |> P.fromObject |> P.merge(P.fromObject(crap)) |> IO.trace('hey cool')
-// crap2 |> P.fromObject |> P.merge(P.fromObject(crap)) |> P.toObject |> IO.trace('goodbye')
-
-// [<'dope', 4>, <'stink', 5>] |> P.fromList |> IO.trace('sneeze')
-
-// T.pair('x', 'y') |> IO.trace('tuplies')
-
+  F.ap([
+    (x) => x.customer,
+    (x) => x.item
+  ]),
+  L.map(M.fromMaybe({name: 'unknown'})),
+  (xx) => (#- xx[0].name + ' purchased ' + xx[1].name + ' for $' + xx[1].cost.toFixed(2) -#),
+  IO.trace('RECEIPT')
+)(0)

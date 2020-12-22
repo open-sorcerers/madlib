@@ -2,23 +2,24 @@ import M from "../atomic/Maybe"
 import L from "../atomic/List"
 import F from "../atomic/Function"
 import T from "../atomic/Tuple"
+import IO from '../atomic/IO'
 
-propOrWrappedDefault :: w -> z -> String -> x -> y
-export propOrWrappedDefault = (Wrap, def, px, ob) => ( #- {
+propOr :: d -> String -> x -> M.Maybe d
+export propOr = (def, px, ob) => ( #- {
   return (
-    !!ob[px] ?
+    ob[px] ?
     M.Just(ob[px]) :
-    def && Wrap ? Wrap(def) : Wrap
+    M.Nothing
   )
 } -# )
 
-export prop = propOrWrappedDefault(M.Nothing, false)
-export propOr = propOrWrappedDefault(M.Just)
 
-propEq :: e -> String -> o -> Boolean
-export propEq = (xx, px, ob) => (
-  M.fromMaybe(false, prop(px, ob))
-)
+propEq :: String -> e -> o -> Boolean
+export propEq = (px, x, ob) => pipe(
+  propOr('⊄', px),
+  M.fromMaybe('⊅'),
+  F.invert(F.equals(x))
+)(ob)
 
 objOf :: String -> x -> y
 export objOf = (px, x) => (#-{ return { [px]: x } }-#)

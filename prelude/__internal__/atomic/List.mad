@@ -52,15 +52,3 @@ export times = (fn, x) => (#- {
   }
   return list
 } -#)
-
-ap :: List (a -> b) -> List a -> List b
-export ap = (fns, xs) => reduce(
-  (agg, fn) => pipe(
-    map(fn),
-    concat(agg)
-  )(xs),
-  [],
-  fns
-)
-
-

@@ -27,3 +27,5 @@ export flip = (fn) => (
   (b, a) => (fn(a, b))
 )
 
+// invert :: (a -> b) -> c -> d
+export invert = (fn, x) => pipe(fn, not)(x)

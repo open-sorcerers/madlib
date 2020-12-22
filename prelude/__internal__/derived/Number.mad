@@ -21,3 +21,12 @@ export range = (a, b) => (#- {
   }
   return r
 } -#)
+
+floor :: Number -> Number
+export floor = (x) => (#- Math.floor(x) -#)
+
+ceil :: Number -> Number
+export ceil = (x) => (#- Math.ceil(x) -#)
+
+round :: Number -> Number
+export round = (x) => (#- Math.round(x) -#) 
