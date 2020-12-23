@@ -47,4 +47,3 @@ export merge = (a, b) => L.reduce(
   [],
   [a, b]
 )
-
