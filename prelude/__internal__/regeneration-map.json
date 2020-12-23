@@ -26,5 +26,8 @@
   "Tuple": ["./atomic/Tuple.mad"],
   "Wish": ["./atomic/Wish.mad"],
   "Writer": ["./derived/Writer.mad"],
-  "WriterReader": ["./derived/WriterReader.mad"]
+  "WriterReader": ["./derived/WriterReader.mad"],
+  "HitPoint": ["./test/HitPoint.mad"],
+  "LcovDotInfo": ["./test/LcovDotInfo.mad"],
+  "TestTools": ["./test/TestTools.mad"]
 }
