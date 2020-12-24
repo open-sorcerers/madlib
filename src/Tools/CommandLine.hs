@@ -59,10 +59,11 @@ parseBundle = switch
   <> showDefault
   )
 
+parseREPL :: Parser Command
+parseREPL = pure ReadEvalPrintLoop
 
 parseInstall :: Parser Command
 parseInstall = pure Install
-
 
 parseCompile :: Parser Command
 parseCompile =
@@ -86,13 +87,13 @@ parseCoverage = switch
 parseTest :: Parser Command
 parseTest = Test <$> parseInput <*> parseCoverage
 
-
 parseCommand :: Parser Command
 parseCommand =
   subparser
     $  command "compile" (parseCompile `withInfo` "compile madlib code to js")
     <> command "test"    (parseTest `withInfo` "test tools")
     <> command "install" (parseInstall `withInfo` "install madlib packages")
+    <> command "repl"    (parseREPL `withInfo` "read > eval > print > loop")
 
 parseTransform :: Parser Command
 parseTransform = parseCommand

@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: bdb0a2cc7fa8e63469799c66c59122247770213128779b0a8bb7444acb7a9c6b
+-- hash: 882f9e4f6a159dbb6bc678c79c0fe26ac86595d7c508905cf27f82355b2844ab
 
 name:           madlib
 version:        0.0.6
@@ -30,7 +30,8 @@ library
       AST.Canonical
       AST.Solved
       AST.Source
-      Compile
+      Compile.Core
+      Compile.Runner
       Coverage.Coverable
       Error.Error
       Explain.Format
@@ -53,6 +54,7 @@ library
       Parse.Lexer
       Tools.CommandLine
       Tools.CommandLineFlags
+      Tools.REPL
       Utils.Path
       Utils.PathUtils
       Utils.Tuple
@@ -92,7 +94,8 @@ executable madlib
       AST.Canonical
       AST.Solved
       AST.Source
-      Compile
+      Compile.Core
+      Compile.Runner
       Coverage.Coverable
       Error.Error
       Explain.Format
@@ -114,6 +117,7 @@ executable madlib
       Parse.Lexer
       Tools.CommandLine
       Tools.CommandLineFlags
+      Tools.REPL
       Utils.Path
       Utils.PathUtils
       Utils.Tuple

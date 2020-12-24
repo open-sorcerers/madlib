@@ -20,9 +20,11 @@ import           Infer.Infer
 import           Options.Applicative
 import           Tools.CommandLineFlags
 import           Tools.CommandLine
-import           Compile
+import           Compile.Core
+import           Compile.Runner
 import qualified AST.Solved                    as Slv
 import qualified Explain.Format                as Explain
+import qualified Tools.REPL                    as REPL
 import           Control.Monad                  ( when )
 import           System.Process
 import           Control.Exception              ( try
@@ -67,11 +69,8 @@ run cmd = do
     Test entrypoint coverage -> runTests entrypoint coverage
 
     Install                  -> runPackageInstaller
+    ReadEvalPrintLoop        -> REPL.readEvaluatePrintLoop
 
-shouldBeCovered :: FilePath -> FilePath -> Bool
-shouldBeCovered rootPath path
-  | rootPath `isPrefixOf` path && not ("Spec" `isInfixOf` path) = True
-  | otherwise = False
 
 runCoverageInitialization :: FilePath -> Slv.Table -> IO ()
 runCoverageInitialization rootPath table = do
@@ -84,36 +83,6 @@ runCoverageInitialization rootPath table = do
   createDirectoryIfMissing True ".coverage"
   writeFile ".coverage/lcov.info" lcovInfoContent
 
-generateLCovInfoForAST :: FilePath -> [Coverable] -> String
-generateLCovInfoForAST astPath coverables =
-  let
-    functions = filter isFunction coverables
-    lines     = filter isLine coverables
-    tn        = "TN:"
-    sf        = "SF:" <> astPath
-    -- sf          = "SF:" <> makeRelativeEx "/Users/a.boeglin/Code/madlib" astPath
-    fns =
-      rstrip
-        $   unlines
-        $   (\Function { line, name } -> "FN:" <> show line <> "," <> name)
-        <$> functions
-    fndas =
-      rstrip
-        $   unlines
-        $   (\Function { line, name } -> "FNDA:0" <> "," <> name)
-        <$> functions
-    fnf = "FNF:" <> show (length functions)
-    fnh = "FNH:0"
-    das =
-      rstrip
-        $   unlines
-        $   (\Line { line } -> "DA:" <> show line <> ",0")
-        <$> lines
-    lf          = "LF:" <> show (length lines)
-    lh          = "LH:0"
-    endOfRecord = "end_of_record"
-  in
-    rstrip $ unlines [tn, sf, fns, fndas, fnf, fnh, das, lf, lh, endOfRecord]
 
 runPackageInstaller :: IO ()
 runPackageInstaller = do
@@ -144,127 +113,4 @@ runTests entrypoint coverage = do
   case (testOutput :: Either IOError ()) of
     Left  e -> putStrLn $ ppShow e
     Right a -> return ()
-
-runCompilation :: String -> String -> Bool -> Bool -> Bool -> Bool -> IO ()
-runCompilation entrypoint outputPath verbose debug bundle coverage = do
-  canonicalEntrypoint <- canonicalizePath entrypoint
-  astTable            <- buildASTTable canonicalEntrypoint
-
-  rootPath            <- canonicalizePath $ computeRootPath entrypoint
-
-  let entryAST         = astTable >>= flip findAST canonicalEntrypoint
-      resolvedASTTable = case (entryAST, astTable) of
-        (Right ast, Right table) ->
-          runExcept (runStateT (solveTable table ast) Unique { count = 0 })
-        (_     , Left e) -> Left e
-        (Left e, _     ) -> Left e
-
-  when verbose $ do
-    putStrLn $ "OUTPUT: " ++ outputPath
-    putStrLn $ "ENTRYPOINT: " ++ canonicalEntrypoint
-    putStrLn $ "ROOT PATH: " ++ rootPath
-  when debug $ do
-    putStrLn $ "PARSED:\n" ++ ppShow astTable
-    putStrLn $ "RESOLVED:\n" ++ ppShow resolvedASTTable
-
-  case resolvedASTTable of
-    Left err -> do
-      hPutStrLn stderr $ ppShow err
-      Explain.format readFile err >>= putStrLn >> exitFailure
-    Right (table, _) -> do
-      when coverage $ do
-        runCoverageInitialization rootPath table
-
-      generate rootPath outputPath bundle coverage table
-
-      when bundle $ do
-        let entrypointOutputPath = computeTargetPath
-              (takeDirectory outputPath <> "/.bundle")
-              rootPath
-              canonicalEntrypoint
-
-        bundled <- runBundle outputPath entrypointOutputPath
-        case bundled of
-          Left  e             -> putStrLn e
-          Right bundleContent -> do
-            _ <- readProcessWithExitCode
-              "rm"
-              ["-r", takeDirectory outputPath <> "/.bundle"]
-              ""
-            writeFile outputPath bundleContent
-
-      when debug $ do
-        putStrLn "compiled JS:"
-        putStrLn
-          $   concat
-          $   compile
-                (CompilationConfig canonicalEntrypoint rootPath outputPath False)
-          <$> M.elems table
-
-
-rollupNotFoundMessage = unlines
-  [ "Compilation error:"
-  , "Rollup was not found."
-  , "You must have rollup installed in order to use the bundling option. Please visit this page in order to install it: https://rollupjs.org/guide/en/#installation"
-  ]
-
-runBundle :: FilePath -> FilePath -> IO (Either String String)
-runBundle dest entrypointCompiledPath = do
-  rollupPath        <- try $ getEnv "ROLLUP_PATH"
-  rollupPathChecked <- case (rollupPath :: Either IOError String) of
-    Left _ -> do
-      r <-
-        try (readProcessWithExitCode "rollup" ["--version"] "") :: IO
-          (Either SomeException (ExitCode, String, String))
-      case r of
-        Left  _ -> return $ Left rollupNotFoundMessage
-        Right _ -> return $ Right "rollup"
-    Right p -> do
-      r <-
-        try (readProcessWithExitCode p ["--version"] "") :: IO
-          (Either SomeException (ExitCode, String, String))
-      case r of
-        Left _ -> do
-          r <-
-            try (readProcessWithExitCode "rollup" ["--version"] "") :: IO
-              (Either SomeException (ExitCode, String, String))
-          case r of
-            Left  _ -> return $ Left rollupNotFoundMessage
-            Right _ -> return $ Right "rollup"
-        Right _ -> return $ Right p
-
-
-  case rollupPathChecked of
-    Right rollup -> do
-      (_, stdout, _) <- readProcessWithExitCode
-        rollup
-        [entrypointCompiledPath, "--format", "umd"]
-        ""
-      return $ Right stdout
-    Left e -> return $ Left e
-
-
-generate :: FilePath -> FilePath -> Bool -> Bool -> Slv.Table -> IO ()
-generate rootPath outputPath bundle coverage table =
-  (head <$>)
-    <$> mapM (generateAST rootPath outputPath bundle coverage)
-    $   M.elems table
-
-
-generateAST :: FilePath -> FilePath -> Bool -> Bool -> Slv.AST -> IO ()
-generateAST rootPath outputPath bundle coverage ast@Slv.AST { Slv.apath = Just path }
-  = do
-    let computedOutputPath = if bundle
-          then computeTargetPath (takeDirectory outputPath <> "/.bundle")
-                                 rootPath
-                                 path
-          else computeTargetPath (takeDirectory outputPath) rootPath path
-
-    createDirectoryIfMissing True $ takeDirectory computedOutputPath
-    writeFile computedOutputPath $ compile
-      (CompilationConfig rootPath path computedOutputPath coverage)
-      ast
-
-
-
 
