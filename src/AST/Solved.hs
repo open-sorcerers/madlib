@@ -19,6 +19,7 @@ data AST =
     { aimports    :: [Import]
     , aexps       :: [Exp]
     , atypedecls  :: [TypeDecl]
+    , ainterfaces :: [Interface]
     , ainstances  :: [Instance]
     , apath       :: Maybe FilePath
     }
@@ -28,6 +29,8 @@ data Import
   = NamedImport [Name] FilePath FilePath
   | DefaultImport Name FilePath FilePath
   deriving(Eq, Show)
+
+data Interface = Interface Name Name (M.Map Name Typing) deriving(Eq, Show)
 
 data Instance = Instance Name Typing (M.Map Name Exp) deriving(Eq, Show)
 

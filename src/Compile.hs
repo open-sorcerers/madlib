@@ -5,7 +5,7 @@ module Compile where
 
 import qualified Data.Map                      as M
 import           Data.Maybe                     ( fromMaybe )
-import           Data.List                      ( sort
+import           Data.List                      (isInfixOf,  sort
                                                 , find
                                                 , intercalate
                                                 )
@@ -222,15 +222,20 @@ instance Compilable Exp where
             in  hpWrapLine coverage astPath (getStartLine abs) next
 
           buildAbs :: CompilationConfig -> Exp -> Exp -> String
-          buildAbs config abs arg = case methodClass (trace ("ABS: "<>ppShow abs) abs) of
+          buildAbs config abs arg = case methodClass abs of
             Nothing -> compile config abs
-            Just n  -> n <> showArgType arg <> "." <> compile config abs
+            Just n  -> n <> "[" <> showArgType arg <> "]" <> "." <> compile config abs
 
           showArgType :: Exp -> String
           showArgType exp = case exp of
             Solved t _ _ -> case t of
-              TCon CNum    -> "Number"
-              TCon CString -> "String"
+              TCon CNum    -> "'Number'"
+              TCon CString -> "'String'"
+              TComp _ n _ -> if "." `isInfixOf` n
+                then "'" <> (tail $ dropWhile (/= '.') n) <> "'"
+                else "'" <> n <> "'"
+              TVar _ _ -> "getMadlibType(" <> compile config exp <> ")"
+              _ -> ppShow t
 
           methodClass :: Exp -> Maybe String
           methodClass exp = case exp of
@@ -618,12 +623,15 @@ buildImportPath config absPath =
 updateASTPath :: FilePath -> CompilationConfig -> CompilationConfig
 updateASTPath astPath config = config { ccastPath = astPath }
 
+instance Compilable Slv.Interface where
+  compile _ interface = case interface of
+    Slv.Interface name _ _ -> "const " <> name <> " = {};\n"
+
 instance Compilable Slv.Instance where
   compile config inst = case inst of
     Slv.Instance interface ty dict ->
-      "const "
-      <> interface
-      <> typingToStr ty
+      interface
+      <> "['" <> typingToStr ty <> "']"
       <> " = {\n"
       <> intercalate ",\n" (uncurry compileMethod <$> M.toList dict)
       <> "\n};\n"
@@ -634,6 +642,9 @@ instance Compilable Slv.Instance where
 typingToStr :: Typing -> String
 typingToStr t = case t of
   TRSingle n -> n
+  TRComp n _ -> if "." `isInfixOf` n
+    then tail $ dropWhile (/= '.') n
+    else n
 
 instance Compilable AST where
   compile config ast =
@@ -643,6 +654,7 @@ instance Compilable AST where
       typeDecls         = atypedecls ast
       path              = apath ast
       imports           = aimports ast
+      interfaces        = ainterfaces ast
       instances         = ainstances ast
 
 
@@ -651,10 +663,13 @@ instance Compilable AST where
       configWithASTPath = updateASTPath astPath config
 
       infoComment       = "// file: " <> astPath <> "\n"
-      helpers           = curryPowder <> "\n" <> eq <> if coverage
+      helpers           = curryPowder <> "\n" <> eq <> getMadlibType <> if coverage
         then "\n" <> hpFnWrap <> "\n" <> hpLineWrap
         else ""
 
+      compiledInterfaces = case interfaces of
+        [] -> ""
+        x -> foldr1 (<>) (compile configWithASTPath <$> x)
       compiledInstances = case instances of
         [] -> ""
         x -> foldr1 (<>) (compile configWithASTPath <$> x)
@@ -674,6 +689,7 @@ instance Compilable AST where
       infoComment
       <> compiledImports
       <> helpers
+      <> compiledInterfaces
       <> compiledInstances
       <> compiledAdts
       <> compiledExps
@@ -779,4 +795,16 @@ eq = unlines
   , "  }"
   , "  return l === r;"
   , "}"
+  ]
+
+getMadlibType :: String
+getMadlibType = unlines
+  [ "const getMadlibType = (value) => {"
+  , "  if (typeof value === 'string') {"
+  , "    return 'String';"
+  , "  }"
+  , "  else {"
+  , "    return '__UNKNOWN__';"
+  , "  }"
+  , "};"
   ]

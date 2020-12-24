@@ -26,22 +26,25 @@ typingToType env (Meta _ _ (Src.TRSingle t))
     case h of
       (TComp astPath realName _) -> return $ TComp astPath realName []
 
-      -- TODO: need to apply params to the type
       (TAlias _ _ _ t          ) -> return t
 
 
 typingToType env (Meta _ _ (Src.TRComp t ts)) = do
   -- fetch ADT from env, and verify that the args applied match it or ERR
-  h <- lookupADT env t
+  params <- mapM (typingToType env) ts
+  h <- if (isLower . head) t
+    -- then return $ TComp (envcurrentpath env) t []
+    then return $ TGenComp t [] params
+    else lookupADT env t
   case h of
     (TComp astPath realName _) -> do
-      params <- mapM (typingToType env) ts
       return $ TComp astPath realName params
 
     (TAlias _ _ vars t) -> do
-      params <- mapM (typingToType env) ts
       let subst = M.fromList $ zip vars params
       return $ apply env subst t
+
+    _ -> return h
 
 typingToType env (Meta _ _ (Src.TRArr l r)) = do
   l' <- typingToType env l

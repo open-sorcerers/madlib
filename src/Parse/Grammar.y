@@ -122,6 +122,7 @@ methodDefs :: { M.Map Src.Name Src.Typing }
 
 instance :: { Src.Instance }
   : 'instance' name name '{' rets methodImpls rets '}' { Src.Instance (strV $2) (Meta emptyInfos (tokenToArea $3) (Src.TRSingle $ strV $3)) $6 }
+  | 'instance' name name '.' name '{' rets methodImpls rets '}' { Src.Instance (strV $2) (Meta emptyInfos (tokenToArea $3) (Src.TRComp (strV $3<>"."<>strV $5) [])) $8 }
 
 methodImpls :: { M.Map Src.Name Src.Exp }
   : name '=' exp { M.fromList [(strV $1, $3)] }

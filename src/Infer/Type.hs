@@ -12,7 +12,7 @@ type Imports = M.Map String Type
 
 -- Instance:
 --   Type:           type the instance handles
---   String:         The class it instantiates
+--   String:         The interface it instantiates
 --   Map String Exp: The dictionary of exps from the instance
 --   [String]:       The constraints on the instance ? Not clear yet.
 data Instance = Instance Type String (M.Map String Exp) [String] deriving(Eq, Show)
@@ -43,6 +43,9 @@ data Type
   | TCon TCon                   -- Constant type
   | TArr Type Type              -- Arrow type
   | TComp FilePath String [Type]         -- Composite type
+  -- generic composite type, mainly a constrained for that allows lower cased composites types
+  -- Like in: Monad m => m a -> b -> m b
+  | TGenComp String [String] [Type]
   | TRecord (M.Map String Type) Bool -- Record type: Bool means open or closed
   | TAlias FilePath String [TVar] Type -- Aliases, filepath of definition module, name, params, type it aliases
   | TTuple [Type]

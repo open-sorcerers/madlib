@@ -43,14 +43,16 @@ extendVars env (x, s) = env { envvars = M.insert x s $ envvars env }
 lookupInstance :: Env -> String -> Type -> Maybe Ty.Instance
 lookupInstance env interface ty =
   let instances = envinstances env
-  in  find (\(Ty.Instance ty' interface' _ _) -> ty' == ty && interface == interface') instances
+  in  find (\(Ty.Instance ty' interface' _ _) -> ty' `typeEq` ty && interface == interface') instances
 
-lookupInstanceMethod :: Env -> String -> Infer Src.Exp
-lookupInstanceMethod env name = do
-  let inst = find (\case Ty.Instance _ _ dict _ -> case dict M.!? name of
-                          Just _ -> True
-                          Nothing -> False
-        ) (envinstances env)
+typeEq :: Type -> Type -> Bool
+typeEq t1 t2 = case (t1, t2) of
+  (TComp p n _, TComp p' n' _) -> p == p' && n == n'
+  _ -> t1 == t2
+
+lookupInstanceMethod :: Env -> Type -> String -> String -> Infer Src.Exp
+lookupInstanceMethod env instanceType interface name = do
+  let inst = find (\case Ty.Instance t interface' _ _ -> interface == interface' && t `typeEq` (trace ("INST-TYPE: "<>ppShow instanceType<>"\nINT-NAME: "<>ppShow interface<>"\nMETHOD: "<>ppShow name) instanceType)) (envinstances env)
   case inst of
     Nothing -> throwError $ InferError (UnboundVariable name) NoReason
     Just (Ty.Instance _ _ dict _) -> return $ fromMaybe undefined $ M.lookup name dict
@@ -130,6 +132,10 @@ addConstraints :: String -> String -> Type -> Type
 addConstraints interfaceName var t = case t of
   TVar _ (TV n) -> if n == var then TVar [interfaceName] (TV n) else t
   TArr l r -> TArr (addConstraints interfaceName var l) (addConstraints interfaceName var r)
+  TGenComp name _ args ->
+    if name == var
+      then TGenComp name [interfaceName] (addConstraints interfaceName var <$> args)
+      else TGenComp name [] (addConstraints interfaceName var <$> args)
   _ -> t
 
 getInterfaceMethods :: Ty.Interface -> M.Map String Scheme
@@ -146,7 +152,7 @@ buildInitialEnv priorEnv AST { atypedecls, ainterfaces, ainstances, apath = Just
   interfaces <- solveInterfaces priorEnv ainterfaces
   instances  <- solveInstances priorEnv ainstances
   let allVars = M.union (M.union (envvars initialEnv) vars) (getInterfacesMethods interfaces)
-  return Env { envvars        = (trace (ppShow instances) allVars)
+  return Env { envvars        = (trace ("INSTANCES: "<>ppShow instances<>"\nINTERFACES: "<>ppShow interfaces) allVars)
              , envtypes       = M.union (envtypes initialEnv) tadts
              , envimports     = M.empty
              , envinterfaces  = interfaces

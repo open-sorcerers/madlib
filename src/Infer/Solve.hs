@@ -27,6 +27,8 @@ import           Explain.Location
 import           Utils.Tuple
 import           Data.List                      ( find )
 import           Data.Maybe                     ( fromMaybe )
+import Debug.Trace (trace)
+import Text.Show.Pretty (ppShow)
 
 
 infer :: Env -> Src.Exp -> Infer (Substitution, Type, Slv.Exp)
@@ -124,11 +126,6 @@ inferVar env exp =
 
           return (s, t, Slv.Solved t area $ Slv.Var n)
 
--- checkMethod :: Env -> String -> InferError -> Infer (Substitution, Type)
--- checkMethod env n _ = do
---   method <- lookupInstanceMethod env n
---   (s, t, e) <- infer env method
---   return (s, t)
 
 enhanceVarError
   :: Env -> Src.Exp -> Area -> InferError -> Infer (Substitution, Type)
@@ -174,21 +171,48 @@ inferApp env (Meta _ area (Src.App abs arg final)) = do
   (s1, t1, eabs) <- infer env abs
   (s2, t2, earg) <- infer (apply env (removeRecordTypes s1) env) arg
 
-  s3             <- case unify env (apply env s2 t1) (TArr t2 tv) of
+              -- MOVE THIS TO APP, WHERE WE MIGHT KNOW THE TYPE OF THE APPLIED VALUE
+  let cs = constraints t1
+  let fName = case abs of
+          Meta _ _ (Src.Var n) -> n
+          _                    -> ""
+
+  t1' <- if null cs
+    then return t1
+    else do
+      -- Check type of t2, if it's a var we shouldn't lookup the method but just return t1 instead.
+      method <- catchError (lookupInstanceMethod (trace ("ENV: "<>ppShow env<>"\nCS: "<>ppShow cs) env) t2 (head cs) fName) (\_ -> return abs)
+      (ss,tt,_) <- infer env method
+      return (trace ("T1: " <> ppShow t1 <> "\nT2: " <>ppShow t2<>"\nARG: "<>ppShow arg<> "\nSS: "<>ppShow ss<>"\nTT: "<>ppShow tt<>"\nFNAME: "<>ppShow fName) tt)
+
+
+
+  s3             <- case unify env (apply env s2 t1') (TArr t2 tv) of
     Right s -> return s
     Left  e -> throwError $ InferError e $ Reason (WrongTypeApplied abs arg)
                                                   (envcurrentpath env)
                                                   (getArea arg)
   let t = apply env s3 tv
+
   let solved =
         Slv.Solved t area $ Slv.App eabs (updateType earg $ apply env s3 t2) final
 
-  return ( -- s3 `compose` s2 `compose` s1
-           compose env s3 (compose env s2 s1)
+  return ( compose env s3 (compose env s2 s1)
          , t
          , solved
          )
 
+
+constraints :: Type -> [String]
+constraints t = case t of
+  TVar cts _ -> cts
+  TArr l r -> constraints l <> constraints r
+  TGenComp _ cts vars -> cts <> concat (constraints <$> vars)
+  _ -> []
+
+-- convertGenComp :: Type -> Type -> Type
+-- convertGenComp comp genComp = case comp of
+--   TComp path name vars -> 
 
 
 -- INFER ASSIGNMENT
@@ -420,11 +444,18 @@ inferWhere env whereExp@(Meta _ loc (Src.Where exp iss)) = do
 
   let (TArr _ whereType) = (apply env s . head) issTypes
 
+  -- let finalSubst = foldr1 (compose env) $ beg <$> inferredIss
+  
+  -- This breaks build script and most likely patterns in general, needs to be fixed properly
+  let finalSubst = compose env issSubstitution (compose env s (compose env issSubstitution se))
+
+  -- let finalSubst = compose env issSubstitution (compose env s se)
+
   return
-    ( compose env s se
-    , apply env se whereType
-    , Slv.Solved whereType loc
-      $ Slv.Where (updateType ee (apply env s te)) updatedIss
+    ( finalSubst
+    , apply env s whereType
+    , Slv.Solved (apply env finalSubst whereType) loc
+      $ Slv.Where (updateType ee (apply env finalSubst te)) updatedIss
     )
 
  where
@@ -450,8 +481,8 @@ inferWhere env whereExp@(Meta _ loc (Src.Where exp iss)) = do
 
     return
       ( sf
-      , tarr
-      , Slv.Solved tarr area
+      , apply env sf tarr
+      , Slv.Solved (apply env sf tarr) area
         $ Slv.Is (updatePattern pattern) (updateType ee $ apply env sf te)
       )
 
@@ -880,15 +911,21 @@ mergeTypeDecl namespace absPath adts key = case M.lookup key adts of
   _ -> key
 
 
+updateInterface :: Src.Interface -> Slv.Interface
+updateInterface (Src.Interface name var methods) = Slv.Interface name var (updateTyping <$> methods)
+
 inferAST :: Env -> Src.AST -> Infer Slv.AST
-inferAST env Src.AST { Src.aexps, Src.apath, Src.aimports, Src.atypedecls, Src.ainstances } =
+inferAST env Src.AST { Src.aexps, Src.apath, Src.aimports, Src.atypedecls, Src.ainstances, Src.ainterfaces } =
   do
     inferredExps <- inferExps env aexps
     inferredInstances <- mapM (resolveInstance env) ainstances
+    let updatedInterfaces = updateInterface <$> ainterfaces
+
     return Slv.AST { Slv.aexps      = inferredExps
                    , Slv.apath      = apath
                    , Slv.atypedecls = updateADT <$> atypedecls
                    , Slv.aimports   = updateImport <$> aimports
+                   , Slv.ainterfaces = updatedInterfaces
                    , Slv.ainstances = inferredInstances
                    }
 
