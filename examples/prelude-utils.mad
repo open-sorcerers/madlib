@@ -11,6 +11,8 @@ import T from 'Tuple'
 import S from 'String'
 import P from 'Map'
 
+IO.trace("MAYBE WHAT?", M)
+
 // 🔧 utils
 
 j2 :: x -> String
@@ -126,6 +128,13 @@ ctx = {
   customers: customers,
   sales: []
 }
+
+// pipe(
+// (where
+//   is M.Just x  : x
+//   is M.Nothing : "nah"
+// )
+// )(M.Just('shit'))
 
 grabValuesOffCrap = (x) => (#- x && x.__args && x.__args[0] -#)
 

@@ -11,4 +11,5 @@ data Command
       }
   | Test { testInput :: FilePath, coverage :: Bool }
   | Install
+  | ReadEvalPrintLoop
   deriving (Eq, Show)
