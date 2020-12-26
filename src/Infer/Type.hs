@@ -4,6 +4,8 @@ module Infer.Type where
 
 import qualified Data.Map                      as M
 import AST.Source (Exp)
+import Text.Show.Pretty (ppShow)
+import Debug.Trace (trace)
 
 
 type Vars = M.Map String Scheme

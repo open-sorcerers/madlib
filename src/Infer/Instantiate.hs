@@ -9,6 +9,8 @@ import           Control.Monad
 import           Control.Monad.State
 import           Infer.Substitute
 import           Infer.Infer
+import Debug.Trace (trace)
+import Text.Show.Pretty (ppShow)
 
 
 letters :: [String]
@@ -19,7 +21,7 @@ newTVar :: Kind -> Infer Type
 newTVar k = do
   s <- get
   put s { count = count s + 1 }
-  return $ TVar $ TV (letters !! count s) k
+  return $ TVar $ TV (letters !! (trace ("COUNT: "<>ppShow s) count) s) k
 
 
 instantiate :: Scheme -> Infer (Qual Type)
@@ -31,7 +33,7 @@ class Instantiate t where
   inst  :: [Type] -> t -> t
 instance Instantiate Type where
   inst ts (TApp l r) = TApp (inst ts l) (inst ts r)
-  -- inst ts (TGen n)  = ts !! n
+  inst ts (TGen n)  = (trace ("GEN: "<> show n<>"\nTYPES: "<>ppShow ts) ts) !! n
   inst _ t           = t
 instance Instantiate a => Instantiate [a] where
   inst ts = map (inst ts)

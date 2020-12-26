@@ -12,6 +12,15 @@ class Substitutable a where
   apply :: Env -> Substitution -> a -> a
   ftv   :: a -> S.Set TVar
 
+
+instance Substitutable Pred where
+  apply env s (IsIn i ts) = IsIn i (apply env s ts)
+  ftv (IsIn i ts)      = ftv ts
+
+instance Substitutable t => Substitutable (Qual t) where
+  apply env s (ps :=> t) = apply env s ps :=> apply env s t
+  ftv (ps :=> t)      = ftv ps `S.union` ftv t
+
 instance Substitutable Type where
   apply env _ (  TCon a             ) = TCon a
   apply env s t@(TVar a ) = M.findWithDefault t a s
@@ -19,6 +28,7 @@ instance Substitutable Type where
   apply env s (  TComp src main vars) = TComp src main (apply env s <$> vars)
   apply env s (  TRecord fields open) = TRecord (apply env s <$> fields) open
   apply env s (  TTuple elems       ) = TTuple (apply env s <$> elems)
+  apply env s t                       = t
 
   ftv TCon{}              = S.empty
   ftv (TVar a        )    = S.singleton a
@@ -26,6 +36,7 @@ instance Substitutable Type where
   ftv (TComp _ _ vars  )  = foldl' (\s v -> S.union s $ ftv v) S.empty vars
   ftv (TRecord fields _)  = foldl' (\s v -> S.union s $ ftv v) S.empty fields
   ftv (TTuple elems    )  = foldl' (\s v -> S.union s $ ftv v) S.empty elems
+  ftv t                   = S.fromList []
 
 -- instance Substitutable Scheme where
 --   apply env s (Forall as t) = Forall as $ apply env s' t

@@ -14,6 +14,9 @@ import           Error.Error
 import           Explain.Reason
 import           Explain.Meta
 import           Infer.Instantiate              ( newTVar )
+import Data.Maybe (fromMaybe)
+import Text.Show.Pretty (ppShow)
+import Debug.Trace (trace)
 
 
 buildTypeDecls :: Env -> FilePath -> [TypeDecl] -> Infer TypeDecls
@@ -74,54 +77,65 @@ resolveADTConstructor
   :: Env -> FilePath -> TypeDecls -> Name -> [Name] -> Constructor -> Infer Vars
 resolveADTConstructor priorEnv astPath typeDecls n params (Constructor cname cparams)
   = do
-    let t = buildADTConstructorReturnType astPath n params
-    t' <- mapM (argToType priorEnv typeDecls n params) cparams
-    let ctype = foldr1 TApp (t' <> [t])
-    return $ M.fromList [(cname, Forall (const Star <$> params) ([] :=> ctype))]
+    -- return $ M.fromList [("Just", Forall [Star] ([] :=> (TGen 0 `fn` (TApp (TCon (TC "Maybe" (Kfun Star Star))) (TGen 0)))))]
+    let gens = zip params (map TGen [0..])
+    let rt = foldl TApp (TCon $ TC n (buildKind $ length params)) $ snd <$> gens
+    t' <- mapM (argToType priorEnv gens typeDecls n params) cparams
+    let ctype = foldr1 fn (t' <> [rt])
+    return $ M.fromList [(cname, Forall (Star <$ params) ([] :=> (trace ("CTYPE: "<>ppShow ctype<>"\nKINDS: "<>ppShow (Star <$ cparams)) ctype)))]
 
-buildADTConstructorReturnType :: FilePath -> Name -> [Name] -> Type
-buildADTConstructorReturnType astPath tname tparams =
-  TComp astPath tname $ TVar . (`TV` Star) <$> tparams
+    -- let t = buildADTConstructorReturnType astPath n params
+    -- t' <- mapM (argToType priorEnv typeDecls n params) cparams
+    -- let ctype = foldr1 fn (t' <> [t])
+    -- return $ M.fromList [(cname, Forall (const Star <$> params) ([] :=> ctype))]
 
+-- buildADTConstructorReturnType :: FilePath -> Name -> [Name] -> Type
+-- buildADTConstructorReturnType astPath tname tparams =
+--   TApp (TCon (TC tname Star)) ()
+--   -- TComp astPath tname $ TVar . (`TV` Star) <$> tparams
+
+buildKind :: Int -> Kind
+buildKind n | n > 0  = Kfun Star $ buildKind (n - 1)
+            | n == 0 = Star
 
 -- TODO: This should probably be merged with typingToType somehow
-argToType :: Env -> TypeDecls -> Name -> [Name] -> Typing -> Infer Type
-argToType _ typeDecls _ params (Meta _ _ (TRSingle n))
+argToType :: Env -> [(Name, Type)] -> TypeDecls -> Name -> [Name] -> Typing -> Infer Type
+argToType _ gens typeDecls _ params (Meta _ _ (TRSingle n))
   | n == "Number" = return tNumber
   | n == "Boolean" = return tBool
   | n == "String" = return tStr
-  | isLower (head n) && (n `elem` params) = return $ TVar $ TV n Star
-  | isLower (head n) = newTVar Star
+  -- | isLower (head n) && (n `elem` params) = return $ TVar $ TV n Star
+  | isLower (head n) = return $ fromMaybe (TGen 0) (M.lookup n (M.fromList gens))
   | -- A free var that is not in type params
     otherwise = case M.lookup n typeDecls of
     Just a  -> return a
     Nothing -> throwError $ InferError (UnknownType n) NoReason
 
-argToType priorEnv typeDecls name params (Meta _ _ (TRComp tname targs)) =
+argToType priorEnv gens typeDecls name params (Meta _ _ (TRComp tname targs)) =
   case M.lookup tname typeDecls of
   -- TODO: Verify the length of tparams and make sure it matches the one of targs ! otherwise
   -- we have a type application error.
     Just (TComp fp n _) ->
-      TComp fp n <$> mapM (argToType priorEnv typeDecls name params) targs
+      TComp fp n <$> mapM (argToType priorEnv gens typeDecls name params) targs
     Nothing -> if tname == "List"
       then
         TComp "Prelude" tname
-          <$> mapM (argToType priorEnv typeDecls name params) targs
+          <$> mapM (argToType priorEnv gens typeDecls name params) targs
       else case M.lookup tname (envtypes priorEnv) of
         Just (TComp path tname _) ->
           TComp path tname
-            <$> mapM (argToType priorEnv typeDecls name params) targs
+            <$> mapM (argToType priorEnv gens typeDecls name params) targs
         Nothing -> throwError $ InferError (UnknownType tname) NoReason
 
-argToType priorEnv typeDecls name params (Meta _ _ (TRArr l r)) = do
-  l' <- argToType priorEnv typeDecls name params l
-  r' <- argToType priorEnv typeDecls name params r
+argToType priorEnv gens typeDecls name params (Meta _ _ (TRArr l r)) = do
+  l' <- argToType priorEnv gens typeDecls name params l
+  r' <- argToType priorEnv gens typeDecls name params r
   return $ TApp l' r'
 
-argToType priorEnv typeDecls name params (Meta _ _ (TRRecord f)) = do
-  f' <- mapM (argToType priorEnv typeDecls name params) f
+argToType priorEnv gens typeDecls name params (Meta _ _ (TRRecord f)) = do
+  f' <- mapM (argToType priorEnv gens typeDecls name params) f
   return $ TRecord f' False
 
-argToType priorEnv typeDecls name params (Meta _ _ (TRTuple elems)) = do
-  elems' <- mapM (argToType priorEnv typeDecls name params) elems
+argToType priorEnv gens typeDecls name params (Meta _ _ (TRTuple elems)) = do
+  elems' <- mapM (argToType priorEnv gens typeDecls name params) elems
   return $ TTuple elems'

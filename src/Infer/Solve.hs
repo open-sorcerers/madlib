@@ -29,6 +29,7 @@ import           Data.List                      ( find )
 import           Data.Maybe                     ( fromMaybe )
 import Debug.Trace (trace)
 import Text.Show.Pretty (ppShow)
+import Infer.Scheme (toScheme)
 
 
 infer :: Env -> Src.Exp -> Infer (Substitution, Type, Slv.Exp)
@@ -44,7 +45,7 @@ infer env lexp =
         Src.Abs _ _            -> inferAbs env lexp
         Src.App _ _ _          -> inferApp env lexp
         Src.Assignment _ _     -> inferAssignment env lexp
-        -- Src.Where      _ _     -> inferWhere env lexp
+        Src.Where      _ _     -> inferWhere env lexp
         -- Src.Record _           -> inferRecord env lexp
         -- Src.FieldAccess _ _    -> inferFieldAccess env lexp
         -- Src.TypedExp    _ _    -> inferTypedExp env lexp
@@ -408,6 +409,66 @@ inferExport env (Meta _ area (Src.Export exp)) = do
 
 
 -- INFER WHERE
+
+inferPatterns     :: Env -> [Src.Pattern] -> Infer ([Pred], Vars, [Type])
+inferPatterns env pats = do
+  psasts <- mapM (inferPattern env) pats
+  let ps = concat [ ps' | (ps',_,_) <- psasts ]
+      as = foldr M.union M.empty [ vars | (_,vars,_) <- psasts ]
+      ts = [ t | (_,_,t) <- psasts ]
+  return (ps, as, ts)
+
+inferPattern :: Env -> Src.Pattern -> Infer ([Pred], Vars, Type)
+inferPattern env (Meta _ _ pat) = case pat of
+  Src.PVar i -> do
+    v <- newTVar Star
+    return ([], M.singleton i (toScheme v), v)
+
+  Src.PNum n -> do
+    return ([], M.empty, tNumber)
+
+  Src.PCtor n pats -> do
+    (ps, vars, ts) <- inferPatterns env pats
+    tv <- newTVar Star
+    sc <- lookupVar env n
+    (ps' :=> t) <- instantiate sc
+    s <- case unify env t (foldr fn tv ts) of
+      Right r -> return r
+
+    return (ps<>ps', vars, apply env s tv)
+
+  
+-- tiPat (PCon (i:>:sc) pats) = do (ps,as,ts) <- tiPats pats
+--                                 t'         <- newTVar Star
+--                                 (qs :=> t) <- freshInst sc
+--                                 unify t (foldr fn t' ts)
+--                                 return (ps++qs, as, t')
+
+inferWhere :: Env -> Src.Exp -> Infer (Substitution, Type, Slv.Exp)
+inferWhere env (Meta _ area (Src.Where exp iss)) = do
+  (s, t, e) <- infer env exp
+  tv         <- newTVar Star
+  pss <- mapM (inferBranch env tv t) iss
+  let issSubstitution = foldr1 (compose env) $ s : (beg <$> pss)
+  return (issSubstitution, apply env issSubstitution tv, Slv.Solved (apply env issSubstitution tv) area
+      $ Slv.Where (updateType e (apply env issSubstitution tv)) (lst <$> pss))
+  -- return (ps++concat pss, v)
+
+
+inferBranch :: Env -> Type -> Type -> Src.Is -> Infer (Substitution, [Pred], Slv.Is)
+inferBranch env tv t (Meta _ area (Src.Is pat exp)) = do
+  (ps, vars,t') <- inferPattern env pat
+  s <- case unify env t t' of
+    Right r -> return r
+  (s', t'', e')   <- infer (env{ envvars = envvars env <> vars}) exp
+  s'' <- case unify env tv t'' of
+    Right r -> return r
+  let subst = compose env (compose env s s') s''
+  return ( subst
+         , ps
+         , Slv.Solved (apply env subst t' `fn` apply env subst t'') area
+            $ Slv.Is (updatePattern pat) (updateType e' (apply env subst t''))
+         )-- ++qs)
 
 -- inferWhere :: Env -> Src.Exp -> Infer (Substitution, Type, Slv.Exp)
 -- inferWhere env whereExp@(Meta _ loc (Src.Where exp iss)) = do
