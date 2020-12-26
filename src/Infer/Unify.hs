@@ -1,3 +1,4 @@
+{-# LANGUAGE TupleSections #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE RankNTypes #-}
 module Infer.Unify where
@@ -12,6 +13,7 @@ import           Error.Error
 import Infer.Env (lookupInstance)
 import Debug.Trace (trace)
 import Text.Show.Pretty (ppShow)
+import Data.Char (isLower)
 
 
 occursCheck :: Substitutable a => TVar -> a -> Bool
@@ -54,6 +56,7 @@ unify env (TComp astPath main vars) (TComp astPath' main' vars')
     == astPath'
     && length vars
     == length vars'
+    || (isLower . head) main || (isLower . head) main'
   = let z = zip vars vars' in unifyVars env M.empty z
   | otherwise
   = throwError
@@ -80,6 +83,8 @@ unify env (TRecord fields open) (TRecord fields' open')
 unify env (TVar constraints tv) t               = bind env constraints tv t
 unify env t        (TVar constraints tv)        = bind env constraints tv t
 unify _ (TCon a) (TCon b) | a == b = return M.empty
+unify _ (TComp _ _ _) (TGenComp _ _ _) = return M.empty
+unify _ (TGenComp _ _ _) (TComp _ _ _) = return M.empty
 unify _ t1 t2                      = throwError $ UnificationError t1 t2
 
 
@@ -97,3 +102,9 @@ unifyElems env t (t' : xs) = do
   s1 <- unify env t t'
   s2 <- unifyElems env t xs
   return $ compose env s1 s2
+
+-- unifyOrSwap :: Env -> Type -> Type -> Either TypeError (Substitution, Maybe Type)
+-- unifyOrSwap env t1 t2 = case (t1, t2) of
+--   (t@(TComp _ _ _), TGenComp _ _ _) -> return (M.empty, Just t)
+--   (TGenComp _ _ _, t@(TComp _ _ _)) -> return (M.empty, Just t)
+--   _ -> (,Nothing) <$> unify env t1 t2

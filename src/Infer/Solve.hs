@@ -172,22 +172,22 @@ inferApp env (Meta _ area (Src.App abs arg final)) = do
   (s2, t2, earg) <- infer (apply env (removeRecordTypes s1) env) arg
 
               -- MOVE THIS TO APP, WHERE WE MIGHT KNOW THE TYPE OF THE APPLIED VALUE
-  let cs = constraints t1
-  let fName = case abs of
-          Meta _ _ (Src.Var n) -> n
-          _                    -> ""
+  -- let cs = constraints t1
+  -- let fName = case abs of
+  --         Meta _ _ (Src.Var n) -> n
+  --         _                    -> ""
 
-  t1' <- if null cs
-    then return t1
-    else do
-      -- Check type of t2, if it's a var we shouldn't lookup the method but just return t1 instead.
-      method <- catchError (lookupInstanceMethod (trace ("ENV: "<>ppShow env<>"\nCS: "<>ppShow cs) env) t2 (head cs) fName) (\_ -> return abs)
-      (ss,tt,_) <- infer env method
-      return (trace ("T1: " <> ppShow t1 <> "\nT2: " <>ppShow t2<>"\nARG: "<>ppShow arg<> "\nSS: "<>ppShow ss<>"\nTT: "<>ppShow tt<>"\nFNAME: "<>ppShow fName) tt)
+  -- t1' <- if null cs
+  --   then return t1
+  --   else do
+  --     -- Check type of t2, if it's a var we shouldn't lookup the method but just return t1 instead.
+  --     method <- catchError (lookupInstanceMethod env t2 (head cs) fName) (\_ -> return abs)
+  --     (ss,tt,_) <- infer env method
+  --     return tt
 
 
 
-  s3             <- case unify env (apply env s2 t1') (TArr t2 tv) of
+  s3             <- case unify env (apply env s2 t1) (TArr t2 tv) of
     Right s -> return s
     Left  e -> throwError $ InferError e $ Reason (WrongTypeApplied abs arg)
                                                   (envcurrentpath env)
@@ -203,12 +203,12 @@ inferApp env (Meta _ area (Src.App abs arg final)) = do
          )
 
 
-constraints :: Type -> [String]
-constraints t = case t of
-  TVar cts _ -> cts
-  TArr l r -> constraints l <> constraints r
-  TGenComp _ cts vars -> cts <> concat (constraints <$> vars)
-  _ -> []
+-- constraints :: Type -> [String]
+-- constraints t = case t of
+--   TVar cts _ -> cts
+--   TArr l r -> constraints l <> constraints r
+--   TGenComp _ cts vars -> cts <> concat (constraints <$> vars)
+--   _ -> []
 
 -- convertGenComp :: Type -> Type -> Type
 -- convertGenComp comp genComp = case comp of

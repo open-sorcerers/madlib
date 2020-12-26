@@ -21,18 +21,31 @@ instance Show M.Maybe {
 
 show(3) |> IO.log
 show("3") |> IO.log
-show(M.Just("true")) |> IO.log
+show(M.Just(true)) |> IO.log
 
-interface Functor m {
-  map :: (a -> b) -> m a -> m b
-}
+// interface Functor m {
+//   map :: (a -> b) -> m a -> m b
+// }
 
-instance Functor M.Maybe {
-  map = (f, m) => where(m)
-    is M.Just x : M.Just(f(x))
-    is M.Nothing: M.Nothing
-}
+// instance Functor M.Maybe {
+//   map = (f, m) => where(m)
+//     is M.Just x : M.Just(f(x))
+//     is M.Nothing: M.Nothing
+// }
 
-M.Just(3)
-  |> map((x) => x + 2)
-  |> IO.log
+// M.Just(3)
+//   |> map((x) => x + 2)
+//   |> IO.log
+
+// alias Functor m = { map :: (a -> b) -> m a -> m b }
+
+// funtorMaybe :: Functor M.Maybe
+// functorMaybe = {
+//   map: (f, m) => where(m)
+//     is M.Just x : M.Just(f(x))
+//     is M.Nothing: M.Nothing
+// }
+
+// fn = (fm, a, m) => fm.map((_) => a, m)
+
+// fn(functorMaybe, 3, M.Just(4)) |> functorMaybe.map(IO.log)
