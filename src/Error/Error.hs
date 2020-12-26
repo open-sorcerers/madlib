@@ -12,6 +12,7 @@ data TypeError
   = InfiniteType TVar Type
   | UnboundVariable String
   | UnificationError Type Type
+  | KindError Type Type
   | NoInstanceFound String Type
   | ADTAlreadyDefined Type
   | UnknownType String

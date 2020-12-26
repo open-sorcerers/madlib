@@ -37,10 +37,10 @@ buildTypeDecl _ astPath typeDecls adt@ADT{} =
   case M.lookup (adtname adt) typeDecls of
     Just t  -> throwError $ InferError (ADTAlreadyDefined t) NoReason
     Nothing -> return
-      (adtname adt, TComp astPath (adtname adt) (TVar [] . TV <$> adtparams adt))
+      (adtname adt, TComp astPath (adtname adt) (TVar . (`TV` Star) <$> adtparams adt))
 buildTypeDecl priorEnv astPath typeDecls alias@Alias{} = do
   let name   = aliasname alias
-  let params = TV <$> aliasparams alias
+  let params = (`TV` Star) <$> aliasparams alias
   let typing = aliastype alias
   typingType <- typingToType
     priorEnv { envtypes = M.union (envtypes priorEnv) typeDecls }
@@ -76,22 +76,22 @@ resolveADTConstructor priorEnv astPath typeDecls n params (Constructor cname cpa
   = do
     let t = buildADTConstructorReturnType astPath n params
     t' <- mapM (argToType priorEnv typeDecls n params) cparams
-    let ctype = foldr1 TArr (t' <> [t])
-    return $ M.fromList [(cname, Forall (TV <$> params) ctype)]
+    let ctype = foldr1 TApp (t' <> [t])
+    return $ M.fromList [(cname, Forall (const Star <$> params) ([] :=> ctype))]
 
 buildADTConstructorReturnType :: FilePath -> Name -> [Name] -> Type
 buildADTConstructorReturnType astPath tname tparams =
-  TComp astPath tname $ TVar [] . TV <$> tparams
+  TComp astPath tname $ TVar . (`TV` Star) <$> tparams
 
 
 -- TODO: This should probably be merged with typingToType somehow
 argToType :: Env -> TypeDecls -> Name -> [Name] -> Typing -> Infer Type
 argToType _ typeDecls _ params (Meta _ _ (TRSingle n))
-  | n == "Number" = return $ TCon CNum
-  | n == "Boolean" = return $ TCon CBool
-  | n == "String" = return $ TCon CString
-  | isLower (head n) && (n `elem` params) = return $ TVar [] $ TV n
-  | isLower (head n) = newTVar
+  | n == "Number" = return tNumber
+  | n == "Boolean" = return tBool
+  | n == "String" = return tStr
+  | isLower (head n) && (n `elem` params) = return $ TVar $ TV n Star
+  | isLower (head n) = newTVar Star
   | -- A free var that is not in type params
     otherwise = case M.lookup n typeDecls of
     Just a  -> return a
@@ -116,7 +116,7 @@ argToType priorEnv typeDecls name params (Meta _ _ (TRComp tname targs)) =
 argToType priorEnv typeDecls name params (Meta _ _ (TRArr l r)) = do
   l' <- argToType priorEnv typeDecls name params l
   r' <- argToType priorEnv typeDecls name params r
-  return $ TArr l' r'
+  return $ TApp l' r'
 
 argToType priorEnv typeDecls name params (Meta _ _ (TRRecord f)) = do
   f' <- mapM (argToType priorEnv typeDecls name params) f

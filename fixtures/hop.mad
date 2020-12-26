@@ -1,51 +1,6 @@
-import IO from "IO"
-import M from "Maybe"
+x = 2
+y = 1 + x
 
-interface Show a {
-  show :: a -> String
-}
+inc = (x) => x + 1
 
-instance Show Number {
-  show = (num) => #- "Number: " + num.toString() -#
-}
-
-instance Show String {
-  show = (s) => "String: " ++ s
-}
-
-instance Show M.Maybe {
-  show = where
-    is M.Just a : "Just " ++ show(a)
-    is M.Nothing: "Nothing"
-}
-
-show(3) |> IO.log
-show("3") |> IO.log
-show(M.Just(true)) |> IO.log
-
-// interface Functor m {
-//   map :: (a -> b) -> m a -> m b
-// }
-
-// instance Functor M.Maybe {
-//   map = (f, m) => where(m)
-//     is M.Just x : M.Just(f(x))
-//     is M.Nothing: M.Nothing
-// }
-
-// M.Just(3)
-//   |> map((x) => x + 2)
-//   |> IO.log
-
-// alias Functor m = { map :: (a -> b) -> m a -> m b }
-
-// funtorMaybe :: Functor M.Maybe
-// functorMaybe = {
-//   map: (f, m) => where(m)
-//     is M.Just x : M.Just(f(x))
-//     is M.Nothing: M.Nothing
-// }
-
-// fn = (fm, a, m) => fm.map((_) => a, m)
-
-// fn(functorMaybe, 3, M.Just(4)) |> functorMaybe.map(IO.log)
+inc("4")

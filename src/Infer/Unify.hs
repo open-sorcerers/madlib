@@ -10,7 +10,6 @@ import qualified Data.Set                      as S
 import           Infer.Type
 import           Infer.Substitute
 import           Error.Error
-import Infer.Env (lookupInstance)
 import Debug.Trace (trace)
 import Text.Show.Pretty (ppShow)
 import Data.Char (isLower)
@@ -20,27 +19,33 @@ occursCheck :: Substitutable a => TVar -> a -> Bool
 occursCheck a t = S.member a $ ftv t
 
 
-bind :: Env -> [String] -> TVar -> Type -> Either TypeError Substitution
-bind _ constraints tv t@(TVar constraints' tv') | (not . null) constraints =
-  return $ M.singleton tv' (TVar ((S.toList . S.fromList) (constraints <> constraints')) tv')
-  -- return $ M.singleton tv' (TVar ((S.toList . S.fromList) (constraints <> constraints')) tv')
-bind env constraints tv t | t == TVar [] tv  = return M.empty
-                          | occursCheck tv t = throwError $ InfiniteType tv t
-                          | otherwise        =
-  if null constraints
-    then return $ M.singleton tv t
-    else
-      let inst = lookupInstance env (head constraints) t
-      in  case inst of
-        Just _ -> return $ M.singleton tv t
-        _ -> throwError $ NoInstanceFound (head constraints) t
+varBind :: TVar -> Type -> Either TypeError Substitution
+varBind tv t | t == TVar tv     = return M.empty
+            | tv `elem` ftv t   = throwError $ InfiniteType tv t
+            | kind tv /= kind t = throwError $ KindError (TVar tv) t
+            | otherwise         = return $ M.singleton tv t
+
+-- bind :: Env -> [String] -> TVar -> Type -> Either TypeError Substitution
+-- bind _ constraints tv t@(TVar constraints' tv') | (not . null) constraints =
+--   return $ M.singleton tv' (TVar ((S.toList . S.fromList) (constraints <> constraints')) tv')
+--   -- return $ M.singleton tv' (TVar ((S.toList . S.fromList) (constraints <> constraints')) tv')
+-- bind env constraints tv t | t == TVar [] tv  = return M.empty
+--                           | occursCheck tv t = throwError $ InfiniteType tv t
+--                           | otherwise        =
+--   if null constraints
+--     then return $ M.singleton tv t
+--     else
+--       let inst = lookupInstance env (head constraints) t
+--       in  case inst of
+--         Just _ -> return $ M.singleton tv t
+--         _ -> throwError $ NoInstanceFound (head constraints) t
 
 
 cleanTCompMain :: String -> String
 cleanTCompMain = reverse . takeWhile (/= '.') . reverse
 
 unify :: Env -> Type -> Type -> Either TypeError Substitution
-unify env (l `TArr` r) (l' `TArr` r') = do
+unify env (l `TApp` r) (l' `TApp` r') = do
   s1 <- unify env l l'
   s2 <- unify env (apply env s1 r) (apply env s1 r')
   return $ compose env s1 s2
@@ -80,11 +85,9 @@ unify env (TRecord fields open) (TRecord fields' open')
         z      = zip types types'
     unifyVars env M.empty z
 
-unify env (TVar constraints tv) t               = bind env constraints tv t
-unify env t        (TVar constraints tv)        = bind env constraints tv t
+unify env (TVar tv) t               = varBind tv t
+unify env t        (TVar tv)        = varBind tv t
 unify _ (TCon a) (TCon b) | a == b = return M.empty
-unify _ (TComp _ _ _) (TGenComp _ _ _) = return M.empty
-unify _ (TGenComp _ _ _) (TComp _ _ _) = return M.empty
 unify _ t1 t2                      = throwError $ UnificationError t1 t2
 
 
@@ -103,8 +106,3 @@ unifyElems env t (t' : xs) = do
   s2 <- unifyElems env t xs
   return $ compose env s1 s2
 
--- unifyOrSwap :: Env -> Type -> Type -> Either TypeError (Substitution, Maybe Type)
--- unifyOrSwap env t1 t2 = case (t1, t2) of
---   (t@(TComp _ _ _), TGenComp _ _ _) -> return (M.empty, Just t)
---   (TGenComp _ _ _, t@(TComp _ _ _)) -> return (M.empty, Just t)
---   _ -> (,Nothing) <$> unify env t1 t2

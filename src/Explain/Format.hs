@@ -287,11 +287,9 @@ nthEnding n = case n of
 
 typeToStr :: Type -> String
 typeToStr t = case t of
-  TCon CString  -> "String"
-  TCon CNum     -> "Number"
-  TCon CBool    -> "Boolean"
-  TVar _ (TV a) -> a
-  TArr (TArr t1 t2) t2' ->
+  TCon (TC a _) -> a
+  TVar (TV a _) -> a
+  TApp (TApp t1 t2) t2' ->
     "("
       <> typeToStr t1
       <> " -> "
@@ -299,7 +297,7 @@ typeToStr t = case t of
       <> ")"
       <> " -> "
       <> typeToStr t2'
-  TArr t1 t2     -> typeToStr t1 <> " -> " <> typeToStr t2
+  TApp t1 t2     -> typeToStr t1 <> " -> " <> typeToStr t2
   TComp _ n vars -> n <> " " <> unwords (typeToStr <$> vars)
   TRecord fields _ ->
     "{ "

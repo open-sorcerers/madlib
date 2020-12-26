@@ -15,16 +15,27 @@ letters :: [String]
 letters = [1 ..] >>= flip replicateM ['a' .. 'z']
 
 
-newTVar :: Infer Type
-newTVar = do
+newTVar :: Kind -> Infer Type
+newTVar k = do
   s <- get
   put s { count = count s + 1 }
-  return $ TVar [] $ TV (letters !! count s)
+  return $ TVar $ TV (letters !! count s) k
 
 
-instantiate :: Scheme -> Infer Type
-instantiate (Forall as t) = do
-  as' <- mapM (const newTVar) as
-  let s = M.fromList $ zip as as'
-  return $ apply Env {} s t
-  -- return $ apply Env { envvars = M.empty, envtypes = M.empty, envimports = M.empty, envinterfaces = [], envinstances = [], envcurrentpath = ""} s t
+instantiate :: Scheme -> Infer (Qual Type)
+instantiate (Forall ks qt) = do
+  ts <- mapM newTVar ks
+  return (inst ts qt)
+
+class Instantiate t where
+  inst  :: [Type] -> t -> t
+instance Instantiate Type where
+  inst ts (TApp l r) = TApp (inst ts l) (inst ts r)
+  -- inst ts (TGen n)  = ts !! n
+  inst _ t           = t
+instance Instantiate a => Instantiate [a] where
+  inst ts = map (inst ts)
+instance Instantiate t => Instantiate (Qual t) where
+  inst ts (ps :=> t) = inst ts ps :=> inst ts t
+instance Instantiate Pred where
+  inst ts (IsIn c t) = IsIn c (inst ts t)

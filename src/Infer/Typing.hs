@@ -16,11 +16,11 @@ import           Infer.Substitute
 
 typingToType :: Env -> Src.Typing -> Infer Type
 typingToType env (Meta _ _ (Src.TRSingle t))
-  | t == "Number" = return $ TCon CNum
-  | t == "Boolean" = return $ TCon CBool
-  | t == "String" = return $ TCon CString
-  | t == "()" = return $ TCon CUnit
-  | isLower $ head t = return $ TVar [] $ TV t
+  | t == "Number" = return tNumber
+  | t == "Boolean" = return tBool
+  | t == "String" = return tStr
+  | t == "()" = return tUnit
+  | isLower $ head t = return (TVar $ TV t Star)
   | otherwise = do
     h <- lookupADT env t
     case h of
@@ -49,7 +49,7 @@ typingToType env (Meta _ _ (Src.TRComp t ts)) = do
 typingToType env (Meta _ _ (Src.TRArr l r)) = do
   l' <- typingToType env l
   r' <- typingToType env r
-  return $ TArr l' r'
+  return $ TApp l' r'
 
 typingToType env (Meta _ _ (Src.TRRecord fields)) = do
   fields' <- mapM (typingToType env) fields

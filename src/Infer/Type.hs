@@ -34,54 +34,91 @@ data Env
     deriving(Eq, Show)
 
 
-newtype TVar = TV String
+data TVar = TV Id Kind
   deriving (Show, Eq, Ord)
 
+data TCon = TC Id Kind
+  deriving (Show, Eq, Ord)
 
 data Type
-  = TVar [String] TVar          -- Variable type
-  | TCon TCon                   -- Constant type
-  | TArr Type Type              -- Arrow type
-  | TComp FilePath String [Type]         -- Composite type
-  -- generic composite type, mainly a constrained for that allows lower cased composites types
-  -- Like in: Monad m => m a -> b -> m b
-  | TGenComp String [String] [Type]
-  | TRecord (M.Map String Type) Bool -- Record type: Bool means open or closed
-  | TAlias FilePath String [TVar] Type -- Aliases, filepath of definition module, name, params, type it aliases
+  = TVar TVar          -- Variable type
+  | TCon TCon                   -- Constructor type
+  | TGen Int
+  | TApp Type Type              -- Arrow type
+  | TComp FilePath Id [Type]         -- Composite type
+  | TRecord (M.Map Id Type) Bool -- Record type: Bool means open or closed
+  | TAlias FilePath Id [TVar] Type -- Aliases, filepath of definition module, name, params, type it aliases
   | TTuple [Type]
   deriving (Show, Eq, Ord)
 
-
-data TCon
-  = CString
-  | CNum
-  | CBool
-  | CUnit
-  deriving (Show, Eq, Ord)
-
-number :: Type
-number = TCon CNum
-
-bool :: Type
-bool = TCon CBool
-
-str :: Type
-str = TCon CString
-
-unit :: Type
-unit = TCon CUnit
-
-infixr `TArr`
+infixr `TApp`
 
 
-data Scheme = Forall [TVar] Type
-  deriving (Show, Eq, Ord)
+tNumber :: Type
+tNumber = TCon $ TC "Number" Star
+
+tBool :: Type
+tBool = TCon $ TC "Boolean" Star
+
+tStr :: Type
+tStr = TCon $ TC "String" Star
+
+tUnit :: Type
+tUnit = TCon $ TC "()" Star
+
+tList :: Type
+tList = TCon $ TC "List" (Kfun Star Star)
+
+tArrow :: Type
+tArrow = TCon $ TC "(->)" (Kfun Star (Kfun Star Star))
+
+infixr      4 `fn`
+fn         :: Type -> Type -> Type
+a `fn` b    = TApp (TApp tArrow a) b
+
+
+
+type Id = String
+
+data Kind  = Star | Kfun Kind Kind
+             deriving (Eq, Show, Ord)
+
+data Pred   = IsIn Id [Type]
+              deriving (Eq, Show, Ord)
+
+data Qual t = [Pred] :=> t
+              deriving (Eq, Show, Ord)
+
+data Scheme = Forall [Kind] (Qual Type)
+              deriving (Eq, Show, Ord)
 
 
 type Substitution = M.Map TVar Type
 
 
+extractQualifiers :: [Qual t] -> ([Pred], [t])
+extractQualifiers []            = ([], [])
+extractQualifiers [ps:=>t]      = (ps, [t])
+extractQualifiers ((ps:=>t):qs) =
+  let (ps', ts') = extractQualifiers qs
+  in  (ps <> ps', t:ts')
+
+
+class HasKind t where
+  kind :: t -> Kind
+instance HasKind TVar where
+  kind (TV _ k) = k
+instance HasKind TCon where
+  kind (TC _ k) = k
+instance HasKind Type where
+  kind (TCon tc) = kind tc
+  kind (TVar u)  = kind u
+  kind (TApp t _) = case kind t of
+                     (Kfun _ k) -> k
+
+
+-- Do we still need this ?
 arrowReturnType :: Type -> Type
-arrowReturnType (TArr _ (TArr y x)) = arrowReturnType (TArr y x)
-arrowReturnType (TArr _ x         ) = x
+arrowReturnType (TApp _ (TApp y x)) = arrowReturnType (TApp y x)
+arrowReturnType (TApp _ x         ) = x
 arrowReturnType x                   = x
