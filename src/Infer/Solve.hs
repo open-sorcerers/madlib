@@ -46,19 +46,18 @@ infer env lexp =
         Src.App _ _ _          -> inferApp env lexp
         Src.Assignment _ _     -> inferAssignment env lexp
         Src.Where      _ _     -> inferWhere env lexp
-        -- Src.Record _           -> inferRecord env lexp
-        -- Src.FieldAccess _ _    -> inferFieldAccess env lexp
+        Src.Record _           -> inferRecord env lexp
+        Src.FieldAccess _ _    -> inferFieldAccess env lexp
         -- Src.TypedExp    _ _    -> inferTypedExp env lexp
-        -- Src.ListConstructor  _ -> inferListConstructor env lexp
-        -- Src.TupleConstructor _ -> inferTupleConstructor env lexp
+        Src.ListConstructor  _ -> inferListConstructor env lexp
+        Src.TupleConstructor _ -> inferTupleConstructor env lexp
         Src.Export           _ -> inferExport env lexp
-        -- Src.If _ _ _           -> inferIf env lexp
+        Src.If _ _ _           -> inferIf env lexp
         Src.JSExp c            -> do
           t <- newTVar Star
           return (M.empty, t, Slv.Solved t area (Slv.JSExp c))
 
 
--- TODO: Should probably just take a Loc instead of the old Expression !
 applyLitSolve :: Src.Exp -> Type -> Slv.Exp
 applyLitSolve (Meta _ area exp) t = case exp of
   Src.LNum  v -> Slv.Solved t area $ Slv.LNum v
@@ -111,29 +110,19 @@ updateTyping typing = case typing of
 -- INFER VAR
 
 inferVar :: Env -> Src.Exp -> Infer (Substitution, Type, Slv.Exp)
-inferVar env (Meta _ area (Src.Var n)) = do
-  sc         <- lookupVar env n
-  (ps :=> t) <- instantiate sc
-  return (M.empty, t, Slv.Solved t area $ Slv.Var n)
+inferVar env exp@(Meta _ area (Src.Var n)) = case n of
+  ('.' : name) -> do
+    let s = Forall [Star] $ [] :=> ((TRecord (M.fromList [(name, TGen 0)]) True) `fn` (TGen 0))
+    t <- instantiate s
+    return (M.empty, qualType t, Slv.Solved (qualType t) area $ Slv.Var n)
 
-  -- let Meta _ area (Src.Var n) = exp
-  -- in  case n of
-  --       ('.' : name) -> do
-  --         let s = Forall [TV "a"] $ TApp
-  --               (TRecord (M.fromList [(name, TVar [] $ TV "a")]) True)
-  --               (TVar [] $ TV "a")
-  --         t <- instantiate s
-  --         return (M.empty, t, Slv.Solved t area $ Slv.Var n)
-
-  --       _ -> do
-  --         (s, t) <- catchError (lookupVar env n) (enhanceVarError env exp area)
-  --         -- (s, t) <- catchError (lookupVar env n) (checkMethod env n)
-
-  --         return (s, t, Slv.Solved t area $ Slv.Var n)
-
+  _ -> do
+    sc         <- catchError (lookupVar env n) (enhanceVarError env exp area)
+    (ps :=> t) <- instantiate sc
+    return (M.empty, t, Slv.Solved t area $ Slv.Var n)
 
 enhanceVarError
-  :: Env -> Src.Exp -> Area -> InferError -> Infer (Substitution, Type)
+  :: Env -> Src.Exp -> Area -> InferError -> Infer Scheme
 enhanceVarError env exp area (InferError e _) = throwError
   $ InferError e (Reason (VariableNotDeclared exp) (envcurrentpath env) area)
 
@@ -174,8 +163,8 @@ inferApp :: Env -> Src.Exp -> Infer (Substitution, Type, Slv.Exp)
 inferApp env (Meta _ area (Src.App abs arg final)) = do
   tv             <- newTVar Star
   (s1, t1, eabs) <- infer env abs
-  (s2, t2, earg) <- infer env arg
-  -- (s2, t2, earg) <- infer (apply env (removeRecordTypes s1) env) arg
+  -- (s2, t2, earg) <- infer env arg
+  (s2, t2, earg) <- infer (apply env (removeRecordTypes s1) env) arg
 
   s3             <- case unify env (apply env s2 t1) (t2 `fn` tv) of
     Right s -> return s
@@ -191,18 +180,6 @@ inferApp env (Meta _ area (Src.App abs arg final)) = do
          , t
          , solved
          )
-
-
--- constraints :: Type -> [String]
--- constraints t = case t of
---   TVar cts _ -> cts
---   TApp l r -> constraints l <> constraints r
---   TGenComp _ cts vars -> cts <> concat (constraints <$> vars)
---   _ -> []
-
--- convertGenComp :: Type -> Type -> Type
--- convertGenComp comp genComp = case comp of
---   TComp path name vars -> 
 
 
 -- INFER ASSIGNMENT
@@ -227,185 +204,184 @@ inferExport env (Meta _ area (Src.Export exp)) = do
 
 -- INFER LISTCONSTRUCTOR
 
--- inferListConstructor :: Env -> Src.Exp -> Infer (Substitution, Type, Slv.Exp)
--- inferListConstructor env (Meta _ area (Src.ListConstructor elems)) =
---   case elems of
---     [] ->
---       let t = TComp "Prelude" "List" [TVar [] $ TV "a"]
---       in  return (M.empty, t, Slv.Solved t area (Slv.ListConstructor []))
+inferListConstructor :: Env -> Src.Exp -> Infer (Substitution, Type, Slv.Exp)
+inferListConstructor env (Meta _ area (Src.ListConstructor elems)) =
+  case elems of
+    [] -> do
+      tv <- newTVar Star
+      let t = TApp tList tv
+      return (M.empty, t, Slv.Solved t area (Slv.ListConstructor []))
 
---     elems -> do
---       inferred <- mapM (inferListItem env) elems
---       let (_, t1, _) = head inferred
---       let t          = TComp "Prelude" "List" [t1]
---       -- TODO: Error should be handled
---       s <- unifyToInfer env $ unifyElems env t1 (mid <$> inferred)
---       return (s, t, Slv.Solved t area (Slv.ListConstructor (lst <$> inferred)))
+    elems -> do
+      inferred <- mapM (inferListItem env) elems
+      let (_, t1, _) = head inferred
+      let t          = TApp tList t1
+      -- TODO: Error should be handled
+      s <- unifyToInfer env $ unifyElems env t1 (mid <$> inferred)
+      return (s, t, Slv.Solved t area (Slv.ListConstructor (lst <$> inferred)))
 
 
--- inferListItem :: Env -> Src.ListItem -> Infer (Substitution, Type, Slv.ListItem)
--- inferListItem env li = case li of
---   Src.ListItem exp -> do
---     (s, t, e) <- infer env exp
---     return (s, t, Slv.ListItem e)
+inferListItem :: Env -> Src.ListItem -> Infer (Substitution, Type, Slv.ListItem)
+inferListItem env li = case li of
+  Src.ListItem exp -> do
+    (s, t, e) <- infer env exp
+    return (s, t, Slv.ListItem e)
 
---   Src.ListSpread exp -> do
---     (s, t, e) <- infer env exp
---     case t of
---       TComp "Prelude" "List" [t'] -> return (s, t', Slv.ListSpread e)
+  Src.ListSpread exp -> do
+    (s, t, e) <- infer env exp
+    case t of
+      TApp (TCon (TC "List" _)) t' -> return (s, t', Slv.ListSpread e)
 
---       TVar _ _ -> return (s, t, Slv.ListSpread e)
+      TVar _  -> return (s, t, Slv.ListSpread e)
 
---       _ -> throwError $ InferError (WrongSpreadType $ show t) NoReason
+      _ -> throwError $ InferError (WrongSpreadType $ show t) NoReason
 
 
 
 -- INFER TUPLE CONSTRUCTOR
 
--- inferTupleConstructor :: Env -> Src.Exp -> Infer (Substitution, Type, Slv.Exp)
--- inferTupleConstructor env (Meta _ area (Src.TupleConstructor elems)) = do
---   inferredElems <- mapM (infer env) elems
---   let elemSubsts = beg <$> inferredElems
---   let elemTypes  = mid <$> inferredElems
---   let elemEXPS   = lst <$> inferredElems
+inferTupleConstructor :: Env -> Src.Exp -> Infer (Substitution, Type, Slv.Exp)
+inferTupleConstructor env (Meta _ area (Src.TupleConstructor elems)) = do
+  inferredElems <- mapM (infer env) elems
+  let elemSubsts = beg <$> inferredElems
+  let elemTypes  = mid <$> inferredElems
+  let elemEXPS   = lst <$> inferredElems
 
---   let s          = foldr (compose env) M.empty elemSubsts
---   let t          = TTuple elemTypes
+  let s          = foldr (compose env) M.empty elemSubsts
+  let t          = TTuple elemTypes
 
---   return (s, t, Slv.Solved t area (Slv.TupleConstructor elemEXPS))
+  return (s, t, Slv.Solved t area (Slv.TupleConstructor elemEXPS))
 
 
 
 -- INFER RECORD
 
--- inferRecord :: Env -> Src.Exp -> Infer (Substitution, Type, Slv.Exp)
--- inferRecord env exp = do
---   let Meta _ area (Src.Record fields) = exp
+inferRecord :: Env -> Src.Exp -> Infer (Substitution, Type, Slv.Exp)
+inferRecord env exp = do
+  let Meta _ area (Src.Record fields) = exp
 
---   inferred <- mapM (inferRecordField env) fields
---   open     <- shouldBeOpen env fields
---   let inferredFields = lst <$> inferred
---       subst          = foldr (compose env) M.empty (beg <$> inferred)
---       recordType     = TRecord (M.fromList $ concat $ mid <$> inferred) open
---   return
---     (subst, recordType, Slv.Solved recordType area (Slv.Record inferredFields))
+  inferred <- mapM (inferRecordField env) fields
+  open     <- shouldBeOpen env fields
+  let inferredFields = lst <$> inferred
+      subst          = foldr (compose env) M.empty (beg <$> inferred)
+      recordType     = TRecord (M.fromList $ concat $ mid <$> inferred) open
+  return
+    (subst, recordType, Slv.Solved recordType area (Slv.Record inferredFields))
 
--- inferRecordField
---   :: Env -> Src.Field -> Infer (Substitution, [(Slv.Name, Type)], Slv.Field)
--- inferRecordField env field = case field of
---   Src.Field (name, exp) -> do
---     (s, t, e) <- infer env exp
---     return (s, [(name, t)], Slv.Field (name, e))
+inferRecordField
+  :: Env -> Src.Field -> Infer (Substitution, [(Slv.Name, Type)], Slv.Field)
+inferRecordField env field = case field of
+  Src.Field (name, exp) -> do
+    (s, t, e) <- infer env exp
+    return (s, [(name, t)], Slv.Field (name, e))
 
---   Src.FieldSpread exp -> do
---     (s, t, e) <- infer env exp
---     case t of
---       TRecord tfields _ -> return (s, M.toList tfields, Slv.FieldSpread e)
+  Src.FieldSpread exp -> do
+    (s, t, e) <- infer env exp
+    case t of
+      TRecord tfields _ -> return (s, M.toList tfields, Slv.FieldSpread e)
 
---       -- TODO: When we get here we should make it open !!
---       TVar _ _ -> return (s, [], Slv.FieldSpread e)
+      -- TODO: When we get here we should make it open !!
+      TVar _  -> return (s, [], Slv.FieldSpread e)
 
---       -- TODO: This needs to be a new error type maybe ?
---       _ -> throwError $ InferError (WrongSpreadType $ show t) NoReason
+      -- TODO: This needs to be a new error type maybe ?
+      _ -> throwError $ InferError (WrongSpreadType $ show t) NoReason
 
--- shouldBeOpen :: Env -> [Src.Field] -> Infer Bool
--- shouldBeOpen env = foldrM
---   (\field r -> case field of
---     Src.Field       _ -> return $ False || r
---     Src.FieldSpread e -> do
---       (_, t, _) <- infer env e
---       case t of
---         TRecord _ _   -> return $ False || r
---         TVar _ _      -> return $ True || r
---   )
---   False
+shouldBeOpen :: Env -> [Src.Field] -> Infer Bool
+shouldBeOpen env = foldrM
+  (\field r -> case field of
+    Src.Field       _ -> return $ False || r
+    Src.FieldSpread e -> do
+      (_, t, _) <- infer env e
+      case t of
+        TRecord _ _   -> return $ False || r
+        TVar _        -> return $ True || r
+  )
+  False
 
 
 -- INFER FIELD ACCESS
 
--- inferFieldAccess :: Env -> Src.Exp -> Infer (Substitution, Type, Slv.Exp)
--- inferFieldAccess env (Meta _ area (Src.FieldAccess rec@(Meta _ _ re) abs@(Meta _ _ (Src.Var ('.' : name)))))
---   = do
---     (fieldSubst , fieldType , fieldExp ) <- infer env abs
---     (recordSubst, recordType, recordExp) <- infer env rec
+inferFieldAccess :: Env -> Src.Exp -> Infer (Substitution, Type, Slv.Exp)
+inferFieldAccess env (Meta _ area (Src.FieldAccess rec@(Meta _ _ re) abs@(Meta _ _ (Src.Var ('.' : name)))))
+  = do
+    (fieldSubst , fieldType , fieldExp ) <- infer env abs
+    (recordSubst, recordType, recordExp) <- infer env rec
 
---     let foundFieldType = case recordType of
---           TRecord fields _ -> M.lookup name fields
---           _                -> Nothing
+    let foundFieldType = case recordType of
+          TRecord fields _ -> M.lookup name fields
+          _                -> Nothing
 
---     case foundFieldType of
---       Just t -> do
---         let freeVars = ftv t
---         t' <- instantiate $ Forall (S.toList freeVars) t
---         let solved = Slv.Solved t' area (Slv.FieldAccess recordExp fieldExp)
---         return (fieldSubst, t', solved)
+    case foundFieldType of
+      Just t -> do
+        t' <- instantiate $ Forall [kind t] ([] :=> t)
+        let solved = Slv.Solved (qualType t') area (Slv.FieldAccess recordExp fieldExp)
+        return (fieldSubst, qualType t', solved)
 
---       Nothing -> case recordType of
---         TRecord _ False ->
---           throwError $ InferError (FieldNotExisting name) (AreaReason area)
---         _ -> do
---           tv <- newTVar
---           s3 <- case unify env (apply env recordSubst fieldType) (TApp recordType tv) of
---             Right s -> return s
---             Left  e -> throwError $ InferError e NoReason
+      Nothing -> case recordType of
+        TRecord _ False ->
+          throwError $ InferError (FieldNotExisting name) (AreaReason area)
+        _ -> do
+          tv <- newTVar Star
+          s3 <- case unify env (apply env recordSubst fieldType) (recordType `fn` tv) of
+            Right s -> return s
+            Left  e -> throwError $ InferError e NoReason
 
---           let t          = apply env s3 tv
---           let rs         = recordSubstForVar re fieldType
+          let t          = apply env s3 tv
+          let rs         = recordSubstForVar re fieldType
 
---           let recordExp' = updateType recordExp (apply env s3 recordType)
---           let solved = Slv.Solved t area (Slv.FieldAccess recordExp' fieldExp)
+          let recordExp' = updateType recordExp (apply env s3 recordType)
+          let solved = Slv.Solved t area (Slv.FieldAccess recordExp' fieldExp)
 
---           return ( -- s3 `compose` rs `compose` recordSubst
---                    compose env s3 (compose env rs recordSubst)
---                  , t
---                  , solved
---                  )
+          return ( -- s3 `compose` rs `compose` recordSubst
+                   compose env s3 (compose env rs recordSubst)
+                 , t
+                 , solved
+                 )
 
--- recordSubstForVar :: Src.Exp_ -> Type -> Substitution
--- recordSubstForVar (Src.Var n) fieldType =
---   let (TApp recordType' _) = fieldType in M.fromList [(TV n, recordType')]
--- recordSubstForVar _ _ = M.empty
+recordSubstForVar :: Src.Exp_ -> Type -> Substitution
+recordSubstForVar (Src.Var n) fieldType =
+  let (TApp recordType' _) = fieldType in M.fromList [(TV n Star, recordType')]
+recordSubstForVar _ _ = M.empty
 
 
 
 -- INFER IF
 
--- inferIf :: Env -> Src.Exp -> Infer (Substitution, Type, Slv.Exp)
--- inferIf env exp@(Meta _ area (Src.If cond truthy falsy)) = do
---   (s1, tcond  , econd  ) <- infer env cond
---   (s2, ttruthy, etruthy) <- infer env truthy
---   (s3, tfalsy , efalsy ) <- infer env falsy
+inferIf :: Env -> Src.Exp -> Infer (Substitution, Type, Slv.Exp)
+inferIf env exp@(Meta _ area (Src.If cond truthy falsy)) = do
+  (s1, tcond  , econd  ) <- infer env cond
+  (s2, ttruthy, etruthy) <- infer env truthy
+  (s3, tfalsy , efalsy ) <- infer env falsy
 
---   s4 <- catchError (unifyToInfer env $ unify env (TCon CBool) tcond)
---                    (addConditionReason env exp cond area)
---   s5 <- catchError (unifyToInfer env $ unify env ttruthy tfalsy)
---                    (addBranchReason env exp falsy area)
+  s4 <- catchError (unifyToInfer env $ unify env tBool tcond)
+                   (addConditionReason env exp cond area)
+  s5 <- catchError (unifyToInfer env $ unify env ttruthy tfalsy)
+                   (addBranchReason env exp falsy area)
 
---   let t = apply env s5 ttruthy
+  let t = apply env s5 ttruthy
 
---   return
---     ( --s1 `compose` s2 `compose` s3 `compose` s4 `compose` s5
---       compose env s1 (compose env s2 (compose env s3 (compose env s4 s5)))
---     , t
---     , Slv.Solved t area (Slv.If econd etruthy efalsy)
---     )
+  return
+    ( compose env s1 (compose env s2 (compose env s3 (compose env s4 s5)))
+    , t
+    , Slv.Solved t area (Slv.If econd etruthy efalsy)
+    )
 
--- addConditionReason
---   :: Env -> Src.Exp -> Src.Exp -> Area -> InferError -> Infer (Substitution)
--- addConditionReason env ifExp condExp area (InferError e _) =
---   throwError $ InferError
---     e
---     (Reason (IfElseCondIsNotBool ifExp condExp) (envcurrentpath env) area)
+addConditionReason
+  :: Env -> Src.Exp -> Src.Exp -> Area -> InferError -> Infer Substitution
+addConditionReason env ifExp condExp area (InferError e _) =
+  throwError $ InferError
+    e
+    (Reason (IfElseCondIsNotBool ifExp condExp) (envcurrentpath env) area)
 
--- addBranchReason
---   :: Env -> Src.Exp -> Src.Exp -> Area -> InferError -> Infer (Substitution)
--- addBranchReason env ifExp falsyExp area (InferError e _) =
---   throwError $ InferError
---     e
---     (Reason (IfElseBranchTypesDontMatch ifExp falsyExp)
---             (envcurrentpath env)
---             area
---     )
+addBranchReason
+  :: Env -> Src.Exp -> Src.Exp -> Area -> InferError -> Infer Substitution
+addBranchReason env ifExp falsyExp area (InferError e _) =
+  throwError $ InferError
+    e
+    (Reason (IfElseBranchTypesDontMatch ifExp falsyExp)
+            (envcurrentpath env)
+            area
+    )
 
 
 -- INFER WHERE
@@ -437,13 +413,6 @@ inferPattern env (Meta _ _ pat) = case pat of
 
     return (ps<>ps', vars, apply env s tv)
 
-  
--- tiPat (PCon (i:>:sc) pats) = do (ps,as,ts) <- tiPats pats
---                                 t'         <- newTVar Star
---                                 (qs :=> t) <- freshInst sc
---                                 unify t (foldr fn t' ts)
---                                 return (ps++qs, as, t')
-
 inferWhere :: Env -> Src.Exp -> Infer (Substitution, Type, Slv.Exp)
 inferWhere env (Meta _ area (Src.Where exp iss)) = do
   (s, t, e) <- infer env exp
@@ -469,299 +438,6 @@ inferBranch env tv t (Meta _ area (Src.Is pat exp)) = do
          , Slv.Solved (apply env subst t' `fn` apply env subst t'') area
             $ Slv.Is (updatePattern pat) (updateType e' (apply env subst t''))
          )-- ++qs)
-
--- inferWhere :: Env -> Src.Exp -> Infer (Substitution, Type, Slv.Exp)
--- inferWhere env whereExp@(Meta _ loc (Src.Where exp iss)) = do
---   (se, te, ee) <- infer env exp
-
---   inferredIss  <- mapM (inferIs env te) iss
---   let issSubstitution = foldr1 (compose env) $ se : (beg <$> inferredIss)
---   let issTypes        = mid <$> inferredIss
---   let iss             = lst <$> inferredIss
-
---   let typeMatrix      = (, issTypes) <$> issTypes
---   s <-
---     foldr1 (compose env)
---       <$> mapM
---             (\(t, ts) ->
---               -- TODO: Error should be handled
---               unifyToInfer env $ unifyElems env (apply env issSubstitution t) ts
---             )
---             typeMatrix
-
---   let updatedIss =
---         (\(t, (Slv.Solved _ a e)) -> Slv.Solved (apply env (compose env s se) t) a e)
---           <$> zip issTypes iss
-
---   let (TApp _ whereType) = (apply env s . head) issTypes
-
---   -- let finalSubst = foldr1 (compose env) $ beg <$> inferredIss
-  
---   -- This breaks build script and most likely patterns in general, needs to be fixed properly
---   let finalSubst = compose env issSubstitution (compose env s (compose env issSubstitution se))
-
---   -- let finalSubst = compose env issSubstitution (compose env s se)
-
---   return
---     ( finalSubst
---     , apply env s whereType
---     , Slv.Solved (apply env finalSubst whereType) loc
---       $ Slv.Where (updateType ee (apply env finalSubst te)) updatedIss
---     )
-
---  where
---   inferIs :: Env -> Type -> Src.Is -> Infer (Substitution, Type, Slv.Is)
---   inferIs e tinput c@(Meta _ area (Src.Is pattern exp)) = do
---     tp   <- buildPatternType e pattern
---     env' <- case tinput of
---       TVar _ _ -> generateIsEnv tp e pattern
---       _        -> generateIsEnv tinput e pattern
-
---     (se, te, ee) <- infer env' exp
-
---     -- TODO: Ugly fix for now, we'll have to rethink and remodel the way records and record patterns
---     -- are currently implemented.
---     let newTP = completePatternType tp pattern se
-
---     let tarr  = TApp (apply env se tinput) te
---     let tarr' = TApp (apply env se newTP) te
---     su <- catchError (unifyToInfer env' $ unify env tarr tarr')
---                      (addPatternReason e whereExp pattern area)
-
---     let sf = compose env su se
-
---     return
---       ( sf
---       , apply env sf tarr
---       , Slv.Solved (apply env sf tarr) area
---         $ Slv.Is (updatePattern pattern) (updateType ee $ apply env sf te)
---       )
-
-
---   completePatternType :: Type -> Src.Pattern -> Substitution -> Type
---   completePatternType tp pattern se =
---     let step1   = findSpreadTypes tp pattern se
---         applied = apply env se step1
---         step2   = spreadSpreads applied
---     in  step2
-
---   findSpreadTypes :: Type -> Src.Pattern -> Substitution -> Type
---   findSpreadTypes tp@(TRecord ff' _) pattern se = case pattern of
---     (Meta _ _ (Src.PRecord fields)) -> do
---       let ft = M.mapWithKey (assignSpreadType ff' se) fields
---       TRecord ft True
-
---   findSpreadTypes tp _ _ = tp
-
---   assignSpreadType ff' se key field = case field of
---     (Meta _ _ (Src.PSpread (Meta _ _ (Src.PVar n)))) -> TVar [] $ TV n
-
---     (Meta _ _ (Src.PRecord _                      )) -> case M.lookup key ff' of
---       Just x -> findSpreadTypes x field se
---       _      -> findSpreadTypes (TRecord M.empty True) field se
-
---     _ -> case M.lookup key ff' of
---       Just x -> x
---       -- TODO: Put a number to be sure it's unique, but it should use newTVar
---       _      -> TVar [] $ TV "a0"
-
---   spreadSpreads :: Type -> Type
---   spreadSpreads (TRecord fields open) =
---     let (TRecord spreadFields _) = case M.lookup "..." fields of
---           Just (TRecord spreadFields _) ->
---             let withoutSpread = M.filterWithKey (\k v -> k /= "...") fields
---             in  TRecord (M.union withoutSpread spreadFields) open
-
---           Just _  -> TRecord fields open
-
---           Nothing -> TRecord fields open
---     in  TRecord (M.map updateSubRecord spreadFields) open
-
---   spreadSpreads t = t
-
---   updateSubRecord field = case field of
---     (TRecord _ _) -> spreadSpreads field
---     _             -> field
-
-
---   buildPatternType :: Env -> Src.Pattern -> Infer Type
---   buildPatternType e@Env { envvars } pattern@(Meta _ area pat) = case pat of
---     Src.PVar  _         -> newTVar
-
---     Src.PCon  "String"  -> return $ TCon CString
---     Src.PCon  "Boolean" -> return $ TCon CBool
---     Src.PCon  "Number"  -> return $ TCon CNum
-
---     Src.PStr  _         -> return $ TCon CString
---     Src.PBool _         -> return $ TCon CBool
---     Src.PNum  _         -> return $ TCon CNum
-
---     Src.PAny            -> newTVar
-
---     Src.PRecord fields ->
---       let fieldsWithoutSpread = M.filterWithKey (\k v -> k /= "...") fields
---       in  (\fields -> TRecord fields True) . M.fromList <$> mapM
---             (\(k, v) -> (k, ) <$> buildPatternType e v)
---             (M.toList fieldsWithoutSpread)
-
---     Src.PCtor n as -> do
---       (Forall fv ctor) <- if elem '.' n
---         then do
---           t <- findNamespacedConstructorInIs e pattern whereExp n
---           return $ Forall (S.toList $ ftv t) t
---         else findConstructor e pattern whereExp n
-
---       let rt = arrowReturnType ctor
---       ctor'  <- argPatternsToArrowType rt as
---       ctor'' <- instantiate $ Forall fv ctor
---       -- TODO: Error should be handled
---       s      <- unifyToInfer env $ unify env ctor' ctor''
---       return $ apply env s rt
-
---      where
---       argPatternsToArrowType :: Type -> [Src.Pattern] -> Infer Type
---       argPatternsToArrowType rt (f : xs) = do
---         l <- buildPatternType e f
---         r <- argPatternsToArrowType rt xs
---         return $ TApp l r
---       argPatternsToArrowType rt [] = return rt
-
---     Src.PSpread pattern -> buildPatternType env pattern
-
---     -- TODO: Need to iterate through items and unify them
---     Src.PList   []      -> return $ TComp "Prelude" "List" [TVar [] $ TV "a"]
---     Src.PList patterns ->
---       TComp "Prelude" "List" . (: []) <$> buildPatternType e (head patterns)
-
---     Src.PTuple patterns -> TTuple <$> mapM (buildPatternType e) patterns
-
---     _                   -> newTVar
-
-
---   generateIsEnv :: Type -> Env -> Src.Pattern -> Infer Env
---   generateIsEnv t e pattern@(Meta _ area pat) = case (pat, t) of
---     (Src.PVar    v     , t') -> return $ extendVars e (v, Forall [] t')
-
---     (Src.PRecord fields, t') -> do
---       let (fields', open) = case t' of
---             TVar _ _              -> (M.empty, True)
---             TRecord fields' open' -> (fields', open')
-
---       let fieldsWithoutSpread = M.filterWithKey (\k _ -> k /= "...") fields
---       let spreadField = snd <$> find (\(k, _) -> k == "...") (M.toList fields)
-
---       declaredFields <- mapM (\(k, pat) -> (pat, ) <$> lookupType k fields')
---                              (M.toList fieldsWithoutSpread)
-
---       let fieldsEnv =
---             foldrM (\(p, t') e' -> generateIsEnv t' e' p) e declaredFields
-
---       let
---         envForSpread = case spreadField of
---           Just (Meta _ _ (Src.PSpread (Meta _ _ (Src.PVar n)))) ->
---             let
---               keysToRemove = M.keys fieldsWithoutSpread
---               -- TODO: It should likely not be opened and would cause weird issues like accessing non spread properties
---               spreadType =
---                 TRecord (foldr (\k f -> M.delete k f) fields' keysToRemove) open
---             in
---               extendVars e (n, Forall [] spreadType)
---           Nothing -> e
---       (\e' -> e' { envvars = M.union (envvars e') (envvars envForSpread) })
---         <$> fieldsEnv
---      where
---       lookupType fieldName fields = case M.lookup fieldName fields of
---         Just x -> return x
-
---     (Src.PSpread pattern, t) -> generateIsEnv t e pattern
-
---     (Src.PList items, TComp "Prelude" "List" [t]) -> foldrM
---       (\p e' -> case p of
---         Meta _ _ (Src.PSpread (Meta _ _ (Src.PVar v))) ->
---           return $ extendVars e' (v, Forall [] $ TComp "Prelude" "List" [t])
---         _ -> generateIsEnv t e' p
---       )
---       e
---       items
-
---     (Src.PTuple elems, TTuple t) ->
---       foldrM (\(el, t') e' -> generateIsEnv t' e' el) e (zip elems t)
-
---     (Src.PCtor cname as, t) -> do
---       ctor <- if elem '.' cname
---         then findNamespacedConstructorInIs e pattern whereExp cname
---         else instantiate =<< findConstructor e pattern whereExp cname
-
---       let adtT = arrowReturnType ctor
---       s <- case unify env adtT t of
---         Right a -> return a
---         Left  e -> throwError $ InferError
---           e
---           (Reason (PatternTypeError whereExp pattern) (envcurrentpath env) area)
-
---       case (apply env s ctor, as) of
---         (TApp a _, [a']) -> do
---           generateIsEnv a e a'
-
---         (TApp a (TApp b _), [a', b']) -> do
---           e1 <- generateIsEnv a e a'
---           generateIsEnv b e1 b'
-
---         (TApp a (TApp b (TApp c _)), [a', b', c']) -> do
---           e1 <- generateIsEnv a e a'
---           e2 <- generateIsEnv b e1 b'
---           generateIsEnv c e2 c'
-
---         _ -> return e
-
---     _ -> return e
-
-
--- findConstructor :: Env -> Src.Pattern -> Src.Exp -> String -> Infer Scheme
--- findConstructor env pattern@(Meta _ area _) whereExp cname =
---   case M.lookup cname (envvars env) of
---     Just s  -> return s
-
---     Nothing -> throwError $ InferError
---       (UnknownType cname)
---       (Reason (PatternConstructorDoesNotExist whereExp pattern)
---               (envcurrentpath env)
---               area
---       )
-
--- findNamespacedConstructorInIs
---   :: Env -> Src.Pattern -> Src.Exp -> String -> Infer Type
--- findNamespacedConstructorInIs e@Env { envvars } pattern@(Meta _ area _) whereExp cname
---   = do
---     let (namespace, cname') = break (== '.') cname
---     case M.lookup namespace envvars of
---       Just s -> do
---         h <- instantiate s
---         let (TRecord fields _) = h
-
---         case M.lookup (tail cname') fields of
---           Just t  -> return t
---           Nothing -> throwError $ InferError
---             (UnknownType cname)
---             (Reason (PatternConstructorDoesNotExist whereExp pattern)
---                     (envcurrentpath e)
---                     area
---             )
-
---       Nothing -> throwError $ InferError
---         (UnknownType cname)
---         (Reason (PatternConstructorDoesNotExist whereExp pattern)
---                 (envcurrentpath e)
---                 area
---         )
-
-
-addPatternReason
-  :: Env -> Src.Exp -> Src.Pattern -> Area -> InferError -> Infer (Substitution)
-addPatternReason env whereExp pattern area (InferError e _) =
-  throwError $ InferError
-    e
-    (Reason (PatternTypeError whereExp pattern) (envcurrentpath env) area)
 
 
 

@@ -98,6 +98,9 @@ data Scheme = Forall [Kind] (Qual Type)
 type Substitution = M.Map TVar Type
 
 
+qualType :: Qual t -> t
+qualType (_ :=> t) = t
+
 extractQualifiers :: [Qual t] -> ([Pred], [t])
 extractQualifiers []            = ([], [])
 extractQualifiers [ps:=>t]      = (ps, [t])
@@ -113,10 +116,11 @@ instance HasKind TVar where
 instance HasKind TCon where
   kind (TC _ k) = k
 instance HasKind Type where
-  kind (TCon tc) = kind tc
-  kind (TVar u)  = kind u
-  kind (TApp t _) = case kind t of
-                     (Kfun _ k) -> k
+  kind (TCon tc)     = kind tc
+  kind (TVar u)      = kind u
+  kind (TRecord _ _) = Star
+  kind (TApp t _)    = case kind t of
+                        (Kfun _ k) -> k
 
 
 -- Do we still need this ?

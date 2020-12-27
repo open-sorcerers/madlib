@@ -21,7 +21,7 @@ newTVar :: Kind -> Infer Type
 newTVar k = do
   s <- get
   put s { count = count s + 1 }
-  return $ TVar $ TV (letters !! (trace ("COUNT: "<>ppShow s) count) s) k
+  return $ TVar $ TV (letters !! count s) k
 
 
 instantiate :: Scheme -> Infer (Qual Type)
@@ -32,9 +32,10 @@ instantiate (Forall ks qt) = do
 class Instantiate t where
   inst  :: [Type] -> t -> t
 instance Instantiate Type where
-  inst ts (TApp l r) = TApp (inst ts l) (inst ts r)
-  inst ts (TGen n)  = (trace ("GEN: "<> show n<>"\nTYPES: "<>ppShow ts) ts) !! n
-  inst _ t           = t
+  inst ts (TApp l r)         = TApp (inst ts l) (inst ts r)
+  inst ts (TGen n)           = ts !! n
+  inst ts (TRecord fields o) = TRecord (M.map (inst ts) fields) o
+  inst _ t                   = t
 instance Instantiate a => Instantiate [a] where
   inst ts = map (inst ts)
 instance Instantiate t => Instantiate (Qual t) where
