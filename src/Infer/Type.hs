@@ -3,9 +3,9 @@
 module Infer.Type where
 
 import qualified Data.Map                      as M
-import AST.Source (Exp)
-import Text.Show.Pretty (ppShow)
-import Debug.Trace (trace)
+import           AST.Source                     ( Exp )
+import           Text.Show.Pretty               ( ppShow )
+import           Debug.Trace                    ( trace )
 
 
 type Vars = M.Map String Scheme
@@ -75,8 +75,8 @@ tArrow :: Type
 tArrow = TCon $ TC "(->)" (Kfun Star (Kfun Star Star))
 
 infixr      4 `fn`
-fn         :: Type -> Type -> Type
-a `fn` b    = TApp (TApp tArrow a) b
+fn :: Type -> Type -> Type
+a `fn` b = TApp (TApp tArrow a) b
 
 
 
@@ -102,11 +102,10 @@ qualType :: Qual t -> t
 qualType (_ :=> t) = t
 
 extractQualifiers :: [Qual t] -> ([Pred], [t])
-extractQualifiers []            = ([], [])
-extractQualifiers [ps:=>t]      = (ps, [t])
-extractQualifiers ((ps:=>t):qs) =
-  let (ps', ts') = extractQualifiers qs
-  in  (ps <> ps', t:ts')
+extractQualifiers []         = ([], [])
+extractQualifiers [ps :=> t] = (ps, [t])
+extractQualifiers ((ps :=> t) : qs) =
+  let (ps', ts') = extractQualifiers qs in (ps <> ps', t : ts')
 
 
 class HasKind t where
@@ -116,11 +115,11 @@ instance HasKind TVar where
 instance HasKind TCon where
   kind (TC _ k) = k
 instance HasKind Type where
-  kind (TCon tc)     = kind tc
-  kind (TVar u)      = kind u
+  kind (TCon tc    ) = kind tc
+  kind (TVar u     ) = kind u
   kind (TRecord _ _) = Star
-  kind (TApp t _)    = case kind t of
-                        (Kfun _ k) -> k
+  kind (TApp    t _) = case kind t of
+    (Kfun _ k) -> k
 
 
 -- Do we still need this ?

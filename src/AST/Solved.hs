@@ -3,7 +3,7 @@ module AST.Solved where
 
 import qualified Data.Map                      as M
 
-import qualified Infer.Type as Ty
+import qualified Infer.Type                    as Ty
 import           Explain.Location
 
 data Solved a = Solved Ty.Type Area a deriving(Eq, Show)

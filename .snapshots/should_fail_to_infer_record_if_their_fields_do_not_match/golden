@@ -2,8 +2,13 @@ Left
   (InferError
      (UnificationError
         (TRecord
-           (fromList [ ( "x" , TCon CNum ) , ( "y" , TCon CNum ) ]) False)
-        (TRecord (fromList [ ( "name" , TCon CString ) ]) False))
+           (fromList
+              [ ( "x" , TCon (TC "Number" Star) )
+              , ( "y" , TCon (TC "Number" Star) )
+              ])
+           False)
+        (TRecord
+           (fromList [ ( "name" , TCon (TC "String" Star) ) ]) False))
      (Reason
         (WrongTypeApplied
            (Meta

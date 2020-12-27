@@ -14,9 +14,9 @@ import           Error.Error
 import           Explain.Reason
 import           Explain.Meta
 import           Infer.Instantiate              ( newTVar )
-import Data.Maybe (fromMaybe)
-import Text.Show.Pretty (ppShow)
-import Debug.Trace (trace)
+import           Data.Maybe                     ( fromMaybe )
+import           Text.Show.Pretty               ( ppShow )
+import           Debug.Trace                    ( trace )
 
 
 buildTypeDecls :: Env -> FilePath -> [TypeDecl] -> Infer TypeDecls
@@ -40,7 +40,9 @@ buildTypeDecl _ astPath typeDecls adt@ADT{} =
   case M.lookup (adtname adt) typeDecls of
     Just t  -> throwError $ InferError (ADTAlreadyDefined t) NoReason
     Nothing -> return
-      (adtname adt, TComp astPath (adtname adt) (TVar . (`TV` Star) <$> adtparams adt))
+      ( adtname adt
+      , TComp astPath (adtname adt) (TVar . (`TV` Star) <$> adtparams adt)
+      )
 buildTypeDecl priorEnv astPath typeDecls alias@Alias{} = do
   let name   = aliasname alias
   let params = (`TV` Star) <$> aliasparams alias
@@ -77,35 +79,35 @@ resolveADTConstructor
   :: Env -> FilePath -> TypeDecls -> Name -> [Name] -> Constructor -> Infer Vars
 resolveADTConstructor priorEnv astPath typeDecls n params (Constructor cname cparams)
   = do
-    -- return $ M.fromList [("Just", Forall [Star] ([] :=> (TGen 0 `fn` (TApp (TCon (TC "Maybe" (Kfun Star Star))) (TGen 0)))))]
-    let gens = zip params (map TGen [0..])
-    let rt = foldl TApp (TCon $ TC n (buildKind $ length params)) $ snd <$> gens
+    let gens = zip params (map TGen [0 ..])
+    let rt =
+          foldl TApp (TCon $ TC n (buildKind $ length params)) $ snd <$> gens
     t' <- mapM (argToType priorEnv gens typeDecls n params) cparams
     let ctype = foldr1 fn (t' <> [rt])
-    return $ M.fromList [(cname, Forall (Star <$ params) ([] :=> (trace ("CTYPE: "<>ppShow ctype<>"\nKINDS: "<>ppShow (Star <$ cparams)) ctype)))]
-
-    -- let t = buildADTConstructorReturnType astPath n params
-    -- t' <- mapM (argToType priorEnv typeDecls n params) cparams
-    -- let ctype = foldr1 fn (t' <> [t])
-    -- return $ M.fromList [(cname, Forall (const Star <$> params) ([] :=> ctype))]
-
--- buildADTConstructorReturnType :: FilePath -> Name -> [Name] -> Type
--- buildADTConstructorReturnType astPath tname tparams =
---   TApp (TCon (TC tname Star)) ()
---   -- TComp astPath tname $ TVar . (`TV` Star) <$> tparams
+    let vars = M.fromList [(cname, Forall (Star <$ params) ([] :=> ctype))]
+    return vars
 
 buildKind :: Int -> Kind
 buildKind n | n > 0  = Kfun Star $ buildKind (n - 1)
             | n == 0 = Star
 
 -- TODO: This should probably be merged with typingToType somehow
-argToType :: Env -> [(Name, Type)] -> TypeDecls -> Name -> [Name] -> Typing -> Infer Type
+argToType
+  :: Env
+  -> [(Name, Type)]
+  -> TypeDecls
+  -> Name
+  -> [Name]
+  -> Typing
+  -> Infer Type
 argToType _ gens typeDecls _ params (Meta _ _ (TRSingle n))
   | n == "Number" = return tNumber
   | n == "Boolean" = return tBool
   | n == "String" = return tStr
+  |
   -- | isLower (head n) && (n `elem` params) = return $ TVar $ TV n Star
-  | isLower (head n) = return $ fromMaybe (TGen 0) (M.lookup n (M.fromList gens))
+    isLower (head n) = return
+  $ fromMaybe (TGen 0) (M.lookup n (M.fromList gens))
   | -- A free var that is not in type params
     otherwise = case M.lookup n typeDecls of
     Just a  -> return a

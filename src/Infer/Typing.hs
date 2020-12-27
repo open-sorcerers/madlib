@@ -32,9 +32,9 @@ typingToType env (Meta _ _ (Src.TRSingle t))
 typingToType env (Meta _ _ (Src.TRComp t ts)) = do
   -- fetch ADT from env, and verify that the args applied match it or ERR
   params <- mapM (typingToType env) ts
-  h <- if (isLower . head) t
+  h      <- if (isLower . head) t
     then return $ TComp (envcurrentpath env) t []
-    -- then return $ TGenComp t [] params
+         -- then return $ TGenComp t [] params
     else lookupADT env t
   case h of
     (TComp astPath realName _) -> do

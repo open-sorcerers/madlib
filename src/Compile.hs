@@ -5,12 +5,13 @@ module Compile where
 
 import qualified Data.Map                      as M
 import           Data.Maybe                     ( fromMaybe )
-import           Data.List                      (isInfixOf,  sort
+import           Data.List                      ( isInfixOf
+                                                , sort
                                                 , find
                                                 , intercalate
                                                 )
 
-import           AST.Solved                     as Slv
+import           AST.Solved                    as Slv
 import           Utils.Path                     ( cleanRelativePath
                                                 , computeTargetPath
                                                 , makeRelativeEx
@@ -20,9 +21,9 @@ import           System.FilePath                ( replaceExtension
                                                 , joinPath
                                                 )
 import           Explain.Location
-import Infer.Type
-import Debug.Trace (trace)
-import Text.Show.Pretty (ppShow)
+import           Infer.Type
+import           Debug.Trace                    ( trace )
+import           Text.Show.Pretty               ( ppShow )
 
 
 hpWrapLine :: Bool -> FilePath -> Int -> String -> String
@@ -631,20 +632,20 @@ instance Compilable Slv.Instance where
   compile config inst = case inst of
     Slv.Instance interface ty dict ->
       interface
-      <> "['" <> typingToStr ty <> "']"
-      <> " = {\n"
-      <> intercalate ",\n" (uncurry compileMethod <$> M.toList dict)
-      <> "\n};\n"
-    where
-      compileMethod :: Name -> Exp -> String
-      compileMethod n exp = "  " <> n <> ": " <> compile config exp
+        <> "['"
+        <> typingToStr ty
+        <> "']"
+        <> " = {\n"
+        <> intercalate ",\n" (uncurry compileMethod <$> M.toList dict)
+        <> "\n};\n"
+   where
+    compileMethod :: Name -> Exp -> String
+    compileMethod n exp = "  " <> n <> ": " <> compile config exp
 
 typingToStr :: Typing -> String
 typingToStr t = case t of
   TRSingle n -> n
-  TRComp n _ -> if "." `isInfixOf` n
-    then tail $ dropWhile (/= '.') n
-    else n
+  TRComp n _ -> if "." `isInfixOf` n then tail $ dropWhile (/= '.') n else n
 
 instance Compilable AST where
   compile config ast =
@@ -663,16 +664,16 @@ instance Compilable AST where
       configWithASTPath = updateASTPath astPath config
 
       infoComment       = "// file: " <> astPath <> "\n"
-      helpers           = curryPowder <> "\n" <> eq <> getMadlibType <> if coverage
+      helpers = curryPowder <> "\n" <> eq <> getMadlibType <> if coverage
         then "\n" <> hpFnWrap <> "\n" <> hpLineWrap
         else ""
 
       compiledInterfaces = case interfaces of
         [] -> ""
-        x -> foldr1 (<>) (compile configWithASTPath <$> x)
+        x  -> foldr1 (<>) (compile configWithASTPath <$> x)
       compiledInstances = case instances of
         [] -> ""
-        x -> foldr1 (<>) (compile configWithASTPath <$> x)
+        x  -> foldr1 (<>) (compile configWithASTPath <$> x)
       compiledAdts = case typeDecls of
         [] -> ""
         x  -> foldr1 (<>) (compile configWithASTPath <$> x)

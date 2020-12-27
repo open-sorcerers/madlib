@@ -9,8 +9,8 @@ import           Control.Monad
 import           Control.Monad.State
 import           Infer.Substitute
 import           Infer.Infer
-import Debug.Trace (trace)
-import Text.Show.Pretty (ppShow)
+import           Debug.Trace                    ( trace )
+import           Text.Show.Pretty               ( ppShow )
 
 
 letters :: [String]
@@ -32,10 +32,10 @@ instantiate (Forall ks qt) = do
 class Instantiate t where
   inst  :: [Type] -> t -> t
 instance Instantiate Type where
-  inst ts (TApp l r)         = TApp (inst ts l) (inst ts r)
-  inst ts (TGen n)           = ts !! n
+  inst ts (TApp l r        ) = TApp (inst ts l) (inst ts r)
+  inst ts (TGen n          ) = ts !! n
   inst ts (TRecord fields o) = TRecord (M.map (inst ts) fields) o
-  inst _ t                   = t
+  inst _  t                  = t
 instance Instantiate a => Instantiate [a] where
   inst ts = map (inst ts)
 instance Instantiate t => Instantiate (Qual t) where

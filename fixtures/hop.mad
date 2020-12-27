@@ -39,5 +39,12 @@
 // fn = (x) => x + 1
 // fn(2)
 
+// import F from "Function"
+// import IO from "IO"
+
 fn = (r) => r.a.b.c.d.e
+
+3 > 3 + 5
+
+fib = (n) => (if (n < 2) { n } else { fib(n - 1) + fib(n - 2) })
 

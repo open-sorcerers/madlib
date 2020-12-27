@@ -17,10 +17,10 @@ occursCheck a t = S.member a $ ftv t
 
 
 varBind :: TVar -> Type -> Either TypeError Substitution
-varBind tv t | t == TVar tv     = return M.empty
-            | tv `elem` ftv t   = throwError $ InfiniteType tv t
-            | kind tv /= kind t = throwError $ KindError (TVar tv) t
-            | otherwise         = return $ M.singleton tv t
+varBind tv t | t == TVar tv      = return M.empty
+             | tv `elem` ftv t   = throwError $ InfiniteType tv t
+             | kind tv /= kind t = throwError $ KindError (TVar tv) t
+             | otherwise         = return $ M.singleton tv t
 
 
 -- cleanTCompMain :: String -> String
@@ -68,12 +68,13 @@ unify env (TRecord fields open) (TRecord fields' open')
     unifyVars env M.empty z
 
 unify env (TVar tv) t              = varBind tv t
-unify env t        (TVar tv)       = varBind tv t
+unify env t         (TVar tv)      = varBind tv t
 unify _ (TCon a) (TCon b) | a == b = return M.empty
 unify _ t1 t2                      = throwError $ UnificationError t1 t2
 
 
-unifyVars :: Env -> Substitution -> [(Type, Type)] -> Either TypeError Substitution
+unifyVars
+  :: Env -> Substitution -> [(Type, Type)] -> Either TypeError Substitution
 unifyVars env s ((tp, tp') : xs) = do
   s1 <- unify env tp tp'
   unifyVars env (compose env s1 s) xs
@@ -81,7 +82,7 @@ unifyVars _ s _ = return s
 
 
 unifyElems :: Env -> Type -> [Type] -> Either TypeError Substitution
-unifyElems _ _ []          = return M.empty
+unifyElems _   _ []        = return M.empty
 unifyElems env t [t'     ] = unify env t t'
 unifyElems env t (t' : xs) = do
   s1 <- unify env t t'
