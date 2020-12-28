@@ -24,32 +24,19 @@ typingToType env (Meta _ _ (Src.TRSingle t))
   | otherwise = do
     h <- lookupADT env t
     case h of
-      (TComp astPath realName _) -> return $ TComp astPath realName []
-
       (TAlias _ _ _ t          ) -> return t
+      t -> return t
 
 
-typingToType env (Meta _ _ (Src.TRComp t ts)) = do
-  -- fetch ADT from env, and verify that the args applied match it or ERR
+typingToType env (Meta info area (Src.TRComp t ts)) = do
   params <- mapM (typingToType env) ts
-  h      <- if (isLower . head) t
-    then return $ TComp (envcurrentpath env) t []
-         -- then return $ TGenComp t [] params
-    else lookupADT env t
-  case h of
-    (TComp astPath realName _) -> do
-      return $ TComp astPath realName params
-
-    (TAlias _ _ vars t) -> do
-      let subst = M.fromList $ zip vars params
-      return $ apply env subst t
-
-    _ -> return h
+  head <- typingToType env (Meta info area $ Src.TRSingle t)
+  return $ foldl TApp head params
 
 typingToType env (Meta _ _ (Src.TRArr l r)) = do
   l' <- typingToType env l
   r' <- typingToType env r
-  return $ TApp l' r'
+  return $ l' `fn` r'
 
 typingToType env (Meta _ _ (Src.TRRecord fields)) = do
   fields' <- mapM (typingToType env) fields

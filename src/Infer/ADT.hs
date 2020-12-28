@@ -40,8 +40,8 @@ buildTypeDecl _ astPath typeDecls adt@ADT{} =
   case M.lookup (adtname adt) typeDecls of
     Just t  -> throwError $ InferError (ADTAlreadyDefined t) NoReason
     Nothing -> return
-      ( adtname adt
-      , TComp astPath (adtname adt) (TVar . (`TV` Star) <$> adtparams adt)
+      ( adtname adt, TCon $ TC (adtname adt) (buildKind (length $ adtparams adt))
+      -- , TComp astPath (adtname adt) (TVar . (`TV` Star) <$> adtparams adt)
       )
 buildTypeDecl priorEnv astPath typeDecls alias@Alias{} = do
   let name   = aliasname alias

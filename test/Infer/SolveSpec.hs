@@ -76,20 +76,15 @@ spec = do
           actual = tester code
       snapshotTest "should infer division operator" actual
 
-    it "should infer tripleEq operator" $ do
+    it "should infer equality operator" $ do
       let code   = "1 == 3"
           actual = tester code
-      snapshotTest "should infer tripleEq operator" actual
+      snapshotTest "should infer equality operator" actual
 
     it "should infer wrapped douleEq operator" $ do
       let code   = "((a, b) => (a == b))(1, 3)"
           actual = tester code
       snapshotTest "should infer wrapped douleEq operator" actual
-
-    it "should infer asList function" $ do
-      let code   = "(a) => (asList(a))"
-          actual = tester code
-      snapshotTest "should infer asList function" actual
 
     it "should infer an empty source" $ do
       let code   = ""

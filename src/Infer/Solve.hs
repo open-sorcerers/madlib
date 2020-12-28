@@ -115,12 +115,12 @@ inferVar env exp@(Meta _ area (Src.Var n)) = case n of
     let s =
           Forall [Star]
             $   []
-            :=> ((TRecord (M.fromList [(name, TGen 0)]) True) `fn` (TGen 0))
+            :=> (TRecord (M.fromList [(name, TGen 0)]) True `fn` TGen 0)
     t <- instantiate s
     return (M.empty, qualType t, Slv.Solved (qualType t) area $ Slv.Var n)
 
   _ -> do
-    sc         <- catchError (lookupVar (trace ("ENV: "<>ppShow env) env) n) (enhanceVarError env exp area)
+    sc         <- catchError (lookupVar env n) (enhanceVarError env exp area)
     (ps :=> t) <- instantiate sc
     return (M.empty, t, Slv.Solved t area $ Slv.Var n)
 
@@ -331,13 +331,7 @@ inferFieldAccess env (Meta _ area (Src.FieldAccess rec@(Meta _ _ re) abs@(Meta _
           let t          = apply env s tv
 
           let recordExp' = updateType recordExp (apply env s3 recordType)
-          let solved = Slv.Solved
-                t
-                area
-                (Slv.FieldAccess
-                  recordExp'
-                  (trace ("\nT: " <> ppShow t <> "\nS: " <> ppShow s) fieldExp)
-                )
+          let solved = Slv.Solved t area (Slv.FieldAccess recordExp' fieldExp)
 
           return (s, t, solved)
 

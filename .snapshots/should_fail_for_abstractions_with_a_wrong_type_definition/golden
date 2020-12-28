@@ -1,6 +1,7 @@
 Left
   (InferError
-     (UnificationError (TCon CNum) (TCon CString))
+     (UnificationError
+        (TCon (TC "Number" Star)) (TCon (TC "String" Star)))
      (Reason
         (TypeAndTypingMismatch
            (Meta
@@ -62,7 +63,23 @@ Left
                           Infos { nthArg = Nothing , origin = Nothing }
                           (Area (Loc 26 1 27) (Loc 33 1 34))
                           (TRSingle "Boolean"))))))
-           (TArr (TCon CString) (TArr (TCon CNum) (TCon CBool)))
-           (TArr (TVar [] (TV "b")) (TArr (TVar [] (TV "b")) (TCon CBool))))
+           (TApp
+              (TApp
+                 (TCon (TC "(->)" (Kfun Star (Kfun Star Star))))
+                 (TCon (TC "String" Star)))
+              (TApp
+                 (TApp
+                    (TCon (TC "(->)" (Kfun Star (Kfun Star Star))))
+                    (TCon (TC "Number" Star)))
+                 (TCon (TC "Boolean" Star))))
+           (TApp
+              (TApp
+                 (TCon (TC "(->)" (Kfun Star (Kfun Star Star))))
+                 (TVar (TV "d" Star)))
+              (TApp
+                 (TApp
+                    (TCon (TC "(->)" (Kfun Star (Kfun Star Star))))
+                    (TVar (TV "d" Star)))
+                 (TCon (TC "Boolean" Star)))))
         "path"
         (Area (Loc 0 1 1) (Loc 57 2 24))))
