@@ -10,7 +10,6 @@ import           Debug.Trace                    ( trace )
 
 type Vars = M.Map String Scheme
 type TypeDecls = M.Map String Type
-type Imports = M.Map String Type
 
 -- Instance:
 --   Type:           type the instance handles
@@ -28,7 +27,6 @@ data Env
   = Env
     { envvars        :: Vars
     , envtypes       :: TypeDecls
-    , envimports     :: Imports
     , envinterfaces  :: Interfaces
     , envinstances   :: Instances
     , envcurrentpath :: FilePath

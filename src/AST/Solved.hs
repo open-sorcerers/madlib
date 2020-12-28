@@ -8,7 +8,7 @@ import           Explain.Location
 
 data Solved a = Solved Ty.Type Area a deriving(Eq, Show)
 
-getType :: Exp -> Ty.Type
+getType :: Solved a -> Ty.Type
 getType (Solved t _ _) = t
 
 extractExp :: Exp -> Exp_

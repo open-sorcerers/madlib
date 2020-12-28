@@ -37,18 +37,6 @@ unify env (TTuple elems) (TTuple elems') = do
     then unifyVars env M.empty (zip elems elems')
     else throwError $ UnificationError (TTuple elems) (TTuple elems')
 
--- unify env (TComp astPath main vars) (TComp astPath' main' vars')
---   | (cleanTCompMain main == cleanTCompMain main')
---     && astPath
---     == astPath'
---     && length vars
---     == length vars'
---     || (isLower . head) main || (isLower . head) main'
---   = let z = zip vars vars' in unifyVars env M.empty z
---   | otherwise
---   = throwError
---     $ UnificationError (TComp astPath main vars) (TComp astPath' main' vars')
-
 unify env (TRecord fields open) (TRecord fields' open')
   | open || open' = do
     let extraFields    = M.difference fields fields'
@@ -81,11 +69,16 @@ unifyVars env s ((tp, tp') : xs) = do
 unifyVars _ s _ = return s
 
 
-unifyElems :: Env -> Type -> [Type] -> Either TypeError Substitution
-unifyElems _   _ []        = return M.empty
-unifyElems env t [t'     ] = unify env t t'
-unifyElems env t (t' : xs) = do
+unifyElems :: Env -> [Type] -> Either TypeError Substitution
+unifyElems env [] = Right M.empty
+unifyElems env [ts] = Right M.empty
+unifyElems env (h:r) = unifyElems' env h r
+
+unifyElems' :: Env -> Type -> [Type] -> Either TypeError Substitution
+unifyElems' _   _ []        = return M.empty
+unifyElems' env t [t'     ] = unify env t t'
+unifyElems' env t (t' : xs) = do
   s1 <- unify env t t'
-  s2 <- unifyElems env t xs
+  s2 <- unifyElems' env t xs
   return $ compose env s1 s2
 

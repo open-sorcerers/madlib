@@ -30,6 +30,7 @@ import           Data.Maybe                     ( fromMaybe )
 import           Debug.Trace                    ( trace )
 import           Text.Show.Pretty               ( ppShow )
 import           Infer.Scheme                   ( toScheme )
+import qualified Utils.Tuple as T
 
 
 infer :: Env -> Src.Exp -> Infer (Substitution, Type, Slv.Exp)
@@ -213,9 +214,8 @@ inferListConstructor env (Meta _ area (Src.ListConstructor elems)) =
     elems -> do
       inferred <- mapM (inferListItem env) elems
       let (_, t1, _) = head inferred
-      let t          = TApp tList t1
-      -- TODO: Error should be handled
-      s <- unifyToInfer env $ unifyElems env t1 (mid <$> inferred)
+      s <- unifyToInfer env $ unifyElems env (mid <$> inferred)
+      let t          = TApp tList (apply env s t1)
       return (s, t, Slv.Solved t area (Slv.ListConstructor (lst <$> inferred)))
 
 
@@ -388,12 +388,56 @@ inferPatterns env pats = do
 
 inferPattern :: Env -> Src.Pattern -> Infer ([Pred], Vars, Type)
 inferPattern env (Meta _ _ pat) = case pat of
+  Src.PNum _ -> return ([], M.empty, tNumber)
+  Src.PBool _ -> return ([], M.empty, tBool)
+  Src.PStr _ -> return ([], M.empty, tStr)
+
+  Src.PCon n -> return ([], M.empty, TCon $ TC n Star)
+
   Src.PVar i -> do
     v <- newTVar Star
     return ([], M.singleton i (toScheme v), v)
 
-  Src.PNum n -> do
-    return ([], M.empty, tNumber)
+  Src.PAny -> do
+    v <- newTVar Star
+    return ([], M.empty, v)
+  
+  Src.PList pats -> do
+    li <- mapM (inferPListItem env) pats
+    let ts   = T.lst <$> li
+    let ps   = foldr (<>) [] (T.beg <$> li)
+    let vars = foldr (<>) M.empty (T.mid <$> li)
+
+    s <- case unifyElems (mergeVars env vars) ts of
+      Right r -> return r
+      Left e -> throwError $ InferError e NoReason
+
+    return (ps, M.map (apply env s) vars, TApp tList (apply env s (head ts)))
+
+    where
+      inferPListItem :: Env -> Src.Pattern -> Infer ([Pred], Vars, Type)
+      inferPListItem env pat@(Meta _ _ p) = case p of
+        Src.PSpread (Meta _ _ (Src.PVar i)) -> do
+          tv <- newTVar Star
+          let t' = TApp tList tv
+          return ([], M.singleton i (toScheme t'), tv)
+        _ -> inferPattern env pat
+
+  Src.PRecord pats -> do
+    li <- mapM (inferFieldPattern env) pats
+    let vars = foldr (<>) M.empty $ T.mid . snd <$> M.toList li
+    let ps   = foldr (<>) [] $ T.beg . snd <$> M.toList li
+    let ts   = T.lst . snd <$> M.toList li
+    s <- case unifyElems (mergeVars env vars) ts of
+      Right r -> return r
+      Left e -> throwError $ InferError e NoReason
+    
+    return (ps, M.map (apply env s) vars, TRecord (M.map (apply env s . T.lst) li) True)
+
+    where
+      inferFieldPattern :: Env -> Src.Pattern -> Infer ([Pred], Vars, Type)
+      inferFieldPattern env pat@(Meta _ _ p) = case p of
+        _ -> inferPattern env pat
 
   Src.PCtor n pats -> do
     (ps, vars, ts) <- inferPatterns env pats
@@ -404,38 +448,45 @@ inferPattern env (Meta _ _ pat) = case pat of
       Right r -> return r
 
     return (ps <> ps', vars, apply env s tv)
+  
 
 inferWhere :: Env -> Src.Exp -> Infer (Substitution, Type, Slv.Exp)
 inferWhere env (Meta _ area (Src.Where exp iss)) = do
   (s, t, e) <- infer env exp
   tv        <- newTVar Star
   pss       <- mapM (inferBranch env tv t) iss
+
   let issSubstitution = foldr1 (compose env) $ s : (beg <$> pss)
-  return
-    ( issSubstitution
-    , apply env issSubstitution tv
-    , Slv.Solved (apply env issSubstitution tv) area
-      $ Slv.Where (updateType e (apply env issSubstitution tv)) (lst <$> pss)
-    )
-  -- return (ps++concat pss, v)
+
+  s' <- case unifyElems env (Slv.getType . lst <$> pss) of
+    Left e -> throwError $ InferError e NoReason
+    Right r -> return r
+
+  let s'' = compose env s' issSubstitution
+
+  let iss = (\(Slv.Solved t a is) -> Slv.Solved (apply env s'' t) a is) . lst <$> pss
+  let wher = Slv.Solved (apply env s'' tv) area $ Slv.Where e iss
+  return (s'', apply env s'' tv, wher)
 
 
 inferBranch
   :: Env -> Type -> Type -> Src.Is -> Infer (Substitution, [Pred], Slv.Is)
 inferBranch env tv t (Meta _ area (Src.Is pat exp)) = do
   (ps, vars, t') <- inferPattern env pat
-  s              <- case unify env t t' of
+  s              <- case unify (mergeVars env vars) t t' of
     Right r -> return r
-  (s', t'', e') <- infer (env { envvars = M.union (envvars env) vars }) exp
-  s''           <- case unify env tv t'' of
+    Left e -> throwError $ InferError e (Reason (PatternTypeError exp pat) (envcurrentpath env) area)
+  (s', t'', e') <- infer (mergeVars env vars) exp
+  s''           <- case unify (mergeVars env vars) tv t'' of
     Right r -> return r
+    Left e -> throwError $ InferError e (Reason (PatternTypeError exp pat) (envcurrentpath env) area)
   let subst = compose env (compose env s s') s''
   return
     ( subst
     , ps
-    , Slv.Solved (apply env subst t' `fn` apply env subst t'') area
+    , Slv.Solved (apply env subst (t' `fn` t'')) area
       $ Slv.Is (updatePattern pat) (updateType e' (apply env subst t''))
-    )-- ++qs)
+    )
 
 
 
@@ -507,10 +558,9 @@ solveTable table ast = do
 solveTable' :: Src.Table -> Src.AST -> Infer (Slv.Table, Env)
 solveTable' table ast@Src.AST { Src.aimports } = do
   -- First we resolve imports to update the env
-  (inferredASTs, imports, adts, vars) <- solveImports table aimports
+  (inferredASTs, adts, vars) <- solveImports table aimports
 
-  let importEnv = Env { envimports     = imports
-                      , envtypes       = adts
+  let importEnv = Env { envtypes       = adts
                       , envvars        = vars
                       , envinterfaces  = []
                       , envinstances   = []
@@ -518,8 +568,7 @@ solveTable' table ast@Src.AST { Src.aimports } = do
                       }
   -- Then we infer the ast
   env <- buildInitialEnv importEnv ast
-  let envWithImports = env { envimports = imports
-                           , envtypes   = M.union (envtypes env) adts
+  let envWithImports = env { envtypes   = M.union (envtypes env) adts
                            , envvars    = M.union (envvars env) vars
                            }
 
@@ -555,7 +604,7 @@ exportedADTs Slv.AST { Slv.atypedecls } =
 
 
 solveImports
-  :: Src.Table -> [Src.Import] -> Infer (Slv.Table, Imports, TypeDecls, Vars)
+  :: Src.Table -> [Src.Import] -> Infer (Slv.Table, TypeDecls, Vars)
 solveImports table (imp : is) = do
   let modulePath = Src.getImportAbsolutePath imp
 
@@ -611,7 +660,7 @@ solveImports table (imp : is) = do
       throwError $ InferError (ImportNotFound modulePath) NoReason
 
 
-  (nextTable, nextExports, nextADTs, nextVars) <- solveImports table is
+  (nextTable, nextADTs, nextVars) <- solveImports table is
 
   mergedADTs <- do
     adtExports <- if M.intersection adtExports nextADTs == M.empty
@@ -626,13 +675,12 @@ solveImports table (imp : is) = do
 
   return
     ( M.insert modulePath solvedAST (M.union solvedTable nextTable)
-    , M.union exports nextExports
     , mergedADTs
     , M.union nextVars vars
     )
 
 solveImports _ [] = return
-  (M.empty, envimports initialEnv, envtypes initialEnv, envvars initialEnv)
+  (M.empty, envtypes initialEnv, envvars initialEnv)
 
 isADT :: Slv.TypeDecl -> Bool
 isADT Slv.ADT{} = True

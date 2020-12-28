@@ -31,7 +31,8 @@ Right
             (Area (Loc 50 3 1) (Loc 99 6 1))
             (Where
                (Solved
-                  (TCon (TC "Number" Star))
+                  (TApp
+                     (TCon (TC "Maybe" (Kfun Star Star))) (TCon (TC "Number" Star)))
                   (Area (Loc 56 3 7) (Loc 63 3 14))
                   (Var "perhaps"))
                [ Solved

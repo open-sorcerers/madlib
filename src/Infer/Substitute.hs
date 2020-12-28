@@ -1,3 +1,4 @@
+{-# LANGUAGE FlexibleInstances #-}
 module Infer.Substitute where
 
 import qualified Data.Map                      as M

@@ -28,20 +28,13 @@ lookupVar env x = case M.lookup x (envvars env) of
   Just x  -> return x
   Nothing -> throwError $ InferError (UnboundVariable x) NoReason
 
-  -- case M.lookup x $ envvars env of
-  --   Nothing -> case M.lookup x $ envimports env of
-  --     Nothing -> throwError $ InferError (UnboundVariable x) NoReason
-  --     Just s  -> do
-  --       t <- instantiate $ Forall (S.toList $ ftv s) s
-  --       return (M.empty, t)
-
-  --   Just s -> do
-  --     t <- instantiate s
-  --     return (M.empty, t)
-
 
 extendVars :: Env -> (String, Scheme) -> Env
 extendVars env (x, s) = env { envvars = M.insert x s $ envvars env }
+
+
+mergeVars :: Env -> Vars -> Env
+mergeVars env vs = env { envvars = M.union (envvars env) vs}
 
 -- lookupInstance :: Env -> String -> Type -> Maybe Ty.Instance
 -- lookupInstance env interface ty =
@@ -84,7 +77,6 @@ initialEnv = Env
       )
     ]
   , envtypes       = M.fromList [("List", tList)]
-  , envimports     = M.empty
   , envinterfaces  = []
   , envinstances   = []
   , envcurrentpath = ""
@@ -134,7 +126,6 @@ buildInitialEnv priorEnv AST { atypedecls, ainterfaces, ainstances, apath = Just
     -- let allVars = M.union (M.union (envvars initialEnv) vars) (getInterfacesMethods interfaces)
     return Env { envvars        = M.union (envvars initialEnv) vars
                , envtypes       = M.union (envtypes initialEnv) tadts
-               , envimports     = M.empty
                , envinterfaces  = interfaces
                , envinstances   = instances
                , envcurrentpath = apath

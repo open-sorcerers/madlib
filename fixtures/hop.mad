@@ -1,47 +1,52 @@
-x = 2
-y = 1 + x
-
-inc = (x) => x + 1
-
-inc(4)
-
-1 == 2
-
-data Maybe a = Just a | Nothing
-
-Just(3)
-Nothing
-
-where(Just(3))
-  is Just n: n
-
-where(1) {
-  is 1: 3
-  is n: n
+fn2 = (a) => where(a) {
+  is { z: z }: z
+  is { x: x }: x
 }
 
-if (true) {
-  3
-} else {
-  4
-}
+// x = 2
+// y = 1 + x
 
-xs = [1, 2, 3]
-[1, ...xs]
+// inc = (x) => x + 1
 
-<1, "2">
+// inc(4)
 
-r = { a: 3, b: "ok", c: [1, 2, 3] }
+// 1 == 2
 
-r.a + x
+// data Maybe a = Just a | Nothing
+
+// Just(3)
+// Nothing
+
+// where(Just(3))
+//   is Just n: n
+
+// where(1) {
+//   is 1: 3
+//   is n: n
+// }
+
+// if (true) {
+//   3
+// } else {
+//   4
+// }
+
+// xs = [1, 2, 3]
+// [1, ...xs]
+
+// <1, "2">
+
+// r = { a: 3, b: "ok", c: [1, 2, 3] }
+
+// r.a + x
 
 
-fn = (x) => x + 1
-fn(2)
+// fn = (x) => x + 1
+// fn(2)
 
-getA :: Maybe a -> a
-getA = where
-  is Just a: a
+// getA :: Maybe a -> a
+// getA = where
+//   is Just a: a
 
 // import F from "Function"
 // import IO from "IO"
