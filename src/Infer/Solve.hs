@@ -169,8 +169,8 @@ inferApp env (Meta _ area (Src.App abs arg final)) = do
   (s2, t2, earg) <- infer (apply env (removeRecordTypes s1) env) arg
 
   s3             <- case unify env (apply env s2 t1) (t2 `fn` tv) of
-    Right s -> return (trace ("ENV: "<>ppShow env<>"\nt1: "<>ppShow t1<>"\nt2: "<>ppShow t2) s)
-    Left  e -> throwError $ InferError (trace ("ENV: "<>ppShow env<>"\nt1: "<>ppShow t1<>"\nt2: "<>ppShow t2) e) $ Reason (WrongTypeApplied abs arg)
+    Right s -> return s
+    Left  e -> throwError $ InferError e $ Reason (WrongTypeApplied abs arg)
                                                   (envcurrentpath env)
                                                   (getArea arg)
   let t = apply env s3 tv
@@ -417,7 +417,7 @@ inferPattern env (Meta _ _ pat) = case pat of
   Src.PList pats -> do
     li <- mapM (inferPListItem env) pats
     tv <- newTVar Star
-    let ts   = tv : (T.lst <$> li)
+    let ts   = if null li then [tv] else T.lst <$> li
     let ps   = foldr (<>) [] (T.beg <$> li)
     let vars = foldr (<>) M.empty (T.mid <$> li)
 
@@ -502,7 +502,7 @@ inferBranch env tv t (Meta _ area (Src.Is pat exp)) = do
   let subst = compose env (compose env (compose env s s') s'') s'''
   
   return
-    ( trace ("EXT-ENV: "<>ppShow (mergeVars env vars)<>"\nS''': "<>ppShow s''') subst
+    ( subst
     , ps
     , Slv.Solved (apply env subst (t''' `fn` t'')) area
       $ Slv.Is (updatePattern pat) (updateType e' (apply env subst t''))
@@ -516,7 +516,7 @@ removeSpread t = case t of
 extendRecord :: Substitution -> Type -> Type
 extendRecord s t = case t of
   TRecord fs _ ->
-    let spread = M.lookup "..." (trace ("S: "<>ppShow s<>"\nT: "<>ppShow t) fs)
+    let spread = M.lookup "..." fs
         fs'    = M.map (extendRecord s) fs
     in case spread of
       Just (TVar tv) -> case M.lookup tv s of
@@ -538,9 +538,9 @@ inferTypedExp env (Meta _ area (Src.TypedExp exp typing)) = do
   t            <- typingToType env typing
   let (gens, t') = makeGeneric M.empty t
 
-  t''           <- instantiate $ Forall (Star <$ M.toList gens) ([] :=> (trace ("GEN-TYPE:"<>ppShow t') t'))
+  t''           <- instantiate $ Forall (Star <$ M.toList gens) ([] :=> t')
 
-  (s1, t1, e1) <- infer env (trace ("T''-GEN: "<>ppShow t'') exp)
+  (s1, t1, e1) <- infer env exp
   s2           <- case unify env (qualType t'') t1 of
     Right solved -> return solved
 
@@ -631,7 +631,7 @@ solveTable' table ast@Src.AST { Src.aimports } = do
                       , envcurrentpath = fromMaybe "" (Src.apath ast)
                       }
   -- Then we infer the ast
-  env <- buildInitialEnv importEnv ast
+  env <- buildInitialEnv (trace ("IMPORT ENV: "<>ppShow importEnv) importEnv) ast
   let envWithImports = env { envtypes   = M.union (envtypes env) adts
                            , envvars    = M.union (envvars env) vars
                            }
@@ -697,7 +697,7 @@ solveImports table (imp : is) = do
         )
   let buildConstructorVars = M.filterWithKey
         (\k v -> k `elem` exportedConstructorNames)
-        (envvars envSolved)
+        (envvars (trace ("IMP: "<>ppShow imp<>"EXPORTED TYPES: "<>ppShow exportedTypes<>"\nEXPORTS: "<>ppShow exportedTypes) envSolved))
 
   (exports, vars) <- case (exportedTypes, imp) of
     (Just exports, Meta _ _ (Src.DefaultImport namespace _ _)) -> do
@@ -751,7 +751,7 @@ solveImports table (imp : is) = do
   return
     ( M.insert modulePath solvedAST (M.union solvedTable nextTable)
     , mergedADTs
-    , M.union nextVars vars
+    , nextVars <> vars <> M.map (\t -> Forall [] $ [] :=> t) exports
     )
 
 solveImports _ [] = return
