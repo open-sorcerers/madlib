@@ -17,7 +17,7 @@ fn2 = (a) => where(a) {
 
 // 1 == 2
 
-// data Maybe a = Just a | Nothing
+data Maybe a = Just a | Nothing
 
 // Just(3)
 // Nothing
@@ -62,3 +62,9 @@ fn2 = (a) => where(a) {
 
 // fib = (n) => (if (n < 2) { n } else { fib(n - 1) + fib(n - 2) })
 
+alias T a = Maybe a
+
+// x :: T String
+// x = Just("ok")
+
+export data ByteArray = ByteArray (List String)

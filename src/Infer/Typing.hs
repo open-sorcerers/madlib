@@ -30,8 +30,9 @@ typingToType env (Meta _ _ (Src.TRSingle t))
 
 typingToType env (Meta info area (Src.TRComp t ts)) = do
   params <- mapM (typingToType env) ts
-  head <- typingToType env (Meta info area $ Src.TRSingle t)
-  return $ foldl TApp head params
+  h   <- typingToType env (Meta info area $ Src.TRSingle t)
+  return $ foldl TApp h params
+  -- return head
 
 typingToType env (Meta _ _ (Src.TRArr l r)) = do
   l' <- typingToType env l

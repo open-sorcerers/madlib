@@ -416,7 +416,8 @@ inferPattern env (Meta _ _ pat) = case pat of
   
   Src.PList pats -> do
     li <- mapM (inferPListItem env) pats
-    let ts   = T.lst <$> li
+    tv <- newTVar Star
+    let ts   = tv : (T.lst <$> li)
     let ps   = foldr (<>) [] (T.beg <$> li)
     let vars = foldr (<>) M.empty (T.mid <$> li)
 
@@ -480,7 +481,7 @@ inferWhere env (Meta _ area (Src.Where exp iss)) = do
 
   let iss = (\(Slv.Solved t a is) -> Slv.Solved (apply env s'' t) a is) . lst <$> pss
   let wher = Slv.Solved (apply env s'' tv) area $ Slv.Where (updateType e (apply env s'' t)) iss
-  return (s'', apply env s'' tv, (trace ("S'': "<>ppShow s''<>"\nTV: "<>ppShow tv<>"\nS: "<>ppShow s) wher))
+  return (s'', apply env s'' tv, wher)
 
 
 inferBranch
@@ -613,7 +614,7 @@ solveTable' table ast@Src.AST { Src.aimports } = do
   inferredAST <- inferAST envWithImports ast
 
   case Slv.apath inferredAST of
-    Just fp -> return $ (M.insert fp inferredAST inferredASTs, envWithImports)
+    Just fp -> return (M.insert fp inferredAST inferredASTs, envWithImports)
 
 
 
@@ -663,7 +664,7 @@ solveImports table (imp : is) = do
   let exportedTypes    = mapM (return . Slv.getType) exportedExps
 
   let exportedADTNames = exportedADTs solvedAST
-  let adtExports = M.filterWithKey (\k _ -> elem k exportedADTNames) envADTs
+  let adtExports = M.filterWithKey (\k _ -> k `elem` exportedADTNames) envADTs
 
   let exportedConstructorNames = Slv.getConstructorName <$> concat
         (Slv.adtconstructors <$> filter (\x -> isADT x && Slv.adtExported x)
@@ -686,8 +687,7 @@ solveImports table (imp : is) = do
         , M.fromList
           [ ( namespace
             , Forall []
-            $   ps
-            :=> (TRecord (M.union exports (M.fromList (zip cvNames ts))) False)
+            $ ps :=> TRecord (M.union exports (M.fromList (zip cvNames ts))) False
             )
           ]
         )
@@ -701,14 +701,26 @@ solveImports table (imp : is) = do
   (nextTable, nextADTs, nextVars) <- solveImports table is
 
   mergedADTs <- do
-    adtExports <- if M.intersection adtExports nextADTs == M.empty
-      then return $ M.union adtExports nextADTs
-      else throwError $ InferError FatalError NoReason
-    case imp of
+    withNamespaces <- case imp of
       Meta _ _ (Src.DefaultImport namespace _ absPath) -> return
         $ M.mapKeys (mergeTypeDecl namespace absPath adtExports) adtExports
 
       _ -> return adtExports
+    
+    if M.intersection withNamespaces nextADTs == M.empty
+      then return $ M.union withNamespaces nextADTs
+      else throwError $ InferError FatalError NoReason
+    
+
+  -- mergedADTs <- do
+  --   adtExports <- if M.intersection adtExports nextADTs == M.empty
+  --     then return $ M.union adtExports nextADTs
+  --     else throwError $ InferError FatalError NoReason
+  --   case imp of
+  --     Meta _ _ (Src.DefaultImport namespace _ absPath) -> return
+  --       $ M.mapKeys (mergeTypeDecl namespace absPath adtExports) adtExports
+
+  --     _ -> return adtExports
 
 
   return
@@ -726,8 +738,10 @@ isADT _         = False
 
 mergeTypeDecl :: String -> FilePath -> M.Map String Type -> String -> String
 mergeTypeDecl namespace absPath adts key = case M.lookup key adts of
-  Just (TComp path _ _) ->
-    if path == absPath then namespace <> "." <> key else key
+  Just (TCon _) -> namespace <> "." <> key
+  -- Just (TCon _) -> key
+  -- Just (TComp path _ _) ->
+  --   if path == absPath then namespace <> "." <> key else key
   Just (TAlias path _ _ _) ->
     if path == absPath then namespace <> "." <> key else key
   _ -> key

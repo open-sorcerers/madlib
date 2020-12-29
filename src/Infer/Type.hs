@@ -118,6 +118,7 @@ instance HasKind Type where
   kind (TRecord _ _) = Star
   kind (TApp    t _) = case kind t of
     (Kfun _ k) -> k
+  kind t = trace ("T: "<>ppShow t) Star
 
 
 -- Do we still need this ?

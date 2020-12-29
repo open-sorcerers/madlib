@@ -16,17 +16,30 @@ import           Error.Error
 import qualified Data.Set                      as S
 import           Infer.Substitute               ( Substitutable(ftv) )
 import           Infer.Typing                   ( typingToType )
-import           Data.List                      ( find )
+import           Data.List                      (isInfixOf,  find )
 import           Data.Maybe                     ( fromMaybe )
 import           Text.Show.Pretty               ( ppShow )
 import           Debug.Trace                    ( trace )
-
+import Infer.Scheme (toScheme)
 
 
 lookupVar :: Env -> String -> Infer Scheme
-lookupVar env x = case M.lookup x (envvars env) of
-  Just x  -> return x
-  Nothing -> throwError $ InferError (UnboundVariable x) NoReason
+lookupVar env x
+  | "." `isInfixOf` x = do
+    let (namespace, name) = break (== '.') x
+    case M.lookup namespace (envvars env) of
+      Just s -> do
+        h <- instantiate s
+        let (TRecord fields _) = qualType h
+
+        case M.lookup (tail name) fields of
+          Just t -> return (toScheme t)
+          Nothing -> throwError $ InferError (UnboundVariable x) NoReason
+
+      Nothing -> throwError $ InferError (UnboundVariable x) NoReason
+  | otherwise = case M.lookup x (envvars env) of
+    Just x  -> return x
+    Nothing -> throwError $ InferError (UnboundVariable x) NoReason
 
 
 extendVars :: Env -> (String, Scheme) -> Env
@@ -123,7 +136,6 @@ buildInitialEnv priorEnv AST { atypedecls, ainterfaces, ainstances, apath = Just
     vars       <- resolveTypeDecls priorEnv apath tadts atypedecls
     interfaces <- solveInterfaces priorEnv ainterfaces
     instances  <- solveInstances priorEnv ainstances
-    -- let allVars = M.union (M.union (envvars initialEnv) vars) (getInterfacesMethods interfaces)
     return Env { envvars        = M.union (envvars initialEnv) vars
                , envtypes       = M.union (envtypes initialEnv) tadts
                , envinterfaces  = interfaces

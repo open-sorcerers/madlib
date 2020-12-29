@@ -17,6 +17,7 @@ import           Infer.Instantiate              ( newTVar )
 import           Data.Maybe                     ( fromMaybe )
 import           Text.Show.Pretty               ( ppShow )
 import           Debug.Trace                    ( trace )
+import Data.List (isInfixOf)
 
 
 buildTypeDecls :: Env -> FilePath -> [TypeDecl] -> Infer TypeDecls
@@ -40,9 +41,7 @@ buildTypeDecl _ astPath typeDecls adt@ADT{} =
   case M.lookup (adtname adt) typeDecls of
     Just t  -> throwError $ InferError (ADTAlreadyDefined t) NoReason
     Nothing -> return
-      ( adtname adt, TCon $ TC (adtname adt) (buildKind (length $ adtparams adt))
-      -- , TComp astPath (adtname adt) (TVar . (`TV` Star) <$> adtparams adt)
-      )
+      (adtname adt, TCon $ TC (adtname adt) (buildKind (length $ adtparams adt)))
 buildTypeDecl priorEnv astPath typeDecls alias@Alias{} = do
   let name   = aliasname alias
   let params = (`TV` Star) <$> aliasparams alias
@@ -104,35 +103,27 @@ argToType _ gens typeDecls _ params (Meta _ _ (TRSingle n))
   | n == "Number" = return tNumber
   | n == "Boolean" = return tBool
   | n == "String" = return tStr
-  |
-  -- | isLower (head n) && (n `elem` params) = return $ TVar $ TV n Star
-    isLower (head n) = return
-  $ fromMaybe (TGen 0) (M.lookup n (M.fromList gens))
-  | -- A free var that is not in type params
-    otherwise = case M.lookup n typeDecls of
-    Just a  -> return a
-    Nothing -> throwError $ InferError (UnknownType n) NoReason
+  | isLower (head n) = return $ fromMaybe (TGen 0) (M.lookup n (M.fromList gens))
+  | otherwise = case M.lookup n typeDecls of
+      Just a  -> return a
+      Nothing -> throwError $ InferError (UnknownType n) NoReason
 
 argToType priorEnv gens typeDecls name params (Meta _ _ (TRComp tname targs)) =
-  case M.lookup tname typeDecls of
-  -- TODO: Verify the length of tparams and make sure it matches the one of targs ! otherwise
-  -- we have a type application error.
-    Just (TComp fp n _) ->
-      TComp fp n <$> mapM (argToType priorEnv gens typeDecls name params) targs
-    Nothing -> if tname == "List"
-      then
-        TComp "Prelude" tname
-          <$> mapM (argToType priorEnv gens typeDecls name params) targs
-      else case M.lookup tname (envtypes priorEnv) of
-        Just (TComp path tname _) ->
-          TComp path tname
-            <$> mapM (argToType priorEnv gens typeDecls name params) targs
-        Nothing -> throwError $ InferError (UnknownType tname) NoReason
+  let cleanName = tname
+  -- let cleanName = if "." `isInfixOf` tname
+  --       then tail $ dropWhile (/= '.') tname
+  --       else tname
+  in
+    case M.lookup (trace ("TNAME: "<>ppShow tname<>"\nDecls: "<>ppShow (envtypes priorEnv<>typeDecls)) cleanName) (envtypes priorEnv<>typeDecls) of
+      Just t@(TCon _) -> foldM (\prev a -> do
+                arg <- argToType priorEnv gens typeDecls name params a
+                return $ TApp prev arg) t targs
+      Nothing -> throwError $ InferError (UnknownType cleanName) NoReason
 
 argToType priorEnv gens typeDecls name params (Meta _ _ (TRArr l r)) = do
   l' <- argToType priorEnv gens typeDecls name params l
   r' <- argToType priorEnv gens typeDecls name params r
-  return $ TApp l' r'
+  return $ l' `fn` r'
 
 argToType priorEnv gens typeDecls name params (Meta _ _ (TRRecord f)) = do
   f' <- mapM (argToType priorEnv gens typeDecls name params) f

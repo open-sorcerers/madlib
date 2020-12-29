@@ -37,6 +37,14 @@ const __eq = (l, r) => {
   }
   return l === r;
 }
+const getMadlibType = (value) => {
+  if (typeof value === 'string') {
+    return 'String';
+  }
+  else {
+    return '__UNKNOWN__';
+  }
+};
 const Just = curryPowder((a) => ({ __constructor: "Just", __args: [ a ] }));
 const Nothing = ({ __constructor: "Nothing", __args: [  ] });
 export const fn = curryPowder((b, c) => b + c);
@@ -51,8 +59,8 @@ const users = response.users;
 const carResponse = ({ cars: ([]) });
 const allResponses = ({ ...response, ...carResponse });
 ((__x__) => {
-  if (true && __x__.users.__constructor === "List" && true) {
-    const { users: { __args: [a] }, cars: cs } = __x__;
+  if (true && true) {
+    const { users: a, cars: cs } = __x__;
     return cs;
   }
   else if (true) {

@@ -37,6 +37,14 @@ const __eq = (l, r) => {
   }
   return l === r;
 }
+const getMadlibType = (value) => {
+  if (typeof value === 'string') {
+    return 'String';
+  }
+  else {
+    return '__UNKNOWN__';
+  }
+};
 
 const __hpFnWrap = (astPath, line, name) => (fn) => {
   function wrapped(...args) {
@@ -65,8 +73,8 @@ const users = __hpLineWrap('path', 13, __hpLineWrap('path', 13, response).users)
 const carResponse = ({ cars: __hpLineWrap('path', 14, ([])) });
 const allResponses = ({ ...__hpLineWrap('path', 15, __hpLineWrap('path', 15, response)), ...__hpLineWrap('path', 15, __hpLineWrap('path', 15, carResponse)) });
 ((__x__) => {
-  if (__hp('path', 'line', 17, 17) || true && __x__.users.__constructor === "List" && true) {
-    const { users: { __args: [a] }, cars: cs } = __x__;
+  if (__hp('path', 'line', 17, 17) || true && true) {
+    const { users: a, cars: cs } = __x__;
     return __hpLineWrap('path', 17, cs);
   }
   else if (__hp('path', 'line', 18, 18) || true) {
