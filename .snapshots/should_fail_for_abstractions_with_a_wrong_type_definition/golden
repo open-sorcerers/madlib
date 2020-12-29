@@ -75,11 +75,11 @@ Left
            (TApp
               (TApp
                  (TCon (TC "(->)" (Kfun Star (Kfun Star Star))))
-                 (TVar (TV "d" Star)))
+                 (TVar (TV "c" Star)))
               (TApp
                  (TApp
                     (TCon (TC "(->)" (Kfun Star (Kfun Star Star))))
-                    (TVar (TV "d" Star)))
+                    (TVar (TV "c" Star)))
                  (TCon (TC "Boolean" Star)))))
         "path"
         (Area (Loc 0 1 1) (Loc 57 2 24))))

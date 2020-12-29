@@ -169,8 +169,8 @@ inferApp env (Meta _ area (Src.App abs arg final)) = do
   (s2, t2, earg) <- infer (apply env (removeRecordTypes s1) env) arg
 
   s3             <- case unify env (apply env s2 t1) (t2 `fn` tv) of
-    Right s -> return s
-    Left  e -> throwError $ InferError e $ Reason (WrongTypeApplied abs arg)
+    Right s -> return (trace ("ENV: "<>ppShow env<>"\nt1: "<>ppShow t1<>"\nt2: "<>ppShow t2) s)
+    Left  e -> throwError $ InferError (trace ("ENV: "<>ppShow env<>"\nt1: "<>ppShow t1<>"\nt2: "<>ppShow t2) e) $ Reason (WrongTypeApplied abs arg)
                                                   (envcurrentpath env)
                                                   (getArea arg)
   let t = apply env s3 tv
@@ -536,29 +536,51 @@ extendRecord s t = case t of
 inferTypedExp :: Env -> Src.Exp -> Infer (Substitution, Type, Slv.Exp)
 inferTypedExp env (Meta _ area (Src.TypedExp exp typing)) = do
   t            <- typingToType env typing
+  let (gens, t') = makeGeneric M.empty t
 
-  t'           <- instantiate $ Forall [kind t] ([] :=> t)
+  t''           <- instantiate $ Forall (Star <$ M.toList gens) ([] :=> (trace ("GEN-TYPE:"<>ppShow t') t'))
 
-  (s1, t1, e1) <- infer env exp
-  s2           <- case unify env (qualType t') t1 of
+  (s1, t1, e1) <- infer env (trace ("T''-GEN: "<>ppShow t'') exp)
+  s2           <- case unify env (qualType t'') t1 of
     Right solved -> return solved
 
     Left  err    -> throwError $ InferError
       err
-      (Reason (TypeAndTypingMismatch exp typing (qualType t') t1)
+      (Reason (TypeAndTypingMismatch exp typing (qualType t'') t1)
               (envcurrentpath env)
               area
       )
 
   return
     ( compose env s1 s2
-    , qualType t'
+    , qualType t''
     , Slv.Solved
-      (qualType t')
+      (qualType t'')
       area
-      (Slv.TypedExp (updateType e1 (qualType t')) (updateTyping typing))
+      (Slv.TypedExp (updateType e1 (qualType t'')) (updateTyping typing))
     )
 
+makeGeneric :: M.Map String Int -> Type -> (M.Map String Int, Type)
+makeGeneric gens t = case t of
+  TVar (TV n _) -> case M.lookup n gens of
+    Just x ->  (gens, TGen x)
+    Nothing -> (M.insert n (length gens) gens, TGen (length gens))
+  TCon _ -> (gens, t)
+  TApp l r ->
+    let (gens', l')  = makeGeneric gens l
+        (gens'', r') = makeGeneric gens' r
+    in (gens'', TApp l' r')
+  TRecord fs o ->
+    let update = M.map (makeGeneric gens) fs
+        fs'    = M.map snd update
+        gens'  = foldr M.union gens $ snd <$> (M.toList $ M.map fst update)
+    in  (gens', TRecord fs' o)
+
+  TTuple ts ->
+    let update = makeGeneric gens <$> ts
+        ts' = snd <$> update
+        gens' = foldr M.union gens $ fst <$> update
+    in (gens', TTuple ts')
 
 
 inferExps :: Env -> [Src.Exp] -> Infer [Slv.Exp]
@@ -569,19 +591,22 @@ inferExps env [exp   ] = (: []) . lst <$> infer env exp
 inferExps env (e : xs) = do
   (_, t, e') <- infer env e
   let exp = Slv.extractExp e'
+  -- let scheme = makeGeneric M.empty t
+  let (gens, t') = makeGeneric M.empty t
+  let scheme = Forall (Star <$ M.toList gens) $ [] :=> t'
   let
     env' = case exp of
       Slv.Assignment name _ ->
-        extendVars env (name, Forall [kind t] ([] :=> t))
+        extendVars env (name, scheme)
 
       Slv.TypedExp (Slv.Solved _ _ (Slv.Assignment name _)) _ ->
-        extendVars env (name, Forall [kind t] ([] :=> t))
+        extendVars env (name, scheme)
 
       Slv.TypedExp (Slv.Solved _ _ (Slv.Export (Slv.Solved _ _ (Slv.Assignment name _)))) _
-        -> extendVars env (name, Forall [kind t] ([] :=> t))
+        -> extendVars env (name, scheme)
 
       Slv.Export (Slv.Solved _ _ (Slv.Assignment name _)) ->
-        extendVars env (name, Forall [kind t] ([] :=> t))
+        extendVars env (name, scheme)
 
       _ -> env
 

@@ -68,3 +68,16 @@ alias T a = Maybe a
 // x = Just("ok")
 
 export data ByteArray = ByteArray (List String)
+
+// map :: (a -> b) -> List a -> List b
+map = (f, xs) => (#- some JS -#)
+
+
+map(
+  map((x) => x + 1),
+  [[1, 2]]
+)
+
+// map(map((x) => x + 1), [[1, 2], [3, 4]])
+// [[1, 2], [3, 4]]
+//   |> map(map((x) => (x * 2)))

@@ -120,9 +120,3 @@ instance HasKind Type where
     (Kfun _ k) -> k
   kind t = trace ("T: "<>ppShow t) Star
 
-
--- Do we still need this ?
-arrowReturnType :: Type -> Type
-arrowReturnType (TApp _ (TApp y x)) = arrowReturnType (TApp y x)
-arrowReturnType (TApp _ x         ) = x
-arrowReturnType x                   = x
