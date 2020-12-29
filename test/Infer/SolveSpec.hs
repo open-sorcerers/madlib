@@ -804,7 +804,7 @@ spec = do
         "should correctly infer types of record pattern when the input has a variable type"
       $ do
           let code = unlines
-                [ "fn2 = (a) => (where(a) {"
+                [ "fn2 = (x) => (where(x) {"
                 , "  is { z: z }: z"
                 , "  is { x: x }: x"
                 , "})"

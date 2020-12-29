@@ -25,7 +25,9 @@ Right
                          (Area (Loc 48 3 3) (Loc 79 5 3))
                          (Where
                             (Solved
-                               (TVar (TV "b" Star)) (Area (Loc 54 3 9) (Loc 55 3 10)) (Var "b"))
+                               (TApp (TCon (TC "Maybe" (Kfun Star Star))) (TVar (TV "d" Star)))
+                               (Area (Loc 54 3 9) (Loc 55 3 10))
+                               (Var "b"))
                             [ Solved
                                 (TApp
                                    (TApp

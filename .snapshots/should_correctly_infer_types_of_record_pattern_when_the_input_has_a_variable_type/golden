@@ -8,9 +8,13 @@ Right
                   (TCon (TC "(->)" (Kfun Star (Kfun Star Star))))
                   (TRecord
                      (fromList
-                        [ ( "x" , TVar (TV "e" Star) ) , ( "z" , TVar (TV "e" Star) ) ])
+                        [ ( "x" , TVar (TV "e" Star) )
+                        , ( "z"
+                          , TRecord (fromList [ ( "x" , TVar (TV "e" Star) ) ]) True
+                          )
+                        ])
                      True))
-               (TVar (TV "e" Star)))
+               (TRecord (fromList [ ( "x" , TVar (TV "e" Star) ) ]) True))
             (Area (Loc 0 1 1) (Loc 3 1 4))
             (Assignment
                "fn2"
@@ -20,24 +24,44 @@ Right
                         (TCon (TC "(->)" (Kfun Star (Kfun Star Star))))
                         (TRecord
                            (fromList
-                              [ ( "x" , TVar (TV "e" Star) ) , ( "z" , TVar (TV "e" Star) ) ])
+                              [ ( "x" , TVar (TV "e" Star) )
+                              , ( "z"
+                                , TRecord (fromList [ ( "x" , TVar (TV "e" Star) ) ]) True
+                                )
+                              ])
                            True))
-                     (TVar (TV "e" Star)))
+                     (TRecord (fromList [ ( "x" , TVar (TV "e" Star) ) ]) True))
                   (Area (Loc 6 1 7) (Loc 61 4 3))
                   (Abs
-                     "a"
+                     "x"
                      [ Solved
-                         (TVar (TV "e" Star))
+                         (TRecord (fromList [ ( "x" , TVar (TV "e" Star) ) ]) True)
                          (Area (Loc 14 1 15) (Loc 60 4 1))
                          (Where
                             (Solved
-                               (TVar (TV "b" Star)) (Area (Loc 20 1 21) (Loc 21 1 22)) (Var "a"))
+                               (TRecord
+                                  (fromList
+                                     [ ( "x" , TVar (TV "e" Star) )
+                                     , ( "z"
+                                       , TRecord (fromList [ ( "x" , TVar (TV "e" Star) ) ]) True
+                                       )
+                                     ])
+                                  True)
+                               (Area (Loc 20 1 21) (Loc 21 1 22))
+                               (Var "x"))
                             [ Solved
                                 (TApp
                                    (TApp
                                       (TCon (TC "(->)" (Kfun Star (Kfun Star Star))))
-                                      (TRecord (fromList [ ( "z" , TVar (TV "e" Star) ) ]) True))
-                                   (TVar (TV "e" Star)))
+                                      (TRecord
+                                         (fromList
+                                            [ ( "z"
+                                              , TRecord
+                                                  (fromList [ ( "x" , TVar (TV "e" Star) ) ]) True
+                                              )
+                                            ])
+                                         True))
+                                   (TRecord (fromList [ ( "x" , TVar (TV "e" Star) ) ]) True))
                                 (Area (Loc 27 2 3) (Loc 41 2 17))
                                 (Is
                                    (PRecord (fromList [ ( "z" , PVar "z" ) ]))
@@ -50,12 +74,12 @@ Right
                                    (TApp
                                       (TCon (TC "(->)" (Kfun Star (Kfun Star Star))))
                                       (TRecord (fromList [ ( "x" , TVar (TV "e" Star) ) ]) True))
-                                   (TVar (TV "e" Star)))
+                                   (TRecord (fromList [ ( "x" , TVar (TV "e" Star) ) ]) True))
                                 (Area (Loc 44 3 3) (Loc 58 3 17))
                                 (Is
                                    (PRecord (fromList [ ( "x" , PVar "x" ) ]))
                                    (Solved
-                                      (TVar (TV "e" Star))
+                                      (TRecord (fromList [ ( "x" , TVar (TV "e" Star) ) ]) True)
                                       (Area (Loc 57 3 16) (Loc 58 3 17))
                                       (Var "x")))
                             ])

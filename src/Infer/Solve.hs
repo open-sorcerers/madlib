@@ -401,6 +401,18 @@ inferPattern env (Meta _ _ pat) = case pat of
   Src.PAny -> do
     v <- newTVar Star
     return ([], M.empty, v)
+
+  Src.PTuple pats -> do
+    ti <- mapM (inferPattern env) pats
+    let ts   = T.lst <$> ti
+    let ps   = foldr (<>) [] (T.beg <$> ti)
+    let vars = foldr (<>) M.empty (T.mid <$> ti)
+
+    s <- case unifyElems (mergeVars env vars) ts of
+      Right r -> return r
+      Left e -> throwError $ InferError e NoReason
+
+    return (ps, M.map (apply env s) vars, TTuple (apply env s ts))
   
   Src.PList pats -> do
     li <- mapM (inferPListItem env) pats
@@ -427,16 +439,19 @@ inferPattern env (Meta _ _ pat) = case pat of
     li <- mapM (inferFieldPattern env) pats
     let vars = foldr (<>) M.empty $ T.mid . snd <$> M.toList li
     let ps   = foldr (<>) [] $ T.beg . snd <$> M.toList li
+    -- let li' = M.filterWithKey (\k _ -> k /= "...") li
     let ts   = T.lst . snd <$> M.toList li
-    s <- case unifyElems (mergeVars env vars) ts of
-      Right r -> return r
-      Left e -> throwError $ InferError e NoReason
-    
-    return (ps, M.map (apply env s) vars, TRecord (M.map (apply env s . T.lst) li) True)
+
+    return (ps, vars, TRecord (M.map T.lst li) True)
 
     where
       inferFieldPattern :: Env -> Src.Pattern -> Infer ([Pred], Vars, Type)
       inferFieldPattern env pat@(Meta _ _ p) = case p of
+        Src.PSpread (Meta _ _ (Src.PVar i)) -> do
+          tv <- newTVar Star
+          let tr = tv--TRecord M.empty (trace ("I: "<> ppShow i) True)
+          return ([], M.singleton i (toScheme tr), tr)
+
         _ -> inferPattern env pat
 
   Src.PCtor n pats -> do
@@ -446,6 +461,7 @@ inferPattern env (Meta _ _ pat) = case pat of
     (ps' :=> t)    <- instantiate sc
     s              <- case unify env t (foldr fn tv ts) of
       Right r -> return r
+      Left e -> throwError $ InferError e NoReason
 
     return (ps <> ps', vars, apply env s tv)
   
@@ -465,29 +481,54 @@ inferWhere env (Meta _ area (Src.Where exp iss)) = do
   let s'' = compose env s' issSubstitution
 
   let iss = (\(Slv.Solved t a is) -> Slv.Solved (apply env s'' t) a is) . lst <$> pss
-  let wher = Slv.Solved (apply env s'' tv) area $ Slv.Where e iss
-  return (s'', apply env s'' tv, wher)
+  let wher = Slv.Solved (apply env s'' tv) area $ Slv.Where (updateType e (apply env s'' t)) iss
+  return (s'', apply env s'' tv, (trace ("S'': "<>ppShow s''<>"\nTV: "<>ppShow tv<>"\nS: "<>ppShow s) wher))
 
 
 inferBranch
   :: Env -> Type -> Type -> Src.Is -> Infer (Substitution, [Pred], Slv.Is)
 inferBranch env tv t (Meta _ area (Src.Is pat exp)) = do
   (ps, vars, t') <- inferPattern env pat
-  s              <- case unify (mergeVars env vars) t t' of
+  s              <- case unify (mergeVars env vars) t (removeSpread t') of
     Right r -> return r
     Left e -> throwError $ InferError e (Reason (PatternTypeError exp pat) (envcurrentpath env) area)
   (s', t'', e') <- infer (mergeVars env vars) exp
   s''           <- case unify (mergeVars env vars) tv t'' of
     Right r -> return r
     Left e -> throwError $ InferError e (Reason (PatternTypeError exp pat) (envcurrentpath env) area)
-  let subst = compose env (compose env s s') s''
+  let t''' = extendRecord (s <> s'' <> s') t'
+  s''' <- case unify (mergeVars env vars) t t''' of
+    Right r -> return r
+    Left e -> throwError $ InferError e (Reason (PatternTypeError exp pat) (envcurrentpath env) area)
+  let subst = compose env (compose env (compose env s s') s'') s'''
+  
   return
-    ( subst
+    ( trace ("EXT-ENV: "<>ppShow (mergeVars env vars)<>"\nS''': "<>ppShow s''') subst
     , ps
-    , Slv.Solved (apply env subst (t' `fn` t'')) area
+    , Slv.Solved (apply env subst (t''' `fn` t'')) area
       $ Slv.Is (updatePattern pat) (updateType e' (apply env subst t''))
     )
 
+removeSpread :: Type -> Type
+removeSpread t = case t of
+  TRecord fs o -> TRecord (M.filterWithKey (\k _ -> k /= "...") fs) o
+  _ -> t
+
+extendRecord :: Substitution -> Type -> Type
+extendRecord s t = case t of
+  TRecord fs _ ->
+    let spread = M.lookup "..." (trace ("S: "<>ppShow s<>"\nT: "<>ppShow t) fs)
+        fs'    = M.map (extendRecord s) fs
+    in case spread of
+      Just (TVar tv) -> case M.lookup tv s of
+        Just t' -> do
+          case extendRecord s t' of
+            TRecord fs'' _ -> TRecord (M.filterWithKey (\k _ -> k /= "...") (fs' <> fs'')) True
+            _ -> t
+        _ -> t
+      _ -> t
+
+  _ -> t
 
 
 -- INFER TYPEDEXP

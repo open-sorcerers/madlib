@@ -1,7 +1,12 @@
 fn2 = (a) => where(a) {
-  is { z: z }: z
+  is { x: x, ...b }: b.z
   is { x: x }: x
 }
+
+// fn2 = (a) => where(a) {
+//   is { z: z }: z
+//   is { x: x }: x
+// }
 
 // x = 2
 // y = 1 + x

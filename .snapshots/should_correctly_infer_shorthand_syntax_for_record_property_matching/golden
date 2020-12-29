@@ -35,7 +35,14 @@ Right
                          (Area (Loc 16 2 3) (Loc 53 4 3))
                          (Where
                             (Solved
-                               (TVar (TV "b" Star)) (Area (Loc 22 2 9) (Loc 23 2 10)) (Var "r"))
+                               (TRecord
+                                  (fromList
+                                     [ ( "x" , TCon (TC "Number" Star) )
+                                     , ( "y" , TCon (TC "Number" Star) )
+                                     ])
+                                  True)
+                               (Area (Loc 22 2 9) (Loc 23 2 10))
+                               (Var "r"))
                             [ Solved
                                 (TApp
                                    (TApp
