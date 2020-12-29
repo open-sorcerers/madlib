@@ -439,7 +439,6 @@ inferPattern env (Meta _ _ pat) = case pat of
     li <- mapM (inferFieldPattern env) pats
     let vars = foldr (<>) M.empty $ T.mid . snd <$> M.toList li
     let ps   = foldr (<>) [] $ T.beg . snd <$> M.toList li
-    -- let li' = M.filterWithKey (\k _ -> k /= "...") li
     let ts   = T.lst . snd <$> M.toList li
 
     return (ps, vars, TRecord (M.map T.lst li) True)
@@ -449,8 +448,7 @@ inferPattern env (Meta _ _ pat) = case pat of
       inferFieldPattern env pat@(Meta _ _ p) = case p of
         Src.PSpread (Meta _ _ (Src.PVar i)) -> do
           tv <- newTVar Star
-          let tr = tv--TRecord M.empty (trace ("I: "<> ppShow i) True)
-          return ([], M.singleton i (toScheme tr), tr)
+          return ([], M.singleton i (toScheme tv), tv)
 
         _ -> inferPattern env pat
 
@@ -472,7 +470,7 @@ inferWhere env (Meta _ area (Src.Where exp iss)) = do
   tv        <- newTVar Star
   pss       <- mapM (inferBranch env tv t) iss
 
-  let issSubstitution = foldr1 (compose env) $ s : (beg <$> pss)
+  let issSubstitution = foldr1 (compose env) $ (beg <$> pss) <> [s]
 
   s' <- case unifyElems env (Slv.getType . lst <$> pss) of
     Left e -> throwError $ InferError e NoReason
@@ -531,6 +529,7 @@ extendRecord s t = case t of
   _ -> t
 
 
+
 -- INFER TYPEDEXP
 
 inferTypedExp :: Env -> Src.Exp -> Infer (Substitution, Type, Slv.Exp)
@@ -558,8 +557,6 @@ inferTypedExp env (Meta _ area (Src.TypedExp exp typing)) = do
       area
       (Slv.TypedExp (updateType e1 (qualType t')) (updateTyping typing))
     )
-
-
 
 
 
