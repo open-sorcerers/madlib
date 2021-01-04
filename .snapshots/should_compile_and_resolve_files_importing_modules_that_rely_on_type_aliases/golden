@@ -37,6 +37,14 @@ const __eq = (l, r) => {
   }
   return l === r;
 }
+const getMadlibType = (value) => {
+  if (typeof value === 'string') {
+    return 'String';
+  }
+  else {
+    return '__UNKNOWN__';
+  }
+};
 export const of = curryPowder((a, bad, good) => good(a));
 export const bad = curryPowder((e, bad, good) => bad(e));
 export const map = curryPowder((f, run, bad, good) => run(bad, curryPowder((x) => good(f(x)))));
@@ -86,4 +94,12 @@ const __eq = (l, r) => {
   }
   return l === r;
 }
+const getMadlibType = (value) => {
+  if (typeof value === 'string') {
+    return 'String';
+  }
+  else {
+    return '__UNKNOWN__';
+  }
+};
 W.fulfill(curryPowder((a) => a), curryPowder((a) => a))(W.map(curryPowder((x) => x + `!`))(W.chain(curryPowder((x) => W.of(`finally a string`)))(W.chain(curryPowder((x) => W.of(x * 3)))(W.map(curryPowder((x) => x % 2))(W.of(3))))));

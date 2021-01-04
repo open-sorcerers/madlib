@@ -62,8 +62,8 @@ Right
                          (TApp
                             (TApp
                                (TCon (TC "(->)" (Kfun Star (Kfun Star Star))))
-                               (TVar (TV "b" Star)))
-                            (TApp (TCon (TC "List" (Kfun Star Star))) (TVar (TV "b" Star))))
+                               (TVar (TV "l" Star)))
+                            (TApp (TCon (TC "List" (Kfun Star Star))) (TVar (TV "l" Star))))
                          (Area (Loc 26 2 1) (Loc 27 2 2))
                          (FieldAccess
                             (Solved
@@ -73,10 +73,10 @@ Right
                                        , TApp
                                            (TApp
                                               (TCon (TC "(->)" (Kfun Star (Kfun Star Star))))
-                                              (TVar (TV "b" Star)))
+                                              (TVar (TV "l" Star)))
                                            (TApp
                                               (TCon (TC "List" (Kfun Star Star)))
-                                              (TVar (TV "b" Star)))
+                                              (TVar (TV "l" Star)))
                                        )
                                      ])
                                   False)
@@ -87,8 +87,8 @@ Right
                                   (TApp
                                      (TCon (TC "(->)" (Kfun Star (Kfun Star Star))))
                                      (TRecord
-                                        (fromList [ ( "singleton" , TVar (TV "d" Star) ) ]) True))
-                                  (TVar (TV "d" Star)))
+                                        (fromList [ ( "singleton" , TVar (TV "k" Star) ) ]) True))
+                                  (TVar (TV "k" Star)))
                                (Area (Loc 28 2 3) (Loc 37 2 12))
                                (Var ".singleton"))))
                       (Solved

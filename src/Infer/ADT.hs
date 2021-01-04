@@ -79,16 +79,25 @@ resolveADTConstructor
 resolveADTConstructor priorEnv astPath typeDecls n params (Constructor cname cparams)
   = do
     let gens = zip params (map TGen [0 ..])
-    let rt =
-          foldl TApp (TCon $ TC n (buildKind $ length params)) $ snd <$> gens
+    let rt = foldl TApp (TCon $ TC n (buildKind $ length params)) $ snd <$> gens
     t' <- mapM (argToType priorEnv gens typeDecls n params) cparams
     let ctype = foldr1 fn (t' <> [rt])
-    let vars = M.fromList [(cname, Forall (Star <$ params) ([] :=> ctype))]
-    return vars
+    let vars = M.fromList [(cname, Forall (take (countGens ctype) (repeat Star) ) ([] :=> ctype))]
+    return (trace ("CTOR-VARS: "<>ppShow vars) vars)
 
 buildKind :: Int -> Kind
 buildKind n | n > 0  = Kfun Star $ buildKind (n - 1)
             | n == 0 = Star
+
+countGens :: Type -> Int
+countGens t = case t of
+  TVar _   -> 0
+  TCon _   -> 0
+  TApp l r -> countGens l + countGens r
+  TGen _   -> 1
+  TRecord fs _ -> foldl (+) 0 $ countGens <$> M.elems fs
+  TTuple ts -> foldl (+) 0 $ countGens <$> ts
+
 
 -- TODO: This should probably be merged with typingToType somehow
 argToType
@@ -110,9 +119,6 @@ argToType _ gens typeDecls _ params (Meta _ _ (TRSingle n))
 
 argToType priorEnv gens typeDecls name params (Meta _ _ (TRComp tname targs)) =
   let cleanName = tname
-  -- let cleanName = if "." `isInfixOf` tname
-  --       then tail $ dropWhile (/= '.') tname
-  --       else tname
   in
     case M.lookup (trace ("TNAME: "<>ppShow tname<>"\nDecls: "<>ppShow (envtypes priorEnv<>typeDecls)) cleanName) (envtypes priorEnv<>typeDecls) of
       Just t@(TCon _) -> foldM (\prev a -> do

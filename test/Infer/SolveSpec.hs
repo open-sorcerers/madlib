@@ -434,13 +434,13 @@ spec = do
           , "  inventory :: List ShopItem,"
           , "  sales :: List ShopDiscount"
           , "}"
-          , ""
-          , "buySomethingFromShop :: ShopContext -> Number -> Number -> List (Maybe String)"
-          , "buySomethingFromShop = (ctx, itemId, customerId) => {"
-          , "  item = find(propEq(itemId, 'id'), ctx.inventory)"
-          , "  customer = find(propEq(customerId, 'id'), ctx.customers)"
-          , "  return [item, customer]"
-          , "}"
+          -- , ""
+          -- , "buySomethingFromShop :: ShopContext -> Number -> Number -> List (Maybe String)"
+          -- , "buySomethingFromShop = (ctx, itemId, customerId) => {"
+          -- , "  item = find(propEq(itemId, 'id'), ctx.inventory)"
+          -- , "  customer = find(propEq(customerId, 'id'), ctx.customers)"
+          -- , "  return [item, customer]"
+          -- , "}"
           ]
         actual = tester code
       snapshotTest

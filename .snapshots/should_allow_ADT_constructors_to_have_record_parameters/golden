@@ -63,8 +63,8 @@ Right
                                         (TApp
                                            (TCon (TC "(->)" (Kfun Star (Kfun Star Star))))
                                            (TRecord
-                                              (fromList [ ( "Point" , TVar (TV "c" Star) ) ]) True))
-                                        (TVar (TV "c" Star)))
+                                              (fromList [ ( "Point" , TVar (TV "j" Star) ) ]) True))
+                                        (TVar (TV "j" Star)))
                                      (Area (Loc 32 2 7) (Loc 37 2 12))
                                      (Var ".Point"))))
                             (Solved

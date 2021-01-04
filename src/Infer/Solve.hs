@@ -1,3 +1,4 @@
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE TupleSections #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE FlexibleContexts #-}
@@ -29,7 +30,7 @@ import           Data.List                      ( find )
 import           Data.Maybe                     ( fromMaybe )
 import           Debug.Trace                    ( trace )
 import           Text.Show.Pretty               ( ppShow )
-import           Infer.Scheme                   ( toScheme )
+import           Infer.Scheme                   (quantify,  toScheme )
 import qualified Utils.Tuple as T
 
 
@@ -121,8 +122,9 @@ inferVar env exp@(Meta _ area (Src.Var n)) = case n of
     return (M.empty, qualType t, Slv.Solved (qualType t) area $ Slv.Var n)
 
   _ -> do
-    sc         <- catchError (lookupVar env n) (enhanceVarError env exp area)
+    sc        <- catchError (lookupVar env n) (enhanceVarError env exp area)
     (ps :=> t) <- instantiate sc
+
     return (M.empty, t, Slv.Solved t area $ Slv.Var n)
 
 enhanceVarError :: Env -> Src.Exp -> Area -> InferError -> Infer Scheme
@@ -166,7 +168,8 @@ inferApp :: Env -> Src.Exp -> Infer (Substitution, Type, Slv.Exp)
 inferApp env (Meta _ area (Src.App abs arg final)) = do
   tv             <- newTVar Star
   (s1, t1, eabs) <- infer env abs
-  (s2, t2, earg) <- infer (apply env (removeRecordTypes s1) env) arg
+  (s2, t2, earg) <- infer env arg
+  -- (s2, t2, earg) <- infer (apply env (removeRecordTypes s1) env) arg
 
   s3             <- case unify env (apply env s2 t1) (t2 `fn` tv) of
     Right s -> return s
@@ -412,6 +415,7 @@ inferPattern env (Meta _ _ pat) = case pat of
       Right r -> return r
       Left e -> throwError $ InferError e NoReason
 
+
     return (ps, M.map (apply env s) vars, TTuple (apply env s ts))
   
   Src.PList pats -> do
@@ -535,7 +539,8 @@ extendRecord s t = case t of
 
 inferTypedExp :: Env -> Src.Exp -> Infer (Substitution, Type, Slv.Exp)
 inferTypedExp env (Meta _ area (Src.TypedExp exp typing)) = do
-  t            <- typingToType env typing
+  s <- typingToScheme env typing
+  (_ :=> t) <- instantiate s
   let (gens, t') = makeGeneric M.empty t
 
   t''           <- instantiate $ Forall (Star <$ M.toList gens) ([] :=> t')
@@ -573,7 +578,7 @@ makeGeneric gens t = case t of
   TRecord fs o ->
     let update = M.map (makeGeneric gens) fs
         fs'    = M.map snd update
-        gens'  = foldr M.union gens $ snd <$> (M.toList $ M.map fst update)
+        gens'  = foldr M.union gens $ M.elems $ M.map fst update
     in  (gens', TRecord fs' o)
 
   TTuple ts ->
@@ -591,7 +596,6 @@ inferExps env [exp   ] = (: []) . lst <$> infer env exp
 inferExps env (e : xs) = do
   (_, t, e') <- infer env e
   let exp = Slv.extractExp e'
-  -- let scheme = makeGeneric M.empty t
   let (gens, t') = makeGeneric M.empty t
   let scheme = Forall (Star <$ M.toList gens) $ [] :=> t'
   let
@@ -631,7 +635,7 @@ solveTable' table ast@Src.AST { Src.aimports } = do
                       , envcurrentpath = fromMaybe "" (Src.apath ast)
                       }
   -- Then we infer the ast
-  env <- buildInitialEnv (trace ("IMPORT ENV: "<>ppShow importEnv) importEnv) ast
+  env <- buildInitialEnv importEnv ast
   let envWithImports = env { envtypes   = M.union (envtypes env) adts
                            , envvars    = M.union (envvars env) vars
                            }
@@ -697,7 +701,7 @@ solveImports table (imp : is) = do
         )
   let buildConstructorVars = M.filterWithKey
         (\k v -> k `elem` exportedConstructorNames)
-        (envvars (trace ("IMP: "<>ppShow imp<>"EXPORTED TYPES: "<>ppShow exportedTypes<>"\nEXPORTS: "<>ppShow exportedTypes) envSolved))
+        (envvars envSolved)
 
   (exports, vars) <- case (exportedTypes, imp) of
     (Just exports, Meta _ _ (Src.DefaultImport namespace _ _)) -> do
@@ -735,23 +739,22 @@ solveImports table (imp : is) = do
     if M.intersection withNamespaces nextADTs == M.empty
       then return $ M.union withNamespaces nextADTs
       else throwError $ InferError FatalError NoReason
-    
 
-  -- mergedADTs <- do
-  --   adtExports <- if M.intersection adtExports nextADTs == M.empty
-  --     then return $ M.union adtExports nextADTs
-  --     else throwError $ InferError FatalError NoReason
-  --   case imp of
-  --     Meta _ _ (Src.DefaultImport namespace _ absPath) -> return
-  --       $ M.mapKeys (mergeTypeDecl namespace absPath adtExports) adtExports
+  let generify = \e ->
+        let (gens, t') = makeGeneric M.empty e
+        in  Forall (Star <$ M.toList gens) $ [] :=> t'
+        
 
-  --     _ -> return adtExports
+  let genericExports = M.map generify exports
 
+  let allVars = nextVars <> vars <> genericExports
+  allVarsQt <- mapM instantiate allVars
+  let allVarsT = M.map (\case (_ :=> t) -> t) allVarsQt
 
   return
     ( M.insert modulePath solvedAST (M.union solvedTable nextTable)
     , mergedADTs
-    , nextVars <> vars <> M.map (\t -> Forall [] $ [] :=> t) exports
+    , M.map generify allVarsT
     )
 
 solveImports _ [] = return

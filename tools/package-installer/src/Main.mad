@@ -19,7 +19,7 @@ installPackages = (config) => (
   FS.readFile(config)
     |> W.mapRej((_) => ("The madlib.json file was not found, verify that you have created one or that you run the command from the right directory."))
     |> W.map(J.parse(J.field("dependencies", J.map(J.string))))
-    |> W.chain((dm) => where(dm)
+    |> W.chain(where {
         is E.Left e: W.bad(e)
         is E.Right depMap:
           M.keys(depMap)
@@ -44,7 +44,7 @@ installPackages = (config) => (
                    |> W.map((a) => "package " ++ key ++ " installed")
                ))
             |> W.parallel
-        )
+       })
     |> W.fulfill(IO.log, L.map(IO.log))
 )
 

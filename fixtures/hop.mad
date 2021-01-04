@@ -67,17 +67,100 @@ alias T a = Maybe a
 // x :: T String
 // x = Just("ok")
 
-export data ByteArray = ByteArray (List String)
+mayMap :: (e -> f) -> T e -> T f
+mayMap = (f, m) => where(m) {
+  is Nothing: Nothing
+  is Just x : Just(f(x))
+}
 
-// map :: (a -> b) -> List a -> List b
-map = (f, xs) => (#- some JS -#)
+// export data ByteArray = ByteArray (List String)
+
+// // map :: (a -> b) -> List a -> List b
+// map = (f, xs) => (#- some JS -#)
 
 
-map(
-  map((x) => x + 1),
-  [[1, 2]]
-)
+// map(
+//   map((x) => x + 1),
+//   [[1, 2]]
+// )
 
 // map(map((x) => x + 1), [[1, 2], [3, 4]])
 // [[1, 2], [3, 4]]
 //   |> map(map((x) => (x * 2)))
+
+
+// import { of, map, chain, fulfill, Wish } from "Wish"
+
+import W from "Wish"
+
+// export alias Wish e a = (e -> m) -> (a -> n) -> o
+
+// of :: a -> Wish e a
+// export of = (a) => ((bad, good) => (good(a)))
+
+// bad :: e -> Wish e a
+// export bad = (e) => ((bad, good) => (bad(e)))
+
+
+// map :: (a -> b) -> Wish e a -> Wish e b
+// export map = (f, run) => (
+//   (bad, good) => (run(bad, (x) => (good(f(x)))))
+// )
+
+// mapRej :: (e -> f) -> Wish e a -> Wish f a
+// export mapRej = (f, run) => (
+//   (bad, good) => (
+//     run((x) => (bad(f(x))), good)
+//   )
+// )
+
+// chain :: (a -> Wish f b) -> Wish e a -> Wish f b
+// export chain = (f, run) => (
+//   (bad, good) => (
+//     run(bad, (x) => (f(x)(bad, good)))
+//   )
+// )
+
+// chainRej :: (e -> Wish f b) -> Wish e a -> Wish f b
+// export chainRej = (f, run) => (
+//   (bad, good) => (
+//     run((x) => (f(x)(bad, good)), good)
+//   )
+// )
+
+// fulfill :: (e -> m) -> (a -> n) -> Wish e a -> o
+// export fulfill = (bad, good, run) => (
+//   run(bad, good)
+// )
+
+import IO from "IO"
+import S from "System"
+
+// of(3)
+//   |> map((x) => (x % 2))
+//   |> chain((x) => (of(x * 3)))
+//   |> chain((_) => (of(`finally a string`)))
+//   |> map((x) => (x ++ '!'))
+//   |> fulfill(IO.log, IO.log)
+W.of(3)
+  |> W.map((x) => (x % 2))
+  |> W.chain((x) => (W.of(x * 3)))
+  |> W.chain((_) => (W.of(`finally a string`)))
+  |> W.map((x) => (x ++ '!'))
+  |> W.fulfill(IO.log, IO.log)
+
+prepare :: W.Wish e <String, String, String>
+prepare = W.of(<"", "", "">)
+
+prepare
+  |> W.chain((x) => where(x) {
+       is <a, b, c>:
+           W.chain((x) => W.of(x), W.of(""))
+  })
+
+export data ByteWord
+  = Int8Bit a
+  | Int16Bit a
+  | Int32Bit a
+
+Int8Bit("String")

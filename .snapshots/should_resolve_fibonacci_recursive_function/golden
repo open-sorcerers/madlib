@@ -145,11 +145,7 @@ Right
                                      (Area (Loc 51 1 52) (Loc 61 1 62))
                                      (App
                                         (Solved
-                                           (TApp
-                                              (TApp
-                                                 (TCon (TC "(->)" (Kfun Star (Kfun Star Star))))
-                                                 (TCon (TC "Number" Star)))
-                                              (TCon (TC "Number" Star)))
+                                           (TVar (TV "a" Star))
                                            (Area (Loc 51 1 52) (Loc 54 1 55))
                                            (Var "fib"))
                                         (Solved
