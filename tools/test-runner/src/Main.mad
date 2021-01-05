@@ -34,12 +34,11 @@ prepare
   |> W.chain(where {
        is <entry, dest, madlib>:
          S.exec(madlib ++ " compile -i " ++ entry ++ " -o .tests/")
-           |> W.chain((x) => W.of(x))
-          //  |> W.chain((_) => (S.spawn("node " ++ dest)))
-          //  |> W.mapRej((rej) => where(rej) is S.CommandError _ msg: msg)
-          //  |> W.chain((a) => {
-          //      S.exec("rm -r .tests")
-          //      return W.of(a)
-          //    })
+           |> W.chain((_) => (S.spawn("node " ++ dest)))
+           |> W.mapRej((rej) => where(rej) is S.CommandError _ msg: msg)
+           |> W.chain((a) => {
+               S.exec("rm -r .tests")
+               return W.of(a)
+             })
      })
-  // |> W.fulfill(IO.err, F.identity)
+  |> W.fulfill(IO.err, F.identity)

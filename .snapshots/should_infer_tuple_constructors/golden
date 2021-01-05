@@ -3,11 +3,13 @@ Right
     { aimports = []
     , aexps =
         [ Solved
-            (TTuple
-               [ TCon (TC "Number" Star)
-               , TCon (TC "Number" Star)
-               , TCon (TC "Number" Star)
-               ])
+            (TApp
+               (TApp
+                  (TApp
+                     (TCon (TC "(,,)" (Kfun Star (Kfun Star (Kfun Star Star)))))
+                     (TCon (TC "Number" Star)))
+                  (TCon (TC "Number" Star)))
+               (TCon (TC "Number" Star)))
             (Area (Loc 0 1 1) (Loc 9 1 10))
             (TupleConstructor
                [ Solved
@@ -18,11 +20,13 @@ Right
                    (TCon (TC "Number" Star)) (Area (Loc 7 1 8) (Loc 8 1 9)) (LNum "3")
                ])
         , Solved
-            (TTuple
-               [ TCon (TC "Boolean" Star)
-               , TCon (TC "String" Star)
-               , TCon (TC "Number" Star)
-               ])
+            (TApp
+               (TApp
+                  (TApp
+                     (TCon (TC "(,,)" (Kfun Star (Kfun Star (Kfun Star Star)))))
+                     (TCon (TC "Boolean" Star)))
+                  (TCon (TC "String" Star)))
+               (TCon (TC "Number" Star)))
             (Area (Loc 10 2 1) (Loc 28 2 19))
             (TupleConstructor
                [ Solved

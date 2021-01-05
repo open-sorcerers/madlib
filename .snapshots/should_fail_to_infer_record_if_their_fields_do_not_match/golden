@@ -1,14 +1,22 @@
 Left
   (InferError
      (UnificationError
-        (TRecord
-           (fromList
-              [ ( "x" , TCon (TC "Number" Star) )
-              , ( "y" , TCon (TC "Number" Star) )
-              ])
-           False)
-        (TRecord
-           (fromList [ ( "name" , TCon (TC "String" Star) ) ]) False))
+        (TApp
+           (TApp
+              (TCon (TC "(->)" (Kfun Star (Kfun Star Star))))
+              (TRecord
+                 (fromList
+                    [ ( "x" , TCon (TC "Number" Star) )
+                    , ( "y" , TCon (TC "Number" Star) )
+                    ])
+                 False))
+           (TCon (TC "Boolean" Star)))
+        (TApp
+           (TApp
+              (TCon (TC "(->)" (Kfun Star (Kfun Star Star))))
+              (TRecord
+                 (fromList [ ( "name" , TCon (TC "String" Star) ) ]) False))
+           (TVar (TV "a" Star))))
      (Reason
         (WrongTypeApplied
            (Meta

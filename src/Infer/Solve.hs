@@ -173,6 +173,8 @@ inferApp env (Meta _ area (Src.App abs arg final)) = do
 
   s3             <- case unify env (apply env s2 t1) (t2 `fn` tv) of
     Right s -> return s
+    Left  (UnificationError _ _) -> throwError $ InferError (UnificationError (apply env s2 t1) (t2 `fn` tv)) $ Reason (WrongTypeApplied abs arg) (envcurrentpath env)
+                                                  (getArea arg)
     Left  e -> throwError $ InferError e $ Reason (WrongTypeApplied abs arg)
                                                   (envcurrentpath env)
                                                   (getArea arg)
@@ -249,7 +251,9 @@ inferTupleConstructor env (Meta _ area (Src.TupleConstructor elems)) = do
   let elemEXPS   = lst <$> inferredElems
 
   let s          = foldr (compose env) M.empty elemSubsts
-  let t          = TTuple elemTypes
+
+  let tupleT = getTupleCtor (length elems)
+  let t          = foldl TApp tupleT elemTypes
 
   return (s, t, Slv.Solved t area (Slv.TupleConstructor elemEXPS))
 
@@ -411,12 +415,13 @@ inferPattern env (Meta _ _ pat) = case pat of
     let ps   = foldr (<>) [] (T.beg <$> ti)
     let vars = foldr (<>) M.empty (T.mid <$> ti)
 
-    s <- case unifyElems (mergeVars env vars) ts of
-      Right r -> return r
-      Left e -> throwError $ InferError e NoReason
+    -- s <- case unifyElems (mergeVars env vars) ts of
+    --   Right r -> return r
+    --   Left e -> throwError $ InferError e NoReason
+    let tupleT = getTupleCtor (length ts)
+    let t = foldl TApp tupleT ts
 
-
-    return (ps, M.map (apply env s) vars, TTuple (apply env s ts))
+    return (ps, vars, trace ("TS: "<>ppShow ts<>"\nVARS: "<>ppShow vars) t)
   
   Src.PList pats -> do
     li <- mapM (inferPListItem env) pats
@@ -586,6 +591,8 @@ makeGeneric gens t = case t of
         ts' = snd <$> update
         gens' = foldr M.union gens $ fst <$> update
     in (gens', TTuple ts')
+  TGen _ -> (gens, t)
+  _ -> (gens, t)
 
 
 inferExps :: Env -> [Src.Exp] -> Infer [Slv.Exp]

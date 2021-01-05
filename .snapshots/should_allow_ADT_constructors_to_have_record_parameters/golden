@@ -37,7 +37,11 @@ Right
                                (TApp
                                   (TApp
                                      (TCon (TC "(->)" (Kfun Star (Kfun Star Star))))
-                                     (TTuple [ TCon (TC "Number" Star) , TCon (TC "Number" Star) ]))
+                                     (TApp
+                                        (TApp
+                                           (TCon (TC "(,)" (Kfun Star (Kfun Star Star))))
+                                           (TCon (TC "Number" Star)))
+                                        (TCon (TC "Number" Star))))
                                   (TCon (TC "Point" Star)))
                                (Area (Loc 30 2 5) (Loc 31 2 6))
                                (FieldAccess
@@ -48,10 +52,13 @@ Right
                                              , TApp
                                                  (TApp
                                                     (TCon (TC "(->)" (Kfun Star (Kfun Star Star))))
-                                                    (TTuple
-                                                       [ TCon (TC "Number" Star)
-                                                       , TCon (TC "Number" Star)
-                                                       ]))
+                                                    (TApp
+                                                       (TApp
+                                                          (TCon
+                                                             (TC
+                                                                "(,)" (Kfun Star (Kfun Star Star))))
+                                                          (TCon (TC "Number" Star)))
+                                                       (TCon (TC "Number" Star))))
                                                  (TCon (TC "Point" Star))
                                              )
                                            ])
@@ -68,7 +75,11 @@ Right
                                      (Area (Loc 32 2 7) (Loc 37 2 12))
                                      (Var ".Point"))))
                             (Solved
-                               (TTuple [ TCon (TC "Number" Star) , TCon (TC "Number" Star) ])
+                               (TApp
+                                  (TApp
+                                     (TCon (TC "(,)" (Kfun Star (Kfun Star Star))))
+                                     (TCon (TC "Number" Star)))
+                                  (TCon (TC "Number" Star)))
                                (Area (Loc 38 2 13) (Loc 44 2 19))
                                (TupleConstructor
                                   [ Solved

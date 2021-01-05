@@ -35,18 +35,18 @@ typingToType env (Meta _ _ (Src.TRSingle t))
   | otherwise = do
     h <- lookupADT env t
     case h of
-      (TAlias _ _ _ t          ) -> return h
+      (TAlias _ _ _ t          ) -> updateAliasVars h []
       t -> return t
 
 
 typingToType env (Meta info area (Src.TRComp t ts)) = do
-  h   <- typingToType env (Meta info area $ Src.TRSingle t)
+  h <- lookupADT env t
   params  <- mapM (typingToType env) ts
-  params' <- mapM (`updateAliasVars` []) params
+  -- params' <- mapM (`updateAliasVars` []) params
   case h of
-    TAlias _ _ _ _ -> updateAliasVars h params'
+    (TAlias _ _ _ t          ) -> updateAliasVars h params
+    t -> return $ foldl TApp t params
 
-    _ -> return $ foldl TApp h params'
 
 typingToType env (Meta _ _ (Src.TRArr l r)) = do
   l' <- typingToType env l
@@ -59,7 +59,8 @@ typingToType env (Meta _ _ (Src.TRRecord fields)) = do
 
 typingToType env (Meta _ _ (Src.TRTuple elems)) = do
   elems' <- mapM (typingToType env) elems
-  return $ TTuple elems'
+  let tupleT = getTupleCtor (length elems)
+  return $ foldl TApp tupleT elems'
 
 lookupADT :: Env -> String -> Infer Type
 lookupADT env x = do

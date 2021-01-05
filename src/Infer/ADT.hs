@@ -83,7 +83,7 @@ resolveADTConstructor priorEnv astPath typeDecls n params (Constructor cname cpa
     t' <- mapM (argToType priorEnv gens typeDecls n params) cparams
     let ctype = foldr1 fn (t' <> [rt])
     let vars = M.fromList [(cname, Forall (take (countGens ctype) (repeat Star) ) ([] :=> ctype))]
-    return (trace ("CTOR-VARS: "<>ppShow vars) vars)
+    return vars
 
 buildKind :: Int -> Kind
 buildKind n | n > 0  = Kfun Star $ buildKind (n - 1)
@@ -137,4 +137,5 @@ argToType priorEnv gens typeDecls name params (Meta _ _ (TRRecord f)) = do
 
 argToType priorEnv gens typeDecls name params (Meta _ _ (TRTuple elems)) = do
   elems' <- mapM (argToType priorEnv gens typeDecls name params) elems
-  return $ TTuple elems'
+  let tupleT = getTupleCtor (length elems)
+  return $ foldl TApp tupleT elems'

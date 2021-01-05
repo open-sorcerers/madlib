@@ -69,8 +69,23 @@ tUnit = TCon $ TC "()" Star
 tList :: Type
 tList = TCon $ TC "List" (Kfun Star Star)
 
+tTuple2 :: Type
+tTuple2 = TCon $ TC "(,)" (Kfun Star (Kfun Star Star))
+
+tTuple3 :: Type
+tTuple3 = TCon $ TC "(,,)" (Kfun Star (Kfun Star (Kfun Star Star)))
+
+tTuple4 :: Type
+tTuple4 = TCon $ TC "(,,,)" (Kfun Star (Kfun Star (Kfun Star (Kfun Star Star))))
+
 tArrow :: Type
 tArrow = TCon $ TC "(->)" (Kfun Star (Kfun Star Star))
+
+getTupleCtor :: Int -> Type
+getTupleCtor n = case n of
+  2 -> tTuple2
+  3 -> tTuple3
+  4 -> tTuple4
 
 infixr      4 `fn`
 fn :: Type -> Type -> Type

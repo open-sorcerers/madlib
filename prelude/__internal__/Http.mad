@@ -4,7 +4,7 @@ import B from "Binary"
 export data Response = Response { body :: Body }
 
 export data Body = TextBody String
-          | BinaryBody B.ByteArray
+                 | BinaryBody B.ByteArray
 
 #- import https from "https" -#
 

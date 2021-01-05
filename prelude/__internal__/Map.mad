@@ -65,7 +65,7 @@ export map = (fn, x) => where (x)
 
 
 mapWithKey :: (k -> v -> w) -> Map k v -> Map k w
-export map = (fn, x) => where (x)
+export mapWithKey = (fn, x) => where (x)
   is Map_ items:
     L.map((i) => <T.fst(i), fn(T.fst(i), T.snd(i))>, items) |> fromList
 

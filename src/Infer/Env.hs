@@ -89,7 +89,7 @@ initialEnv = Env
       :=> (TGen 0 `fn` (TGen 0 `fn` TGen 1) `fn` TGen 1)
       )
     ]
-  , envtypes       = M.fromList [("List", tList)]
+  , envtypes       = M.fromList [("List", tList), ("(,)", tTuple2), ("(,,)", tTuple3), ("(,,,)", tTuple4)]
   , envinterfaces  = []
   , envinstances   = []
   , envcurrentpath = ""
