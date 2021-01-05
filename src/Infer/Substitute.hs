@@ -29,14 +29,12 @@ instance Substitutable Type where
   apply env s rec@(TRecord fields open) =
     let applied = TRecord (apply env s <$> fields) open
     in  if rec == applied then applied else apply env s applied
-  apply env s (TTuple elems) = TTuple (apply env s <$> elems)
   apply env s t              = t
 
   ftv TCon{}              = S.empty
   ftv (TVar a           ) = S.singleton a
   ftv (t1      `TApp` t2) = ftv t1 `S.union` ftv t2
   ftv (TRecord fields _ ) = foldl' (\s v -> S.union s $ ftv v) S.empty fields
-  ftv (TTuple elems     ) = foldl' (\s v -> S.union s $ ftv v) S.empty elems
   ftv t                   = S.fromList []
 
 instance Substitutable Scheme where

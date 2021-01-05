@@ -72,8 +72,6 @@ resolveTypeDecl priorEnv astPath typeDecls adt@ADT{} =
 resolveTypeDecl _ _ _ Alias{} = return M.empty
 
 
--- TODO: Verify that Constructors aren't already in the global space or else throw a name clash error
--- Use lookupADT for that
 resolveADTConstructor
   :: Env -> FilePath -> TypeDecls -> Name -> [Name] -> Constructor -> Infer Vars
 resolveADTConstructor priorEnv astPath typeDecls n params (Constructor cname cparams)
@@ -82,24 +80,21 @@ resolveADTConstructor priorEnv astPath typeDecls n params (Constructor cname cpa
     let rt = foldl TApp (TCon $ TC n (buildKind $ length params)) $ snd <$> gens
     t' <- mapM (argToType priorEnv gens typeDecls n params) cparams
     let ctype = foldr1 fn (t' <> [rt])
-    let vars = M.fromList [(cname, Forall (take (countGens ctype) (repeat Star) ) ([] :=> ctype))]
+    let vars = M.fromList [(cname, Forall (replicate (countGens ctype) Star) ([] :=> ctype))]
     return vars
 
 buildKind :: Int -> Kind
 buildKind n | n > 0  = Kfun Star $ buildKind (n - 1)
-            | n == 0 = Star
+            | otherwise = Star
 
 countGens :: Type -> Int
 countGens t = case t of
-  TVar _   -> 0
-  TCon _   -> 0
-  TApp l r -> countGens l + countGens r
-  TGen _   -> 1
-  TRecord fs _ -> foldl (+) 0 $ countGens <$> M.elems fs
-  TTuple ts -> foldl (+) 0 $ countGens <$> ts
+  TApp l r     -> countGens l + countGens r
+  TRecord fs _ -> sum $ countGens <$> M.elems fs
+  TGen _       -> 1
+  _            -> 0
 
 
--- TODO: This should probably be merged with typingToType somehow
 argToType
   :: Env
   -> [(Name, Type)]
@@ -118,13 +113,11 @@ argToType _ gens typeDecls _ params (Meta _ _ (TRSingle n))
       Nothing -> throwError $ InferError (UnknownType n) NoReason
 
 argToType priorEnv gens typeDecls name params (Meta _ _ (TRComp tname targs)) =
-  let cleanName = tname
-  in
-    case M.lookup (trace ("TNAME: "<>ppShow tname<>"\nDecls: "<>ppShow (envtypes priorEnv<>typeDecls)) cleanName) (envtypes priorEnv<>typeDecls) of
-      Just t@(TCon _) -> foldM (\prev a -> do
-                arg <- argToType priorEnv gens typeDecls name params a
-                return $ TApp prev arg) t targs
-      Nothing -> throwError $ InferError (UnknownType cleanName) NoReason
+  case M.lookup tname (envtypes priorEnv<>typeDecls) of
+    Just t@(TCon _) -> foldM (\prev a -> do
+      arg <- argToType priorEnv gens typeDecls name params a
+      return $ TApp prev arg) t targs
+    Nothing -> throwError $ InferError (UnknownType tname) NoReason
 
 argToType priorEnv gens typeDecls name params (Meta _ _ (TRArr l r)) = do
   l' <- argToType priorEnv gens typeDecls name params l

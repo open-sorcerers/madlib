@@ -176,8 +176,14 @@ displayResults = (results) => {
   return F.when(
     F.complement(L.isEmpty),
     pipe(
-      IO.trace("\n--------------------------------------------------------------------------------"),
-      IO.trace("\nCOVERAGE REPORT:"),
+      (x) => {
+        IO.log("\n--------------------------------------------------------------------------------")
+        return x
+      },
+      (x) => {
+        IO.log("\nCOVERAGE REPORT:")
+        return x
+      },
       IO.table(T.snd(results))
     )
   )(T.snd(results))

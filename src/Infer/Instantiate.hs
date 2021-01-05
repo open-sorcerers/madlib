@@ -35,7 +35,6 @@ instance Instantiate Type where
   inst ts (TApp l r        ) = TApp (inst ts l) (inst ts r)
   inst ts (TGen n          ) = ts !! n
   inst ts (TRecord fields o) = TRecord (M.map (inst ts) fields) o
-  inst ts (TTuple is)        = TTuple (inst ts <$> is)
   inst ts (TAlias _ _ _ t)   = inst ts t
   inst _  t                  = t
 instance Instantiate a => Instantiate [a] where

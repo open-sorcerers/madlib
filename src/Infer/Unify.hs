@@ -1,4 +1,3 @@
-{-# LANGUAGE TupleSections #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE RankNTypes #-}
 module Infer.Unify where
@@ -22,20 +21,11 @@ varBind tv t | t == TVar tv      = return M.empty
              | kind tv /= kind t = throwError $ KindError (TVar tv) t
              | otherwise         = return $ M.singleton tv t
 
-
--- cleanTCompMain :: String -> String
--- cleanTCompMain = reverse . takeWhile (/= '.') . reverse
-
 unify :: Env -> Type -> Type -> Either TypeError Substitution
 unify env (l `TApp` r) (l' `TApp` r') = do
   s1 <- unify env l l'
   s2 <- unify env (apply env s1 r) (apply env s1 r')
   return $ compose env s1 s2
-
-unify env (TTuple elems) (TTuple elems') = do
-  if length elems == length elems'
-    then unifyVars env M.empty (zip elems elems')
-    else throwError $ UnificationError (TTuple elems) (TTuple elems')
 
 unify env (TRecord fields open) (TRecord fields' open')
   | open || open' = do

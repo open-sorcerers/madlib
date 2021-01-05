@@ -45,10 +45,8 @@ data Type
   | TCon TCon                   -- Constructor type
   | TGen Int
   | TApp Type Type              -- Arrow type
-  | TComp FilePath Id [Type]         -- Composite type
   | TRecord (M.Map Id Type) Bool -- Record type: Bool means open or closed
   | TAlias FilePath Id [TVar] Type -- Aliases, filepath of definition module, name, params, type it aliases
-  | TTuple [Type]
   deriving (Show, Eq, Ord)
 
 infixr `TApp`

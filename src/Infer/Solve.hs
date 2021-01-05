@@ -32,6 +32,7 @@ import           Debug.Trace                    ( trace )
 import           Text.Show.Pretty               ( ppShow )
 import           Infer.Scheme                   (quantify,  toScheme )
 import qualified Utils.Tuple as T
+import Infer.Pattern
 
 
 infer :: Env -> Src.Exp -> Infer (Substitution, Type, Slv.Exp)
@@ -168,8 +169,7 @@ inferApp :: Env -> Src.Exp -> Infer (Substitution, Type, Slv.Exp)
 inferApp env (Meta _ area (Src.App abs arg final)) = do
   tv             <- newTVar Star
   (s1, t1, eabs) <- infer env abs
-  (s2, t2, earg) <- infer env arg
-  -- (s2, t2, earg) <- infer (apply env (removeRecordTypes s1) env) arg
+  (s2, t2, earg) <- infer (apply env (removeRecordTypes s1) env) arg
 
   s3             <- case unify env (apply env s2 t1) (t2 `fn` tv) of
     Right s -> return s
@@ -285,10 +285,8 @@ inferRecordField env field = case field of
     case t of
       TRecord tfields _ -> return (s, M.toList tfields, Slv.FieldSpread e)
 
-      -- TODO: When we get here we should make it open !!
       TVar _ -> return (s, [], Slv.FieldSpread e)
 
-      -- TODO: This needs to be a new error type maybe ?
       _ -> throwError $ InferError (WrongSpreadType $ show t) NoReason
 
 shouldBeOpen :: Env -> [Src.Field] -> Infer Bool
@@ -384,95 +382,6 @@ addBranchReason env ifExp falsyExp area (InferError e _) =
 
 
 -- INFER WHERE
-
-inferPatterns :: Env -> [Src.Pattern] -> Infer ([Pred], Vars, [Type])
-inferPatterns env pats = do
-  psasts <- mapM (inferPattern env) pats
-  let ps = concat [ ps' | (ps', _, _) <- psasts ]
-      as = foldr M.union M.empty [ vars | (_, vars, _) <- psasts ]
-      ts = [ t | (_, _, t) <- psasts ]
-  return (ps, as, ts)
-
-inferPattern :: Env -> Src.Pattern -> Infer ([Pred], Vars, Type)
-inferPattern env (Meta _ _ pat) = case pat of
-  Src.PNum _ -> return ([], M.empty, tNumber)
-  Src.PBool _ -> return ([], M.empty, tBool)
-  Src.PStr _ -> return ([], M.empty, tStr)
-
-  Src.PCon n -> return ([], M.empty, TCon $ TC n Star)
-
-  Src.PVar i -> do
-    v <- newTVar Star
-    return ([], M.singleton i (toScheme v), v)
-
-  Src.PAny -> do
-    v <- newTVar Star
-    return ([], M.empty, v)
-
-  Src.PTuple pats -> do
-    ti <- mapM (inferPattern env) pats
-    let ts   = T.lst <$> ti
-    let ps   = foldr (<>) [] (T.beg <$> ti)
-    let vars = foldr (<>) M.empty (T.mid <$> ti)
-
-    -- s <- case unifyElems (mergeVars env vars) ts of
-    --   Right r -> return r
-    --   Left e -> throwError $ InferError e NoReason
-    let tupleT = getTupleCtor (length ts)
-    let t = foldl TApp tupleT ts
-
-    return (ps, vars, trace ("TS: "<>ppShow ts<>"\nVARS: "<>ppShow vars) t)
-  
-  Src.PList pats -> do
-    li <- mapM (inferPListItem env) pats
-    tv <- newTVar Star
-    let ts   = if null li then [tv] else T.lst <$> li
-    let ps   = foldr (<>) [] (T.beg <$> li)
-    let vars = foldr (<>) M.empty (T.mid <$> li)
-
-    s <- case unifyElems (mergeVars env vars) ts of
-      Right r -> return r
-      Left e -> throwError $ InferError e NoReason
-
-    return (ps, M.map (apply env s) vars, TApp tList (apply env s (head ts)))
-
-    where
-      inferPListItem :: Env -> Src.Pattern -> Infer ([Pred], Vars, Type)
-      inferPListItem env pat@(Meta _ _ p) = case p of
-        Src.PSpread (Meta _ _ (Src.PVar i)) -> do
-          tv <- newTVar Star
-          let t' = TApp tList tv
-          return ([], M.singleton i (toScheme t'), tv)
-        _ -> inferPattern env pat
-
-  Src.PRecord pats -> do
-    li <- mapM (inferFieldPattern env) pats
-    let vars = foldr (<>) M.empty $ T.mid . snd <$> M.toList li
-    let ps   = foldr (<>) [] $ T.beg . snd <$> M.toList li
-    let ts   = T.lst . snd <$> M.toList li
-
-    return (ps, vars, TRecord (M.map T.lst li) True)
-
-    where
-      inferFieldPattern :: Env -> Src.Pattern -> Infer ([Pred], Vars, Type)
-      inferFieldPattern env pat@(Meta _ _ p) = case p of
-        Src.PSpread (Meta _ _ (Src.PVar i)) -> do
-          tv <- newTVar Star
-          return ([], M.singleton i (toScheme tv), tv)
-
-        _ -> inferPattern env pat
-
-  Src.PCtor n pats -> do
-    (ps, vars, ts) <- inferPatterns env pats
-    tv             <- newTVar Star
-    sc             <- lookupVar env n
-    (ps' :=> t)    <- instantiate sc
-    s              <- case unify env t (foldr fn tv ts) of
-      Right r -> return r
-      Left e -> throwError $ InferError e NoReason
-
-    return (ps <> ps', vars, apply env s tv)
-  
 
 inferWhere :: Env -> Src.Exp -> Infer (Substitution, Type, Slv.Exp)
 inferWhere env (Meta _ area (Src.Where exp iss)) = do
@@ -575,22 +484,20 @@ makeGeneric gens t = case t of
   TVar (TV n _) -> case M.lookup n gens of
     Just x ->  (gens, TGen x)
     Nothing -> (M.insert n (length gens) gens, TGen (length gens))
+
   TCon _ -> (gens, t)
+
   TApp l r ->
     let (gens', l')  = makeGeneric gens l
         (gens'', r') = makeGeneric gens' r
     in (gens'', TApp l' r')
+
   TRecord fs o ->
     let update = M.map (makeGeneric gens) fs
         fs'    = M.map snd update
         gens'  = foldr M.union gens $ M.elems $ M.map fst update
     in  (gens', TRecord fs' o)
 
-  TTuple ts ->
-    let update = makeGeneric gens <$> ts
-        ts' = snd <$> update
-        gens' = foldr M.union gens $ fst <$> update
-    in (gens', TTuple ts')
   TGen _ -> (gens, t)
   _ -> (gens, t)
 
@@ -641,6 +548,7 @@ solveTable' table ast@Src.AST { Src.aimports } = do
                       , envinstances   = []
                       , envcurrentpath = fromMaybe "" (Src.apath ast)
                       }
+
   -- Then we infer the ast
   env <- buildInitialEnv importEnv ast
   let envWithImports = env { envtypes   = M.union (envtypes env) adts
@@ -774,9 +682,7 @@ isADT _         = False
 mergeTypeDecl :: String -> FilePath -> M.Map String Type -> String -> String
 mergeTypeDecl namespace absPath adts key = case M.lookup key adts of
   Just (TCon _) -> namespace <> "." <> key
-  -- Just (TCon _) -> key
-  -- Just (TComp path _ _) ->
-  --   if path == absPath then namespace <> "." <> key else key
+
   Just (TAlias path _ _ _) ->
     if path == absPath then namespace <> "." <> key else key
   _ -> key

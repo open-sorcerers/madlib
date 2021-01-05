@@ -42,7 +42,6 @@ typingToType env (Meta _ _ (Src.TRSingle t))
 typingToType env (Meta info area (Src.TRComp t ts)) = do
   h <- lookupADT env t
   params  <- mapM (typingToType env) ts
-  -- params' <- mapM (`updateAliasVars` []) params
   case h of
     (TAlias _ _ _ t          ) -> updateAliasVars h params
     t -> return $ foldl TApp t params
@@ -72,10 +71,8 @@ lookupADT env x = do
 collectVars :: Type -> [TVar]
 collectVars t = case t of
   TVar tv  -> [tv]
-  TCon _   -> []
   TApp l r -> collectVars l <> collectVars r
   TRecord fs _ -> concat $ collectVars <$> M.elems fs
-  TTuple ts -> concat $ collectVars <$> ts
   _ -> []
 
 
@@ -89,15 +86,12 @@ updateAliasVars t args = do
           update ty = case ty of
             TVar tv -> case M.lookup tv instArgs of
               Just x  -> return x
-              Nothing -> newTVar Star --return ty --throwError $ InferError (UnboundVariable (ppShow tv)) NoReason 
+              Nothing -> newTVar Star
             TApp l r -> do
               l' <- update l
               r' <- update r
               return $ TApp l' r'
             TCon _ -> return ty
-            TTuple ts -> do
-              ts' <- mapM update ts
-              return $ TTuple ts'
             TRecord fs o -> do
               fs' <- mapM update fs
               return $ TRecord fs' o

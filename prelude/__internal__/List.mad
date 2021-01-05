@@ -67,3 +67,4 @@ export uniqueBy = (f, xs) => where(xs)
       is Maybe.Nothing: [curr, ...uniqueBy(f, tail)]
     }
   is [last]: [last]
+  is _: []

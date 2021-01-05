@@ -1,0 +1,72 @@
+How types are constructed
+
+Our types
+data Type
+  = TVar TVar          -- Variable type
+  | TCon TCon                   -- Constructor type
+  | TGen Int
+  | TApp Type Type              -- Arrow type
+  deriving (Show, Eq, Ord)
+
+data TVar = TV Id Kind
+  deriving (Show, Eq, Ord)
+
+data TCon = TC Id Kind
+  deriving (Show, Eq, Ord)
+
+TCon: Constructor types, these are types that create values, it's mainly any type we deal with in code:
+1
+Numbers are fully constructed types and have an in memory type of: TCon (TC "Number" Star)
+
+Just(3)
+data types are also just constructor types, a Just(3) has type: TApp (TCon (TC "Maybe" (Kfun Star Star))) (TCon (TC "Number" Star))
+
+
+TVar: variable types, it references a type, that is currently unknown. It's a sort of "anything" with a tag so that we can eventually refine the type.
+In the identity function for example, we don't know what the type of the param or return is, until the function is actually called:
+id = (x) => x
+Here, the inferred type is: TApp (TApp (TCon (TC "->" Kfun Star (Kfun Star Star))) (TVar (TV "a" Star))) (TVar (TV "a" Star))
+Then later when we call it with say 3, we know that since that arg has type Number, we can also know that the return type is a Number.
+
+
+TGen: it is a special kind of type that is mainly used in the env, or when parsing typings. It contains a number to say that this type is unique within the
+scope of a maybe bigger scope. Let's consider a fictive signature:
+a -> b
+The type for it would be:
+TApp (TApp (TCon (TC "->" (Kfun Star (Kfun Star Star)))) (TGen 0) (TGen 1))
+So put clearer, in our system we get: TGen 0 -> TGen 1
+So when we want to use this kind of type we have to "instantiate" them, which means replacing the TGen with fresh type variables.
+
+
+TApp: Type Application, it applies a type to another type. A bit like function application but at the type level. That's where kinds come in.
+Consider the type Maybe a: TApp (TCon (TC "Maybe" (Kfun Star Star))) (TVar (TV "a" Star)).
+The whole type has kind Star (*), but Maybe itself has kind Star -> Star ( * -> * ). It means that Maybe, needs a variable to be applied to it
+in order to be a correctly formed type. Some types like the arrow type ( -> ) need more than one type to be applied to them. So mainly to get a function
+type, you need the input type, and the output type. So when you write a typing such as a -> a, you essentially apply two type variables to ->.
+
+
+
+Substitutions:
+A subsitution is a Map of type variables to types and is defined like this:
+
+type Substitution = M.Map TVar Type
+
+// Practical case :
+inc = (x) => x + 1
+inc(3)
+So here when we encounter x we push it in the env with a freshType ( say TVar (TV "a" Star) ), and then we try to unify that x's type with a Number type ( because + is Number -> Nunber -> Number ).
+So that unification tells us, that if we encounter a type variable on one side, then we can just assign the type to whatever other type it was. It means that, until now we didn't know what type it could be,
+but thanks to unification, it tells us that from its usage ( here as an operand of + ), we can replace it with another type ( Number here ). So it would give us a substitution: { tv "a": Number }.
+
+
+data Maybe a = Just a | Nothing
+
+Just("Hello World !")
+
+
+// TGen
+map :: (a -> b) -> List a -> List b
+map = (f, xs) => where(xs)
+  is []              : []
+  is [last]          : [f(last)]
+  is [first, ...rest]: [f(first), ...map(rest)]

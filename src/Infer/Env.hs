@@ -54,11 +54,6 @@ mergeVars env vs = env { envvars = M.union (envvars env) vs}
 --   let instances = envinstances env
 --   in  find (\(Ty.Instance ty' interface' _ _) -> ty' `typeEq` ty && interface == interface') instances
 
--- typeEq :: Type -> Type -> Bool
--- typeEq t1 t2 = case (t1, t2) of
---   (TComp p n _, TComp p' n' _) -> p == p' && n == n'
---   _ -> t1 == t2
-
 -- lookupInstanceMethod :: Env -> Type -> String -> String -> Infer Src.Exp
 -- lookupInstanceMethod env instanceType interface name = do
 --   let inst = find (\case Ty.Instance t interface' _ _ -> interface == interface' && t `typeEq` instanceType) (envinstances env)

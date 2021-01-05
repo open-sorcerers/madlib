@@ -294,7 +294,6 @@ typeToStr t = case t of
       <> " -> "
       <> typeToStr t2'
   TApp t1 t2     -> typeToStr t1 <> " " <> typeToStr t2
-  TComp _ n vars -> n <> " " <> unwords (typeToStr <$> vars)
   TRecord fields _ ->
     "{ "
       <> intercalate
