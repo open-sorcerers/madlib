@@ -1,12 +1,14 @@
 module Tools.REPL where
 
 import           Data.List
+import           Data.Map                      as M
 import           Control.Monad
 import           Control.Monad.Except           ( runExcept )
 import           Control.Monad.State            ( StateT(runStateT) )
 import           Error.Error
 import           Explain.Reason
 import           Infer.Env
+import           Infer.Type
 import           Infer.Infer
 import           Infer.Solve
 import           Parse.AST
@@ -18,20 +20,24 @@ read' :: IO String
 read' = putStr "𝙈 >" >> hFlush stdout >> getLine
 
 eval' :: String -> String
-eval' str = inferExps
-  Env { envvars = [], envtypes = [], envimports = [], envcurrentpath = "" }
-  [str]
--- eval' code =
---   let inferred = case buildAST "path" code of
---         (Right ast) -> runEnv ast >>= (`runInfer` ast)
---         _           -> Left $ InferError (UnboundVariable "") NoReason
---   in  case inferred of
---         Right x ->
---           compile (CompilationConfig "/" "/repl.mad" "./build" False) x
---         Left e -> ppShow e
---  where
---   runEnv x = fst <$> runExcept
---     (runStateT (buildInitialEnv initialEnv x) Unique { count = 0 })
+-- eval' str = inferExps
+--   Env { envvars        = M.empty
+--       , envtypes       = M.empty
+--       , envimports     = M.empty
+--       , envcurrentpath = ""
+--       }
+--   [str]
+eval' code =
+  let inferred = case buildAST "path" code of
+        (Right ast) -> runEnv ast >>= (`runInfer` ast)
+        _           -> Left $ InferError (UnboundVariable "") NoReason
+  in  case inferred of
+        Right x ->
+          compile (CompilationConfig "/" "/repl.mad" "./build" False) x
+        Left e -> ppShow e
+ where
+  runEnv x = fst <$> runExcept
+    (runStateT (buildInitialEnv initialEnv x) Unique { count = 0 })
 
 print' :: String -> IO ()
 print' = putStrLn
