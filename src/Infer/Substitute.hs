@@ -29,7 +29,7 @@ instance Substitutable Type where
   apply env s rec@(TRecord fields open) =
     let applied = TRecord (apply env s <$> fields) open
     in  if rec == applied then applied else apply env s applied
-  apply env s t              = t
+  apply env s t = t
 
   ftv TCon{}              = S.empty
   ftv (TVar a           ) = S.singleton a
@@ -39,8 +39,8 @@ instance Substitutable Type where
 
 instance Substitutable Scheme where
   apply env s (Forall ks t) = Forall ks $ apply env s t
-    -- where s' = foldr M.delete s as
   ftv (Forall _ t) = ftv t
+
 instance Substitutable a => Substitutable [a] where
   apply env = fmap . apply env
   ftv = foldr (S.union . ftv) S.empty

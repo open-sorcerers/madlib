@@ -17,7 +17,7 @@ import           Infer.Instantiate              ( newTVar )
 import           Data.Maybe                     ( fromMaybe )
 import           Text.Show.Pretty               ( ppShow )
 import           Debug.Trace                    ( trace )
-import Data.List (isInfixOf)
+import           Data.List                      ( isInfixOf )
 
 
 buildTypeDecls :: Env -> FilePath -> [TypeDecl] -> Infer TypeDecls
@@ -41,7 +41,9 @@ buildTypeDecl _ astPath typeDecls adt@ADT{} =
   case M.lookup (adtname adt) typeDecls of
     Just t  -> throwError $ InferError (ADTAlreadyDefined t) NoReason
     Nothing -> return
-      (adtname adt, TCon $ TC (adtname adt) (buildKind (length $ adtparams adt)))
+      ( adtname adt
+      , TCon $ TC (adtname adt) (buildKind (length $ adtparams adt))
+      )
 buildTypeDecl priorEnv astPath typeDecls alias@Alias{} = do
   let name   = aliasname alias
   let params = (`TV` Star) <$> aliasparams alias
@@ -77,19 +79,21 @@ resolveADTConstructor
 resolveADTConstructor priorEnv astPath typeDecls n params (Constructor cname cparams)
   = do
     let gens = zip params (map TGen [0 ..])
-    let rt = foldl TApp (TCon $ TC n (buildKind $ length params)) $ snd <$> gens
+    let rt =
+          foldl TApp (TCon $ TC n (buildKind $ length params)) $ snd <$> gens
     t' <- mapM (argToType priorEnv gens typeDecls n params) cparams
     let ctype = foldr1 fn (t' <> [rt])
-    let vars = M.fromList [(cname, Forall (replicate (countGens ctype) Star) ([] :=> ctype))]
+    let vars = M.fromList
+          [(cname, Forall (replicate (countGens ctype) Star) ([] :=> ctype))]
     return vars
 
 buildKind :: Int -> Kind
-buildKind n | n > 0  = Kfun Star $ buildKind (n - 1)
+buildKind n | n > 0     = Kfun Star $ buildKind (n - 1)
             | otherwise = Star
 
 countGens :: Type -> Int
 countGens t = case t of
-  TApp l r     -> countGens l + countGens r
+  TApp    l  r -> countGens l + countGens r
   TRecord fs _ -> sum $ countGens <$> M.elems fs
   TGen _       -> 1
   _            -> 0
@@ -107,16 +111,21 @@ argToType _ gens typeDecls _ params (Meta _ _ (TRSingle n))
   | n == "Number" = return tNumber
   | n == "Boolean" = return tBool
   | n == "String" = return tStr
-  | isLower (head n) = return $ fromMaybe (TGen 0) (M.lookup n (M.fromList gens))
+  | isLower (head n) = return
+  $ fromMaybe (TGen 0) (M.lookup n (M.fromList gens))
   | otherwise = case M.lookup n typeDecls of
-      Just a  -> return a
-      Nothing -> throwError $ InferError (UnknownType n) NoReason
+    Just a  -> return a
+    Nothing -> throwError $ InferError (UnknownType n) NoReason
 
 argToType priorEnv gens typeDecls name params (Meta _ _ (TRComp tname targs)) =
-  case M.lookup tname (envtypes priorEnv<>typeDecls) of
-    Just t@(TCon _) -> foldM (\prev a -> do
-      arg <- argToType priorEnv gens typeDecls name params a
-      return $ TApp prev arg) t targs
+  case M.lookup tname (envtypes priorEnv <> typeDecls) of
+    Just t@(TCon _) -> foldM
+      (\prev a -> do
+        arg <- argToType priorEnv gens typeDecls name params a
+        return $ TApp prev arg
+      )
+      t
+      targs
     Nothing -> throwError $ InferError (UnknownType tname) NoReason
 
 argToType priorEnv gens typeDecls name params (Meta _ _ (TRArr l r)) = do

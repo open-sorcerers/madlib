@@ -12,10 +12,10 @@ import           Control.Monad.Except           ( MonadError(throwError) )
 import           Error.Error
 import           Explain.Reason
 import           Infer.Substitute
-import Infer.Scheme (quantify)
-import Debug.Trace (trace)
-import Text.Show.Pretty (ppShow)
-import Infer.Instantiate (newTVar)
+import           Infer.Scheme                   ( quantify )
+import           Debug.Trace                    ( trace )
+import           Text.Show.Pretty               ( ppShow )
+import           Infer.Instantiate              ( newTVar )
 
 
 typingToScheme :: Env -> Src.Typing -> Infer Scheme
@@ -35,16 +35,16 @@ typingToType env (Meta _ _ (Src.TRSingle t))
   | otherwise = do
     h <- lookupADT env t
     case h of
-      (TAlias _ _ _ t          ) -> updateAliasVars h []
-      t -> return t
+      (TAlias _ _ _ t) -> updateAliasVars h []
+      t                -> return t
 
 
 typingToType env (Meta info area (Src.TRComp t ts)) = do
-  h <- lookupADT env t
-  params  <- mapM (typingToType env) ts
+  h      <- lookupADT env t
+  params <- mapM (typingToType env) ts
   case h of
-    (TAlias _ _ _ t          ) -> updateAliasVars h params
-    t -> return $ foldl TApp t params
+    (TAlias _ _ _ t) -> updateAliasVars h params
+    t                -> return $ foldl TApp t params
 
 
 typingToType env (Meta _ _ (Src.TRArr l r)) = do
@@ -70,10 +70,10 @@ lookupADT env x = do
 
 collectVars :: Type -> [TVar]
 collectVars t = case t of
-  TVar tv  -> [tv]
-  TApp l r -> collectVars l <> collectVars r
+  TVar tv      -> [tv]
+  TApp    l  r -> collectVars l <> collectVars r
   TRecord fs _ -> concat $ collectVars <$> M.elems fs
-  _ -> []
+  _            -> []
 
 
 updateAliasVars :: Type -> [Type] -> Infer Type
@@ -91,11 +91,10 @@ updateAliasVars t args = do
               l' <- update l
               r' <- update r
               return $ TApp l' r'
-            TCon _ -> return ty
+            TCon _       -> return ty
             TRecord fs o -> do
               fs' <- mapM update fs
               return $ TRecord fs' o
-
       in  update t'
 
     _ -> return t

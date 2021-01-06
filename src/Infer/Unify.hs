@@ -60,9 +60,9 @@ unifyVars _ s _ = return s
 
 
 unifyElems :: Env -> [Type] -> Either TypeError Substitution
-unifyElems env [] = Right M.empty
-unifyElems env [ts] = Right M.empty
-unifyElems env (h:r) = unifyElems' env h r
+unifyElems env []      = Right M.empty
+unifyElems env [ts   ] = Right M.empty
+unifyElems env (h : r) = unifyElems' env h r
 
 unifyElems' :: Env -> Type -> [Type] -> Either TypeError Substitution
 unifyElems' _   _ []        = return M.empty

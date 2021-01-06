@@ -290,10 +290,8 @@ typeToStr t = case t of
   TCon (TC a _) -> a
   TVar (TV a _) -> a
   TApp (TApp (TCon (TC "(->)" _)) t2) t2' ->
-      typeToStr t2
-      <> " -> "
-      <> typeToStr t2'
-  TApp t1 t2     -> typeToStr t1 <> " " <> typeToStr t2
+    typeToStr t2 <> " -> " <> typeToStr t2'
+  TApp t1 t2 -> typeToStr t1 <> " " <> typeToStr t2
   TRecord fields _ ->
     "{ "
       <> intercalate

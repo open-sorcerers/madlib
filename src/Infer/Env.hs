@@ -16,11 +16,13 @@ import           Error.Error
 import qualified Data.Set                      as S
 import           Infer.Substitute               ( Substitutable(ftv) )
 import           Infer.Typing                   ( typingToType )
-import           Data.List                      (isInfixOf,  find )
+import           Data.List                      ( isInfixOf
+                                                , find
+                                                )
 import           Data.Maybe                     ( fromMaybe )
 import           Text.Show.Pretty               ( ppShow )
 import           Debug.Trace                    ( trace )
-import Infer.Scheme (toScheme)
+import           Infer.Scheme                   ( toScheme )
 
 
 lookupVar :: Env -> String -> Infer Scheme
@@ -33,7 +35,7 @@ lookupVar env x
         let (TRecord fields _) = qualType h
 
         case M.lookup (tail name) fields of
-          Just t -> return (toScheme t)
+          Just t  -> return (toScheme t)
           Nothing -> throwError $ InferError (UnboundVariable x) NoReason
 
       Nothing -> throwError $ InferError (UnboundVariable x) NoReason
@@ -47,7 +49,7 @@ extendVars env (x, s) = env { envvars = M.insert x s $ envvars env }
 
 
 mergeVars :: Env -> Vars -> Env
-mergeVars env vs = env { envvars = M.union (envvars env) vs}
+mergeVars env vs = env { envvars = M.union (envvars env) vs }
 
 -- lookupInstance :: Env -> String -> Type -> Maybe Ty.Instance
 -- lookupInstance env interface ty =
@@ -84,7 +86,12 @@ initialEnv = Env
       :=> (TGen 0 `fn` (TGen 0 `fn` TGen 1) `fn` TGen 1)
       )
     ]
-  , envtypes       = M.fromList [("List", tList), ("(,)", tTuple2), ("(,,)", tTuple3), ("(,,,)", tTuple4)]
+  , envtypes       = M.fromList
+                       [ ("List" , tList)
+                       , ("(,)"  , tTuple2)
+                       , ("(,,)" , tTuple3)
+                       , ("(,,,)", tTuple4)
+                       ]
   , envinterfaces  = []
   , envinstances   = []
   , envcurrentpath = ""

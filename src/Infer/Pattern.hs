@@ -2,20 +2,20 @@
 {-# LANGUAGE RankNTypes #-}
 module Infer.Pattern where
 
-import Infer.Type
-import qualified AST.Source as Src
-import Infer.Infer
-import qualified Data.Map as M
-import Explain.Meta
-import qualified Utils.Tuple as T
-import Infer.Instantiate
-import Infer.Scheme
-import Infer.Unify
-import Infer.Env
-import Error.Error
-import Explain.Reason
-import Control.Monad.Except
-import Infer.Substitute
+import           Infer.Type
+import qualified AST.Source                    as Src
+import           Infer.Infer
+import qualified Data.Map                      as M
+import           Explain.Meta
+import qualified Utils.Tuple                   as T
+import           Infer.Instantiate
+import           Infer.Scheme
+import           Infer.Unify
+import           Infer.Env
+import           Error.Error
+import           Explain.Reason
+import           Control.Monad.Except
+import           Infer.Substitute
 
 
 inferPatterns :: Env -> [Src.Pattern] -> Infer ([Pred], Vars, [Type])
@@ -28,13 +28,13 @@ inferPatterns env pats = do
 
 inferPattern :: Env -> Src.Pattern -> Infer ([Pred], Vars, Type)
 inferPattern env (Meta _ _ pat) = case pat of
-  Src.PNum _ -> return ([], M.empty, tNumber)
+  Src.PNum  _ -> return ([], M.empty, tNumber)
   Src.PBool _ -> return ([], M.empty, tBool)
-  Src.PStr _ -> return ([], M.empty, tStr)
+  Src.PStr  _ -> return ([], M.empty, tStr)
 
-  Src.PCon n -> return ([], M.empty, TCon $ TC n Star)
+  Src.PCon  n -> return ([], M.empty, TCon $ TC n Star)
 
-  Src.PVar i -> do
+  Src.PVar  i -> do
     v <- newTVar Star
     return ([], M.singleton i (toScheme v), v)
 
@@ -44,15 +44,15 @@ inferPattern env (Meta _ _ pat) = case pat of
 
   Src.PTuple pats -> do
     ti <- mapM (inferPattern env) pats
-    let ts   = T.lst <$> ti
-    let ps   = foldr (<>) [] (T.beg <$> ti)
-    let vars = foldr (<>) M.empty (T.mid <$> ti)
+    let ts     = T.lst <$> ti
+    let ps     = foldr (<>) [] (T.beg <$> ti)
+    let vars   = foldr (<>) M.empty (T.mid <$> ti)
 
     let tupleT = getTupleCtor (length ts)
-    let t = foldl TApp tupleT ts
+    let t      = foldl TApp tupleT ts
 
     return (ps, vars, t)
-  
+
   Src.PList pats -> do
     li <- mapM (inferPListItem env) pats
     tv <- newTVar Star
@@ -62,18 +62,18 @@ inferPattern env (Meta _ _ pat) = case pat of
 
     s <- case unifyElems (mergeVars env vars) ts of
       Right r -> return r
-      Left e -> throwError $ InferError e NoReason
+      Left  e -> throwError $ InferError e NoReason
 
     return (ps, M.map (apply env s) vars, TApp tList (apply env s (head ts)))
 
-    where
-      inferPListItem :: Env -> Src.Pattern -> Infer ([Pred], Vars, Type)
-      inferPListItem env pat@(Meta _ _ p) = case p of
-        Src.PSpread (Meta _ _ (Src.PVar i)) -> do
-          tv <- newTVar Star
-          let t' = TApp tList tv
-          return ([], M.singleton i (toScheme t'), tv)
-        _ -> inferPattern env pat
+   where
+    inferPListItem :: Env -> Src.Pattern -> Infer ([Pred], Vars, Type)
+    inferPListItem env pat@(Meta _ _ p) = case p of
+      Src.PSpread (Meta _ _ (Src.PVar i)) -> do
+        tv <- newTVar Star
+        let t' = TApp tList tv
+        return ([], M.singleton i (toScheme t'), tv)
+      _ -> inferPattern env pat
 
   Src.PRecord pats -> do
     li <- mapM (inferFieldPattern env) pats
@@ -83,14 +83,14 @@ inferPattern env (Meta _ _ pat) = case pat of
 
     return (ps, vars, TRecord (M.map T.lst li) True)
 
-    where
-      inferFieldPattern :: Env -> Src.Pattern -> Infer ([Pred], Vars, Type)
-      inferFieldPattern env pat@(Meta _ _ p) = case p of
-        Src.PSpread (Meta _ _ (Src.PVar i)) -> do
-          tv <- newTVar Star
-          return ([], M.singleton i (toScheme tv), tv)
+   where
+    inferFieldPattern :: Env -> Src.Pattern -> Infer ([Pred], Vars, Type)
+    inferFieldPattern env pat@(Meta _ _ p) = case p of
+      Src.PSpread (Meta _ _ (Src.PVar i)) -> do
+        tv <- newTVar Star
+        return ([], M.singleton i (toScheme tv), tv)
 
-        _ -> inferPattern env pat
+      _ -> inferPattern env pat
 
   Src.PCtor n pats -> do
     (ps, vars, ts) <- inferPatterns env pats
@@ -99,6 +99,6 @@ inferPattern env (Meta _ _ pat) = case pat of
     (ps' :=> t)    <- instantiate sc
     s              <- case unify env t (foldr fn tv ts) of
       Right r -> return r
-      Left e -> throwError $ InferError e NoReason
+      Left  e -> throwError $ InferError e NoReason
 
     return (ps <> ps', vars, apply env s tv)

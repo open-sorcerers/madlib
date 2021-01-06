@@ -74,7 +74,8 @@ tTuple3 :: Type
 tTuple3 = TCon $ TC "(,,)" (Kfun Star (Kfun Star (Kfun Star Star)))
 
 tTuple4 :: Type
-tTuple4 = TCon $ TC "(,,,)" (Kfun Star (Kfun Star (Kfun Star (Kfun Star Star))))
+tTuple4 =
+  TCon $ TC "(,,,)" (Kfun Star (Kfun Star (Kfun Star (Kfun Star Star))))
 
 tArrow :: Type
 tArrow = TCon $ TC "(->)" (Kfun Star (Kfun Star Star))
@@ -96,7 +97,7 @@ type Id = String
 data Kind  = Star | Kfun Kind Kind
              deriving (Eq, Show, Ord)
 
-data Pred   = IsIn Id [Type]
+data Pred   = IsIn Id Type
               deriving (Eq, Show, Ord)
 
 data Qual t = [Pred] :=> t
@@ -126,10 +127,9 @@ instance HasKind TVar where
 instance HasKind TCon where
   kind (TC _ k) = k
 instance HasKind Type where
-  kind (TCon tc    ) = kind tc
-  kind (TVar u     ) = kind u
-  kind (TRecord _ _) = Star
-  kind (TApp    t _) = case kind t of
+  kind (TCon tc ) = kind tc
+  kind (TVar u  ) = kind u
+  kind (TApp t _) = case kind t of
     (Kfun _ k) -> k
   kind _ = Star
 
