@@ -32,3 +32,4 @@ madlib_modules
 .snapshots/*/actual
 /madlib.json
 .coverage
+*.hs~

@@ -34,6 +34,7 @@ import           Infer.Scheme                   ( quantify
                                                 , toScheme
                                                 )
 import qualified Utils.Tuple                   as T
+import           Utils.Debug
 import           Infer.Pattern
 
 
@@ -142,7 +143,8 @@ inferAbs :: Env -> Src.Exp -> Infer (Substitution, Type, Slv.Exp)
 inferAbs env l@(Meta _ _ (Src.Abs param body)) = do
   tv <- newTVar Star
   let env' = extendVars env (param, Forall [] ([] :=> tv))
-  (s1, t1, es) <- inferBody env' body
+  -- (s1, t1, es) <- inferBody env' body
+  (s1, t1, es) <- inferBody (xtrace "ENV" env') body
   let t = apply env s1 (tv `fn` t1)
   return (s1, t, applyAbsSolve l param es t)
 
