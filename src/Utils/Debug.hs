@@ -5,7 +5,6 @@ import           Data.Maybe
 import           Debug.Trace                    ( trace )
 import           Text.Show.Pretty               ( ppShow )
 import           System.Environment
-import           System.ReadEnvVar
 import           Text.Read                      ( readMaybe )
 
 -- |'xtrace' is a tagged log

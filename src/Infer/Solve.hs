@@ -145,7 +145,7 @@ inferAbs env l@(Meta _ _ (Src.Abs param body)) = do
   let env' = extendVars env (param, Forall [] ([] :=> tv))
   -- (s1, t1, es) <- inferBody env' body
   (s1, t1, es) <- inferBody (xtrace "ENV" env') body
-  let t = apply env s1 (tv `fn` t1)
+  let t = apply env s1 (tv `fn` (xtrace "WHAT" t1))
   return (s1, t, applyAbsSolve l param es t)
 
 

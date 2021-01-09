@@ -25,6 +25,7 @@ module Parse.Lexer
   )
 where
 
+import           Control.Monad.State
 import           System.Exit
 import qualified Data.Text     as T
 import           Explain.Location
@@ -88,7 +89,6 @@ tokens :-
   \-                                    { mapToken (\_ -> TokenDash) }
   $head*\?                              { mapToken (\_ -> TokenQuestionMark) }
   \n[\ ]*\-                             { mapToken (\_ -> TokenDash) }
-  $head*\*                              { mapToken (\_ -> TokenStar) }
   $head*\/                              { mapToken (\_ -> TokenSlash) }
   $head*\%                              { mapToken (\_ -> TokenPercent) }
   $head*\|\>                            { mapToken (\_ -> TokenPipeOperator) }
@@ -107,6 +107,10 @@ tokens :-
     { mapToken (\s -> TokenJSBlock (sanitizeJSBlock s)) }
   [\ \n]*"//".*                         ; -- Comments
   $empty+                               ;
+  <0,comment> \/\*                      { beginComment }
+  <comment>   [.\n]                     ;
+  <comment>   \*\/                      { endComment }
+  <0>       $head*\*                    { mapToken (\_ -> TokenStar) }
 
 {
 blackList :: String
@@ -116,6 +120,32 @@ blackList = "\\`[\ \t \n]*(where|if|else|is|data|alias|export|}|[a-zA-Z0-9]+[\ \
 whiteList :: String
 whiteList = "\\`[\ \t \n]*[a-zA-Z0-9\"]+[\\(]?.*"
 
+-- comments!
+
+data ParseState = ParseState {input::AlexInput,
+                              lexSC::Int, -- lexer start code
+                              commentDepth::Int,
+                              stringBuf::String
+                             }
+                  deriving Show
+
+type Parse a = State ParseState a
+type LexAction = Int -> String -> Parse (Maybe Token)
+
+beginComment :: LexAction
+beginComment _ _ = do
+  s <- get
+  put s {lexSC = comment,
+         commentDepth = (commentDepth s) +1}
+  return Nothing
+
+endComment :: LexAction
+endComment _ _ = do
+  s <- get
+  let cd = commentDepth s
+  let sc' = if cd==1 then 0 else comment
+  put s {lexSC=sc',commentDepth=cd-1}
+  return Nothing
 
 --type AlexAction result = AlexInput -> Int -> Alex result
 mapToken :: (String -> TokenClass) -> AlexInput -> Int -> Alex Token
