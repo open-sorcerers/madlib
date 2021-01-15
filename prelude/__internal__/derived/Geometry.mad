@@ -1,0 +1,34 @@
+import {divide, multiply, pow, sqrt} from '../atomic/Math'
+
+export PI = (#- Math.PI -#)
+
+export square = pow(2)
+
+export distance = (x1, y1, x2, y2) => sqrt(
+  square(x2 - x1) + square(y2 - y1)
+)
+
+degreeToRadian :: Number -> Number
+export degreeToRadian = multiply(PI / 180)
+
+radianToDegree :: Number -> Number
+export radianToDegree = multiply(180 / PI)
+
+hypotenuse :: Number -> Number -> Number
+hypotenuse = (a, b) => sqrt(
+  square(a) + square(b)
+)
+
+leg :: Number -> Number -> Number
+leg = (b, c) => sqrt(
+  square(c) - square(b)
+)
+
+triArea :: Number -> Number -> Number
+triArea = (a, b) => divide(2)(multiply(a, b))
+
+circleArea :: Number -> Number
+circleArea = x => pipe(
+  multiply(PI),
+  pow(2)
+)(x)

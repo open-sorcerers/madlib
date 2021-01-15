@@ -2,13 +2,19 @@ add :: Number -> Number -> Number
 export add = (a, b) => (a + b)
 
 substract :: Number -> Number -> Number
-export substract = (a, b) => (a - b)
+export subtract = (b, a) => (a - b)
 
 multiply :: Number -> Number -> Number
 export multiply = (a, b) => (a * b)
 
 divide :: Number -> Number -> Number
-export divide = (a, b) => (a / b)
+export divide = (b, a) => (a / b)
 
 mod :: Number -> Number -> Number
-export mod = (a, b) => (a % b)
+export mod = (b, a) => (a % b)
+
+sqrt :: Number -> Number
+export sqrt = (x) => (#- Math.sqrt(x) -#)
+
+pow :: Number -> Number -> Number
+export pow = (y, x) => (#- Math.pow(x, y) -#)

@@ -2,6 +2,7 @@
   "Either": ["./atomic/Either.mad"],
   "FileSystem": ["./derived/FileSystem.mad"],
   "Function": ["./atomic/Function.mad", "./derived/Function.mad"],
+  "Geometry": ["./derived/Geometry.mad"],
   "Http": ["./derived/Http.mad"],
   "IO": ["./atomic/IO.mad"],
   "Json": ["./derived/Json.mad"],
