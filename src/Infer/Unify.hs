@@ -4,7 +4,6 @@ module Infer.Unify where
 
 import           Control.Monad.Except
 import qualified Data.Map                      as M
-import qualified Data.Set                      as S
 
 import           Infer.Type
 import           Infer.Substitute
@@ -14,7 +13,7 @@ import Explain.Reason
 
 
 occursCheck :: Substitutable a => TVar -> a -> Bool
-occursCheck a t = S.member a $ ftv t
+occursCheck a t = a `elem` ftv t
 
 
 varBind :: TVar -> Type -> Infer Substitution

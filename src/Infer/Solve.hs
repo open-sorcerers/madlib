@@ -14,7 +14,7 @@ import           Data.Foldable                  ( foldrM )
 import qualified Parse.AST                     as AST
 import qualified AST.Source                    as Src
 import qualified AST.Solved                    as Slv
-import           Infer.Infer
+import           Infer.Infer 
 import           Infer.Type
 import           Infer.Env
 import           Infer.Typing
@@ -188,8 +188,7 @@ inferApp :: Env -> Src.Exp -> Infer (Substitution, [Pred], Type, Slv.Exp)
 inferApp env (Meta _ area (Src.App abs arg final)) = do
   tv                  <- newTVar Star
   (s1, ps1, t1, eabs) <- infer env abs
-  (s2, ps2, t2, earg) <- infer env arg
-  -- (s2, ps2, t2, earg) <- infer (apply (removeRecordTypes s1) env) arg
+  (s2, ps2, t2, earg) <- infer (apply (removeRecordTypes s1) env) arg
 
   s3             <- catchError (unify (apply s2 t1) (t2 `fn` tv)) (\case
         InferError (UnificationError _ _) _ ->
@@ -485,23 +484,18 @@ inferTypedExp :: Env -> Src.Exp -> Infer (Substitution, [Pred], Type, Slv.Exp)
 inferTypedExp env (Meta _ area (Src.TypedExp exp typing)) = do
   s          <- typingToScheme env typing
   (ps :=> t) <- instantiate s
-  let (ps' :=> t'') = ps :=> t
-  -- let (gens, ks, t') = makeGeneric M.empty [] t
-
-  -- (ps' :=> t'')          <- instantiate $ Forall ks ([] :=> t')
 
   (s1, ps1, t1, e1) <- infer env exp
-  s2           <- catchError (unify t'' t1) (\(InferError e _) ->
+  s2           <- catchError (unify t t1) (\(InferError e _) ->
       throwError $ InferError e
-      (Reason (TypeAndTypingMismatch exp typing t'' t1)
+      (Reason (TypeAndTypingMismatch exp typing t t1)
               (envcurrentpath env)
               area
       ))
 
   return
     ( s1 `compose` s2
-    , ps
-    -- , ps ++ ps' ++ ps1
+    , ps ++ ps1
     , t
     , Slv.Solved
       t
@@ -537,7 +531,7 @@ makeGeneric gens ks t = case t of
 type Ambiguity       = (TVar, [Pred])
 
 ambiguities         :: [TVar] -> [Pred] -> [Ambiguity]
-ambiguities vs ps = [ (v, filter (elem v . ftv) ps) | v <- S.toList $ ftv ps S.\\ S.fromList vs ]
+ambiguities vs ps = [ (v, filter (elem v . ftv) ps) | v <- ftv ps \\ vs ]
 
 split :: Env -> [TVar] -> [TVar] -> [Pred] -> Infer ([Pred], [Pred])
 split env fs gs ps = do
@@ -577,70 +571,117 @@ varName :: Slv.Exp -> String
 varName = \case Slv.Solved _ _ (Slv.Var n) -> n
 
 
-inferImplicitlyTyped :: Env -> Src.Exp -> Infer (Env, Slv.Exp)
-inferImplicitlyTyped env exp = undefined
+getExpName :: Src.Exp -> Maybe String
+getExpName (Meta _ _ exp) = case exp of
+  Src.Assignment name _ ->
+    return name
+
+  Src.TypedExp (Meta _ _ (Src.Assignment name _)) _ ->
+    return name
+
+  Src.TypedExp (Meta _ _ (Src.Export (Meta _ _ (Src.Assignment name _)))) _ ->
+    return name
+
+  Src.Export (Meta _ _ (Src.Assignment name _)) ->
+    return name
+
+  _ -> Nothing
 
 
-inferExplicitlyTyped :: Env -> Src.Exp -> Infer (Env, Slv.Exp)
-inferExplicitlyTyped env exp = undefined
+inferImplicitlyTyped :: Env -> Src.Exp -> Infer (Substitution, [Pred], Env, Slv.Exp)
+inferImplicitlyTyped env exp = do
+  tv            <- newTVar Star
+
+  let env' = case getExpName exp of
+        Just n  -> extendVars env (n, toScheme tv)
+        Nothing -> env
+
+  (s, ps, t, e) <- infer env' exp
+  s'            <- (s `compose`) <$> unify tv t
+  let ps' = apply s' ps
+      t'  = apply s' tv
+      fs  = ftv (apply s' env')
+      vs  = ftv t'
+      gs  = vs \\ fs
+  (ds, rs) <- split env' fs vs ps'
+
+  case getExpName exp of
+    Just n  -> return (s', ds, extendVars env' (n, quantify gs $ rs :=> t'), e)
+    Nothing -> return (s', ds ++ rs, env', e)
+
+
+-- type Expl = (Id, Scheme, [Alt])
+
+-- tiExpl :: ClassEnv -> [Assump] -> Expl -> TI [Pred]
+-- tiExpl ce as (i, sc, alts)
+-- = do (qs :=> t) <- freshInst sc
+--       ps         <- tiAlts ce as alts t
+--       s          <- getSubst
+--       let qs'     = apply s qs
+--           t'      = apply s t
+--           fs      = tv (apply s as)
+--           gs      = tv t' \\ fs
+--           sc'     = quantify gs (qs':=>t')
+--           ps'     = filter (not . entail ce qs') (apply s ps)
+--       (ds,rs)    <- split ce fs gs ps'
+--       if sc /= sc' then
+--           fail "signature too general"
+--         else if not (null rs) then
+--           fail "context too weak"
+--         else
+--           return ds
+
+inferExplicitlyTyped :: Env -> Src.Exp -> Infer (Substitution, [Pred], Env, Slv.Exp)
+inferExplicitlyTyped env e@(Meta _ a (Src.TypedExp exp typing)) = do
+  sc            <- typingToScheme env typing
+
+  let env' = case getExpName exp of
+        Just n  -> extendVars env (n, sc)
+        Nothing -> env
+
+  (s, ps, t, e) <- infer env' exp
+  (qs :=> t')  <- instantiate sc
+  s' <- (s `compose`) <$> unify t' t
+
+  let qs' = apply s' qs
+      t'' = apply s' t'
+      fs  = ftv (apply s' env')
+      gs  = ftv t'' \\ fs
+      sc' = quantify gs (qs' :=> t'')
+  ps' <- filterM ((not <$>) . entail env' qs') (apply s' ps)
+  (ds, rs) <- split env' fs gs (trace ("T'': "<>ppShow t''<>"\nGS: "<>ppShow gs<>"\nT': "<>ppShow t') ps')
+
+  if sc /= sc' then
+    throwError $ InferError (SignatureTooGeneral sc sc') (SimpleReason (envcurrentpath env') a)
+  else if not (null rs) then
+    throwError $ InferError ContextTooWeak NoReason
+  else do
+    let e' = updateType e t''
+    return (s', qs', env', Slv.Solved t'' a (Slv.TypedExp e' (updateTyping typing)))
 
 
 inferExps :: Env -> [Src.Exp] -> Infer [Slv.Exp]
 inferExps _   []       = return []
 
 inferExps env (e : xs) = do
-  tv <- newTVar Star
-  let sc = toScheme tv
-  let env' = case Src.extractExp e of
-          Src.Assignment name _ -> extendVars env (name, sc)
-          _                     -> env
+  (s, ps, env', e') <- case e of
+    Meta _ _ (Src.TypedExp _ _) -> inferExplicitlyTyped env e
+    _                           -> inferImplicitlyTyped env e
 
-  i@(s, ps, t, e') <- infer env' e
-
-  s' <- unify t tv
-
-  let s'' = s `compose` s'
-
-  let ps' = apply s'' ps
-  let t'  = apply s'' tv
-  let fs  = S.toList $ ftv (apply s'' env)
-  let vs  = S.toList $ ftv t'
-  let gs  = vs \\ fs
-  (ds, rs) <- split env fs gs ps'
-
-  let exp        = Slv.extractExp e'
-  let scheme = quantify (collectQualTypeVars $ ps' :=> t') $ ps' :=> t'
-
-  let e'' = if not (null ps')
+  let e'' = if not (null ps)
       then case e' of
-        Slv.Solved a t (Slv.Assignment n e'') -> case predType $ head ps' of
-          TVar (TV n' _) -> Slv.Solved a t $ Slv.Assignment n (Slv.Solved a t $ Slv.Placeholder (Slv.ClassRef (predClass $ head ps'), predType $ head ps') e'') 
+        Slv.Solved a t (Slv.Assignment n e'') -> case predType $ head ps of
+          TVar (TV n' _) -> Slv.Solved a t $ Slv.Assignment n (Slv.Solved a t $ Slv.Placeholder (Slv.ClassRef (predClass $ head ps), predType $ head ps) e'') 
           _ -> e'
-        Slv.Solved a t (Slv.TypedExp (Slv.Solved a' t' (Slv.Assignment n e'')) _) -> case predType $ head ps' of
-          TVar (TV n' _) -> Slv.Solved a t $ Slv.Assignment n (Slv.Solved a t $ Slv.Placeholder (Slv.ClassRef (predClass $ head ps'), predType $ head ps') e'') 
+        Slv.Solved a t (Slv.TypedExp (Slv.Solved a' t' (Slv.Assignment n e'')) _) -> case predType $ head ps of
+          TVar (TV n' _) -> Slv.Solved a t $ Slv.Assignment n (Slv.Solved a t $ Slv.Placeholder (Slv.ClassRef (predClass $ head ps), predType $ head ps) e'') 
           _ -> e'
         _ -> e'
       else e'
 
-  let e''' = updatePlaceholders s'' e''
+  let e''' = updatePlaceholders s e''
 
-  let
-    env' = case exp of
-      Slv.Assignment name _ -> extendVars env (name, Forall [] $ ps' :=> t')
-
-      Slv.TypedExp (Slv.Solved _ _ (Slv.Assignment name _)) _ ->
-        extendVars env (name, scheme)
-
-      Slv.TypedExp (Slv.Solved _ _ (Slv.Export (Slv.Solved _ _ (Slv.Assignment name _)))) _
-        -> extendVars env (name, scheme)
-
-      Slv.Export (Slv.Solved _ _ (Slv.Assignment name _)) ->
-        extendVars env (name, Forall [] $ ps' :=> t')
-
-      _ -> env
-
-  (e''' :) <$> inferExps env' (trace ("E''': "<>ppShow e''') xs)
-
+  (e''' :) <$> inferExps env' xs
 
 
 solveTable :: Src.Table -> Src.AST -> Infer Slv.Table

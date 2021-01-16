@@ -13,12 +13,12 @@ import Infer.Infer
 import Control.Monad.Except
 import Error.Error
 import Explain.Reason
-import Data.List (intersect)
+import Data.List (nub, union, intersect)
 
 
 class Substitutable a where
   apply :: Substitution -> a -> a
-  ftv   :: a -> S.Set TVar
+  ftv   :: a -> [TVar]
 
 
 instance Substitutable Pred where
@@ -27,7 +27,7 @@ instance Substitutable Pred where
 
 instance Substitutable t => Substitutable (Qual t) where
   apply s (ps :=> t) = apply s ps :=> apply s t
-  ftv (ps :=> t) = ftv ps `S.union` ftv t
+  ftv (ps :=> t) = ftv ps `union` ftv t
 
 instance Substitutable Type where
   apply _ (  TCon a      ) = TCon a
@@ -38,11 +38,11 @@ instance Substitutable Type where
     in  if rec == applied then applied else apply s applied
   apply s t = t
 
-  ftv TCon{}              = S.empty
-  ftv (TVar a           ) = S.singleton a
-  ftv (t1      `TApp` t2) = ftv t1 `S.union` ftv t2
-  ftv (TRecord fields _ ) = foldl' (\s v -> S.union s $ ftv v) S.empty fields
-  ftv t                   = S.fromList []
+  ftv TCon{}              = []
+  ftv (TVar a           ) = [a]
+  ftv (t1      `TApp` t2) = ftv t1 `union` ftv t2
+  ftv (TRecord fields _ ) = foldl' (\s v -> union s $ ftv v) [] fields
+  ftv t                   = []
 
 instance Substitutable Scheme where
   apply s (Forall ks t) = Forall ks $ apply s t
@@ -50,7 +50,7 @@ instance Substitutable Scheme where
 
 instance Substitutable a => Substitutable [a] where
   apply = fmap . apply
-  ftv = foldr (S.union . ftv) S.empty
+  ftv = foldr (union . ftv) []
 
 instance Substitutable Env where
   apply s env = env { envvars = M.map (apply s) $ envvars env }

@@ -1,4 +1,4 @@
-export alias Wish e a = (e -> m) -> (a -> n) -> o
+export alias Wish e a = (e -> m) -> (a -> n) -> ()
 
 of :: a -> Wish e a
 export of = (a) => ((bad, good) => (good(a)))
@@ -7,16 +7,15 @@ bad :: e -> Wish e a
 export bad = (e) => ((nope, yes) => (nope(e)))
 
 
+// map :: (a -> b) -> ((e -> m) -> (a -> n) -> ()) -> ((e -> m) -> (b -> n) -> ())
 map :: (a -> b) -> Wish e a -> Wish e b
 export map = (f, run) => (
-  (bad, good) => (run(bad, (x) => (good(f(x)))))
+  (bad, good) => run(bad, (x) => good(f(x)))
 )
 
 mapRej :: (e -> f) -> Wish e a -> Wish f a
 export mapRej = (f, run) => (
-  (bad, good) => (
-    run((x) => (bad(f(x))), good)
-  )
+  (bad, good) => run((x) => bad(f(x)), good)
 )
 
 chain :: (a -> Wish f b) -> Wish e a -> Wish f b

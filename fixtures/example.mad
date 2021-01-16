@@ -1,3 +1,10 @@
-xPlusY = (r) => r.x + r.y + r.z
+flip :: (a -> b -> c) -> (b -> a -> c)
+export flip = (fn) => (
+  (b, a) => fn(a, b)
+)
 
-xPlusY({x: 1, y: 3, z: 5})
+
+export alias Wish e a = (e -> m) -> (a -> n) -> ()
+
+of :: a -> Wish e a
+export of = (a) => ((bad, good) => (good(a)))

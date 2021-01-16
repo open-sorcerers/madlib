@@ -25,6 +25,8 @@ data TypeError
   | ImportNotFound String
   | GrammarError FilePath String
   | NameAlreadyDefined String
+  | SignatureTooGeneral Scheme Scheme
+  | ContextTooWeak
   | FatalError
   | ASTHasNoPath
   deriving (Show, Eq, Ord)

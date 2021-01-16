@@ -85,12 +85,6 @@ byInst env p@(IsIn i t)    = tryInsts (insts env i)
     tryInsts (inst:is) = catchError (tryInst inst) (\e -> tryInsts is)
 
 
--- byInst                   :: Env -> Pred -> Infer [Pred]
--- byInst env p@(IsIn i t)    = concat <$> mapM tryInst (insts env i) --msum [ tryInst it | it <- insts env i ]
---  where tryInst (Instance (ps :=> h)) = do
---         u <- match env h p
---         return $ map (apply env u) ps
-
 entail        :: Env -> [Pred] -> Pred -> Infer Bool
 entail env ps p = do
   qs <- byInst env p

@@ -12,7 +12,7 @@ import Text.Show.Pretty (ppShow)
 quantify :: [TVar] -> Qual Type -> Scheme
 quantify vs qt = Forall ks (apply s qt)
  where
-  vs' = [ v | v <- S.toList $ ftv qt, v `elem` vs ]
+  vs' = [ v | v <- ftv qt, v `elem` vs ]
   ks  = map kind vs'
   s   = M.fromList $ zip vs' (map TGen [0 ..])
 
