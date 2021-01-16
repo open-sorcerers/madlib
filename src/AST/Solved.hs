@@ -59,6 +59,7 @@ data Typing
   | TRArr Typing Typing
   | TRRecord (M.Map Name Typing)
   | TRTuple [Typing]
+  | TRConstrained [Typing] Typing -- List of constrains and the typing it applies to
   deriving(Eq, Show)
 
 

@@ -62,9 +62,12 @@ map(inc, [1, 2 ,3]) |> IO.log
 
 chain((x) => Just(x + 1), Just(3))
 
+doIt :: Functor m => m a -> m b
 doIt = (x) => map((k) => k + 1, x)
 
 doIt(Just(3)) |> map(IO.log)
+
+p = 1
 
 
 fn = map(inc)

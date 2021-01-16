@@ -113,6 +113,8 @@ updateTyping typing = case typing of
 
   Meta _ _ (Src.TRTuple  elems  ) -> Slv.TRTuple (updateTyping <$> elems)
 
+  Meta _ _ (Src.TRConstrained ts t) -> Slv.TRConstrained (updateTyping <$> ts) (updateTyping t)
+
 
 
 -- INFER VAR
@@ -186,7 +188,8 @@ inferApp :: Env -> Src.Exp -> Infer (Substitution, [Pred], Type, Slv.Exp)
 inferApp env (Meta _ area (Src.App abs arg final)) = do
   tv                  <- newTVar Star
   (s1, ps1, t1, eabs) <- infer env abs
-  (s2, ps2, t2, earg) <- infer (apply (removeRecordTypes s1) env) arg
+  (s2, ps2, t2, earg) <- infer env arg
+  -- (s2, ps2, t2, earg) <- infer (apply (removeRecordTypes s1) env) arg
 
   s3             <- catchError (unify (apply s2 t1) (t2 `fn` tv)) (\case
         InferError (UnificationError _ _) _ ->
@@ -480,11 +483,12 @@ extendRecord s t = case t of
 
 inferTypedExp :: Env -> Src.Exp -> Infer (Substitution, [Pred], Type, Slv.Exp)
 inferTypedExp env (Meta _ area (Src.TypedExp exp typing)) = do
-  s         <- typingToScheme env typing
+  s          <- typingToScheme env typing
   (ps :=> t) <- instantiate s
-  let (gens, ks, t') = makeGeneric M.empty [] t
+  let (ps' :=> t'') = ps :=> t
+  -- let (gens, ks, t') = makeGeneric M.empty [] t
 
-  (ps' :=> t'')          <- instantiate $ Forall ks ([] :=> t')
+  -- (ps' :=> t'')          <- instantiate $ Forall ks ([] :=> t')
 
   (s1, ps1, t1, e1) <- infer env exp
   s2           <- catchError (unify t'' t1) (\(InferError e _) ->
@@ -496,12 +500,13 @@ inferTypedExp env (Meta _ area (Src.TypedExp exp typing)) = do
 
   return
     ( s1 `compose` s2
-    , ps ++ ps' ++ ps1
-    , t''
+    , ps
+    -- , ps ++ ps' ++ ps1
+    , t
     , Slv.Solved
-      t''
+      t
       area
-      (Slv.TypedExp (updateType e1 t'') (updateTyping typing))
+      (Slv.TypedExp (updateType e1 t) (updateTyping typing))
     )
 
 
@@ -544,7 +549,7 @@ split env fs gs ps = do
     else return (ds, rs)
 
 updatePlaceholders :: Substitution  -> Slv.Exp -> Slv.Exp
-updatePlaceholders s (Slv.Solved t a e) = case (trace ("SUBST: "<>ppShow s<>"\nE: "<>ppShow e) e) of
+updatePlaceholders s (Slv.Solved t a e) = case e of
   Slv.Placeholder (ref, t) exp -> Slv.Solved t a $ Slv.Placeholder (ref, apply s t) exp
   Slv.App abs arg final -> Slv.Solved t a $ Slv.App (updatePlaceholders s abs) (updatePlaceholders s arg) final
   Slv.Abs param es -> Slv.Solved t a $ Slv.Abs param (updatePlaceholders s <$> es)
@@ -571,6 +576,15 @@ isMethod env (Slv.Solved _ _ e) = case e of
 varName :: Slv.Exp -> String
 varName = \case Slv.Solved _ _ (Slv.Var n) -> n
 
+
+inferImplicitlyTyped :: Env -> Src.Exp -> Infer (Env, Slv.Exp)
+inferImplicitlyTyped env exp = undefined
+
+
+inferExplicitlyTyped :: Env -> Src.Exp -> Infer (Env, Slv.Exp)
+inferExplicitlyTyped env exp = undefined
+
+
 inferExps :: Env -> [Src.Exp] -> Infer [Slv.Exp]
 inferExps _   []       = return []
 
@@ -595,19 +609,18 @@ inferExps env (e : xs) = do
   (ds, rs) <- split env fs gs ps'
 
   let exp        = Slv.extractExp e'
-  let (gens, ks, t'') = makeGeneric M.empty [] t
-  let ps'' = (\(IsIn i ts) -> IsIn i $ lst . makeGeneric gens ks <$> ts) <$> ps'
-  let scheme     = Forall ks $ ps'' :=> t''
+  let scheme = quantify (collectQualTypeVars $ ps' :=> t') $ ps' :=> t'
 
-
-  let e'' = case e' of
-        Slv.Solved a t (Slv.Assignment n e'') ->
-          if not (null ps')
-            then case predType $ head ps' of
-              TVar (TV n' _) -> Slv.Solved a t $ Slv.Assignment n (Slv.Solved a t $ Slv.Placeholder (Slv.ClassRef (predClass $ head ps'), predType $ head ps') e'') 
-              _ -> e'
-            else e'
+  let e'' = if not (null ps')
+      then case e' of
+        Slv.Solved a t (Slv.Assignment n e'') -> case predType $ head ps' of
+          TVar (TV n' _) -> Slv.Solved a t $ Slv.Assignment n (Slv.Solved a t $ Slv.Placeholder (Slv.ClassRef (predClass $ head ps'), predType $ head ps') e'') 
+          _ -> e'
+        Slv.Solved a t (Slv.TypedExp (Slv.Solved a' t' (Slv.Assignment n e'')) _) -> case predType $ head ps' of
+          TVar (TV n' _) -> Slv.Solved a t $ Slv.Assignment n (Slv.Solved a t $ Slv.Placeholder (Slv.ClassRef (predClass $ head ps'), predType $ head ps') e'') 
+          _ -> e'
         _ -> e'
+      else e'
 
   let e''' = updatePlaceholders s'' e''
 
@@ -626,7 +639,7 @@ inferExps env (e : xs) = do
 
       _ -> env
 
-  (e''' :) <$> inferExps env' xs
+  (e''' :) <$> inferExps env' (trace ("E''': "<>ppShow e''') xs)
 
 
 
@@ -654,7 +667,7 @@ solveTable' table ast@Src.AST { Src.aimports } = do
                           --  , envmethods = envmethods env <> methods
                            }
 
-  inferredAST <- inferAST envWithImports (trace ("ENV: "<>(ppShow $ Src.apath ast)<>"\n"<>ppShow envWithImports) ast)
+  inferredAST <- inferAST envWithImports ast
 
   case Slv.apath inferredAST of
     Just fp -> return (M.insert fp inferredAST inferredASTs, envWithImports)
@@ -820,14 +833,7 @@ inferMethod :: Env -> (Src.Name, Src.Exp) -> Infer (Slv.Name, Slv.Exp)
 inferMethod env (mn, m) = do
   e <- inferExps env [m]
   return (mn, head e)
-  -- (s, _, t, e) <- infer env m
-  -- sc           <- lookupVar env mn
-  -- (ps :=> t')  <- instantiate sc
 
-  -- s' <- catchError (unify t t') (const $ throwError $ InferError (MethodDoesNotMatchInterfaceType t t') NoReason)
-  -- let t'' = apply s' t'
-
-  -- return (mn, updateType e t'')
 
 updateImport :: Src.Import -> Slv.Import
 updateImport i = case i of

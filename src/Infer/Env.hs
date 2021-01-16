@@ -125,18 +125,6 @@ addConstraints n tv t =
       vars = collectVars t
   in  quantify vars qt
 
-searchVarInType :: Id -> Type -> Maybe Type
-searchVarInType id t = case t of
-  TVar (TV n _) -> if n == id then Just t else Nothing
-  TCon _        -> Nothing
-  TApp l r      ->
-    let l' = searchVarInType id l
-        r' = searchVarInType id r
-    in  case (l', r') of
-      (Just x, _) -> Just x
-      (_, Just x) -> Just x
-      _           -> Nothing
-
 
 solveInstances :: Env -> [Src.Instance] -> Infer Env
 solveInstances = foldM solveInstance

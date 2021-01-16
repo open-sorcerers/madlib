@@ -149,3 +149,15 @@ countGens t = case t of
   TRecord fs _ -> sum $ countGens <$> M.elems fs
   TGen _       -> 1
   _            -> 0
+
+searchVarInType :: Id -> Type -> Maybe Type
+searchVarInType id t = case t of
+  TVar (TV n _) -> if n == id then Just t else Nothing
+  TCon _        -> Nothing
+  TApp l r      ->
+    let l' = searchVarInType id l
+        r' = searchVarInType id r
+    in  case (l', r') of
+      (Just x, _) -> Just x
+      (_, Just x) -> Just x
+      _           -> Nothing

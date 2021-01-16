@@ -16,13 +16,31 @@ import           Infer.Scheme                   ( quantify )
 import           Debug.Trace                    ( trace )
 import           Text.Show.Pretty               ( ppShow )
 import           Infer.Instantiate              ( newTVar )
+import qualified Data.Set as S
 
 
 typingToScheme :: Env -> Src.Typing -> Infer Scheme
 typingToScheme env typing = do
-  t <- typingToType env typing
-  let vars = collectVars t
-  return $ quantify vars ([] :=> t)
+  (ps :=> t) <- qualTypingToQualType env typing
+  let vars = S.toList $ S.fromList $ collectVars t <> concat (collectPredVars <$> ps)
+  return $ quantify vars (ps :=> t)
+
+
+qualTypingToQualType :: Env -> Src.Typing -> Infer (Qual Type)
+qualTypingToQualType env t@(Meta _ _ typing) = case typing of
+  Src.TRConstrained constraints typing' -> do
+    t  <- typingToType env typing'
+    ps <- mapM (constraintToPredicate env t) constraints
+    return $ ps :=> t
+
+  _ -> ([] :=>) <$> typingToType env t
+
+
+constraintToPredicate :: Env -> Type -> Src.Typing -> Infer Pred
+constraintToPredicate env t (Meta _ _ (Src.TRComp n [Meta _ _ (Src.TRSingle var)])) =
+  case searchVarInType var t of
+    Just v -> return $ IsIn n [v]
+    -- Nothing -> throwError $ ...
 
 
 typingToType :: Env -> Src.Typing -> Infer Type
@@ -72,12 +90,21 @@ lookupADT env x = do
     Just x  -> return x
 
 
+collectQualTypeVars :: Qual Type -> [TVar]
+collectQualTypeVars (ps :=> t) =
+  S.toList $ S.fromList $ collectVars t <> concat (collectPredVars <$> ps)
+
+
 collectVars :: Type -> [TVar]
 collectVars t = case t of
   TVar tv      -> [tv]
   TApp    l  r -> collectVars l <> collectVars r
   TRecord fs _ -> concat $ collectVars <$> M.elems fs
   _            -> []
+
+
+collectPredVars :: Pred -> [TVar]
+collectPredVars (IsIn _ ts) = concat $ collectVars <$> ts
 
 
 updateAliasVars :: Type -> [Type] -> Infer Type
