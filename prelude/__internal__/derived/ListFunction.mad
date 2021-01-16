@@ -1,0 +1,5 @@
+import L from '../atomic/List'
+import F from '../atomic/Function'
+
+reject :: (a -> Boolean) -> List a -> List a
+export reject = (predicate, xs) => (#- xs.filter(F.complement(predicate)) -#)

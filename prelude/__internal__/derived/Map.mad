@@ -1,0 +1,49 @@
+import L from "../atomic/List"
+import M from "../atomic/Maybe"
+import T from "../atomic/Tuple"
+import F from "../atomic/Function"
+import LF from "./ListFunction"
+
+export data Map k v = Map_ (List <k, v>)
+
+insert :: k -> v -> Map k v -> Map k v
+export insert = (k, v, m) => (where(m)
+  is Map_ items: pipe(
+    LF.reject(
+      where
+        is <kk, v>: kk == k
+    ),
+    L.append(<k, v>),
+    Map_
+ )(items)
+)
+
+trace :: String -> x -> x
+trace = (tag, x) => (#- { console.log(tag, x); return x } -#)
+
+iter :: (v -> w) -> Map k v -> List w
+export iter = (fn, x) => (where (x)
+  is Map_ items: L.map(fn, items)
+)
+
+keys :: Map k v -> List k
+export keys = iter(T.fst) 
+
+// values :: Map k v -> List v
+export values = iter(T.snd)
+
+len :: Map k v -> Number
+export len = pipe(keys, L.len)
+
+entries :: x -> List y
+entries = (#- Object.entries -#)
+
+objOf :: String -> x -> <String, x>
+export objOf = (kk, vv) => (#- ({ [kk]: vv }) -#)
+
+// merge :: Map k v -> Map l w -> Map j x
+export merge = (a, b) => L.reduce(
+  (agg, x) => L.concat(agg, iter((kv) => kv,  x)),
+  [],
+  [a, b]
+)

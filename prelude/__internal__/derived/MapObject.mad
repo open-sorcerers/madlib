@@ -1,0 +1,23 @@
+import L from '../atomic/List'
+import O from './Object'
+import P from './Map'
+import ML from './MapList'
+
+alias Map k v = P.Map k v
+
+// toObject :: Map k v -> x
+export toObject = L.reduce(
+  (agg, kv) => (
+    where (kv)
+      is <k, v>: O.merge(agg, O.objOf(k, v)) 
+  ),
+  {}
+)
+
+fromObject :: x -> Map k v
+export fromObject = (o) => pipe(
+  O.entries,
+  L.map((px) => < (#- px[0] -#), (#- px[1] -#) >),
+  ML.fromList
+)(o)
+

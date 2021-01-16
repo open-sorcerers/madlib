@@ -1,0 +1,54 @@
+of :: x -> List x
+export of = (x) => (#- [x] -#)
+
+join :: String -> List a -> String
+export join = (del, x) => (#- x.join(del) -#)
+
+map :: (a -> b) -> List a -> List b
+export map = (f, xs) => (#- xs.map((x) => f(x)) -#)
+
+mapWithIndex :: (a -> Number -> b) -> List a -> List b
+export mapWithIndex = (f, xs) => (#- xs.map(f) -#)
+
+concat :: List a -> List a -> List a
+export concat = (xs1, xs2) => (#- xs1.concat(xs2) -#)
+
+append :: a -> List a -> List a
+export append = (v, xs) => (#- [...xs, v] -#)
+
+last :: List a -> a
+export last = (xs) => (#- xs.slice(-1)[0] -#)
+
+init :: List a -> List a
+export init = (xs) => (#- xs.slice(0, -1) -#)
+
+reduceR :: (a -> b -> a) -> a -> List b -> a
+export reduceR = (f, initial, xs) => (#- xs.reduceRight(f, initial) -#)
+
+reduceL :: (a -> b -> a) -> a -> List b -> a
+export reduceL = (f, initial, xs) => (#- xs.reduce(f, initial) -#)
+export reduce = reduceL
+
+filter :: (a -> Boolean) -> List a -> List a
+export filter = (predicate, xs) => (#- xs.filter(predicate) -#)
+
+
+len :: List a -> Number
+export len = (xs) => (#- xs.length -#)
+
+slice :: Number -> Number -> List a -> List a
+export slice = (start, end, xs) => (#- xs.slice(start, end) -#)
+
+isEmpty :: List a -> Boolean
+export isEmpty = (xs) => len(xs) == 0
+
+times :: (a -> b) -> Number -> List b
+export times = (fn, x) => (#- {
+  let y = x - 1
+  const list = new Array(x)
+  while (y >= 0) {
+    list[y] = fn(y) 
+    y--
+  }
+  return list
+} -#)

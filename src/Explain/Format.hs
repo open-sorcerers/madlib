@@ -6,6 +6,7 @@ import           Explain.Meta
 import           Explain.Location
 import qualified AST.Source                    as Src
 import           Infer.Type
+import qualified Data.Char                     as Char
 import           Data.List                      ( intercalate )
 import qualified Data.Map                      as M
 import           Text.Show.Pretty               ( ppShow )
@@ -49,10 +50,11 @@ format rf (InferError err reason) = do
                 <> nthInfo
                 <> "argument"
                 <> fn
-                <> "has type\n\t"
+                <> "has type\n"
                 <> typeToStr actual
-                <> "\nBut it was expected to be\n\t"
+                <> "\nBut it was expected to be\n"
                 <> typeToStr expected
+                <> "\n"
 
         let
           hint = unlines
@@ -254,6 +256,7 @@ format rf (InferError err reason) = do
             <> typeToStr expectedType
             <> "\nBut the actual type is\n\t"
             <> typeToStr actualType
+            <> "\n"
 
       return
         $  "Type error at line "
@@ -285,31 +288,92 @@ nthEnding n = case n of
   3 -> "rd"
   _ -> "th"
 
-typeToStr :: Type -> String
-typeToStr t = case t of
+-- typeToStr :: Type -> String
+-- typeToStr t = case t of
+--   TCon CString -> "String"
+--   TCon CNum    -> "Number"
+--   TCon CBool   -> "Boolean"
+--   TVar (TV a)  -> a
+--   TArr (TArr t1 t2) t2' ->
+--     "("
+--       <> typeToStr t1
+--       <> " -> "
+--       <> typeToStr t2
+--       <> ")"
+--       <> " -> "
+--       <> typeToStr t2'
+--   TArr t1 t2     -> typeToStr t1 <> " -> " <> typeToStr t2
+--   TComp _ n vars -> n <> " " <> unwords (typeToStr <$> vars)
+--   TRecord fields _ ->
+--     "{ "
+--       <> intercalate
+--            ", "
+--            ((\(n, t) -> n <> ": " <> typeToStr t) <$> M.toList fields)
+--       <> "}"
+
+indent :: Int -> String -> String
+indent 0 cc = cc
+indent 1 cc = cc ++ cc
+indent n cc = if n - 1 > 0 then indent (n - 1) cc else ""
+
+isCapitalized :: String -> Bool
+isCapitalized ""              = False
+isCapitalized (letter : rest) = letter == Char.toUpper letter
+
+-- firstCapitalized :: [String] -> String
+-- firstCapitalized xs = filter isCapitalized xs
+
+complexOnly :: Type -> Bool
+complexOnly x = case x of
+  TComp _ _ _    -> True
+  TAlias _ _ _ _ -> True
+  _              -> False
+
+onlyComplex :: [Type] -> [Type]
+onlyComplex = filter complexOnly
+
+fieldValue :: String -> Int -> String -> Type -> String
+fieldValue scope ii n t =
+  (n <> (if scope == "List" then "" else ": " <> typeToFStr scope (ii + 1) t))
+
+scopedNewline :: String -> String
+scopedNewline "List" = ""
+scopedNewline _      = "\n"
+
+scopedIndent :: String -> Int -> String
+scopedIndent "List" ii = ""
+scopedIndent scope  ii = indent ii " "
+
+typeToFStr :: String -> Int -> Type -> String
+typeToFStr scope ii t = case t of
   TCon CString -> "String"
   TCon CNum    -> "Number"
   TCon CBool   -> "Boolean"
   TVar (TV a)  -> a
   TArr (TArr t1 t2) t2' ->
     "("
-      <> typeToStr t1
+      <> typeToFStr scope ii t1
       <> " -> "
-      <> typeToStr t2
+      <> typeToFStr scope ii t2
       <> ")"
       <> " -> "
-      <> typeToStr t2'
-  TArr t1 t2     -> typeToStr t1 <> " -> " <> typeToStr t2
-  TComp _ n vars -> n <> " " <> unwords (typeToStr <$> vars)
+      <> typeToFStr scope ii t2'
+  TArr t1 t2 -> typeToFStr scope ii t1 <> " -> " <> typeToFStr scope ii t2
+  TComp _ "Map" vars ->
+    "Map {" <> unwords (typeToFStr "Map" (ii + 1) <$> vars) <> "}"
+  TComp _ n vars -> n <> " " <> unwords (typeToFStr n (ii + 1) <$> vars)
   TRecord fields _ ->
-    "{ "
+    ("{" ++ (scopedNewline scope) ++ (scopedIndent scope ii))
       <> intercalate
-           ", "
-           ((\(n, t) -> n <> ": " <> typeToStr t) <$> M.toList fields)
-      <> "}"
-  _ -> ppShow t
+           (", " ++ (scopedNewline scope) ++ (scopedIndent scope ii))
+           ((\(n, t) -> fieldValue scope ii n t) <$> M.toList fields)
+      <> (scopedNewline scope)
+      ++ (scopedIndent scope (ii - 1))
+      ++ "}"
+  TAlias _ ref _ actual -> (typeToFStr ref ii actual) ++ " (as " ++ ref ++ ")"
+  _                     -> "UnprintableType"
 
-
+typeToStr = typeToFStr "default" 0
 
 slice :: Int -> Int -> [a] -> [a]
 slice from to xs = take (to - from + 1) (drop from xs)

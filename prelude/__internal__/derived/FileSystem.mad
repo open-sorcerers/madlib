@@ -1,0 +1,52 @@
+import W from "../atomic/Wish"
+import B from "../atomic/Binary"
+
+export data Data
+  = TextData String
+  | BinaryData B.ByteArray
+
+
+#- import fs from "fs" -#
+
+
+writeFile :: String -> Data -> W.Wish e String
+export writeFile = (path, d) => (where(d) {
+  is BinaryData (B.ByteArray arr): (#- 
+    (bad, good) => {
+      fs.writeFile(path, arr, (err) => {
+        if (err) {
+          bad(err);
+        }
+        else {
+          good(path)
+        }
+      });
+    };
+  -#)
+  is TextData content: (#- 
+    (bad, good) => {
+      fs.writeFile(path, content, (err) => {
+        if (err) {
+          bad(err);
+        }
+        else {
+          good(path)
+        }
+      })
+    }
+  -#)
+})
+
+readFile :: String -> W.Wish e String
+export readFile = (path) => (#- 
+  (bad, good) => {
+    fs.readFile(path, "utf8", (err, d) => {
+      if (err) {
+        bad(err);
+      }
+      else {
+        good(d)
+      }
+    });
+  }
+-#)

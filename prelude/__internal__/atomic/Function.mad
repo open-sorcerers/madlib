@@ -1,0 +1,31 @@
+complement :: (a -> Boolean) -> (a -> Boolean)
+export complement = (fn) => ((x) => (!fn(x)))
+
+always :: a -> b -> a
+export always = (a, b) => (a)
+
+identity :: a -> a
+export identity = (a) => (a)
+
+equals :: a -> a -> Boolean
+export equals = (val, a) => val == a
+
+ifElse :: (a -> Boolean) -> (a -> b) -> (a -> b) -> a -> b
+export ifElse = (predicate, truthy, falsy, value) => predicate(value)
+  ? truthy(value)
+  : falsy(value)
+
+when :: (a -> Boolean) -> (a -> a) -> a -> a
+export when = (predicate, truthy, value) =>
+  ifElse(predicate, truthy, always(value), value)
+
+not :: Boolean -> Boolean
+export not = (b) => !b
+
+flip :: (a -> b -> c) -> (b -> a -> c)
+export flip = (fn) => (
+  (b, a) => (fn(a, b))
+)
+
+// invert :: (a -> b) -> c -> d
+export invert = (fn, x) => pipe(fn, not)(x)

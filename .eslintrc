@@ -1,0 +1,6 @@
+extends:
+ - eslint-config-sorcerers
+rules:
+ arrow-parens:
+ - error
+ - as-needed

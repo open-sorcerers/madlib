@@ -1,0 +1,37 @@
+import L from '../atomic/List'
+import M from '../atomic/Maybe'
+
+nth :: Number -> List a -> M.Maybe a
+export nth = (i, xs) => (#- {
+  const x = xs[i];
+  return x === undefined
+    ? M.Nothing
+    : M.Just(x);
+} -#)
+
+unsafeNth :: b -> Number -> List a -> b
+export unsafeNth =  (def, i, xs) => pipe(
+  nth(i),
+  M.fromMaybe(def)
+)(xs)
+
+find :: (a -> Boolean) -> List a -> M.Maybe a
+export find = (predicate, xs) => (#- {
+  const found = xs.find(predicate);
+  if (found === undefined) {
+    return M.Nothing
+  } else {
+    return M.Just(found)
+  }
+} -#)
+
+uniqueBy :: (a -> a -> Boolean) -> List a -> List a
+export uniqueBy = (f, xs) => where(xs)
+  is [curr, ...tail]:
+    where(find(f(curr), tail)) {
+      is M.Just _ : uniqueBy(f, tail)
+      is M.Nothing: [curr, ...uniqueBy(f, tail)]
+    }
+  is [last]: [last]
+
+

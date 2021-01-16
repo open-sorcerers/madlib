@@ -1,0 +1,152 @@
+// 💉 imports
+import W from 'Wish'
+import L from 'List'
+import IO from 'IO'
+import N from 'Number'
+import F from 'Function'
+import E from 'Either'
+import M from 'Maybe'
+import O from 'Object'
+import T from 'Tuple'
+import S from 'String'
+import P from 'Map'
+
+IO.trace("MAYBE WHAT?", M)
+
+// 🔧 utils
+
+j2 :: x -> String
+j2 = (x) => (#- JSON.stringify(x, null, 2) -#)
+
+// 🏗 patterns
+
+alias ShopDiscount = {
+  id :: String,
+  itemId :: Number,
+  multiplier :: Number
+}
+
+alias ShopItem = {
+  id :: Number,
+  name :: String,
+  description :: String,
+  cost :: Number,
+  discounts :: List ShopDiscount
+}
+
+alias ShopCustomer = {
+  id :: Number,
+  name :: String,
+  cart :: List ShopItem,
+  money :: Number
+}
+
+alias ShopContext = {
+  customers :: List ShopCustomer,
+  inventory :: List ShopItem,
+  sales :: List ShopDiscount
+}
+
+// ✨ functions
+idEqual = O.propEq('id')
+
+// {item :: M.Maybe ShopCustomer, customer :: M.Maybe ShopCustomer }
+buySomethingFromShop :: ShopContext -> Number -> Number -> x
+buySomethingFromShop = (ctx, itemId, customerId) => ({
+  item: L.find(idEqual(itemId), ctx.inventory),
+  customer: L.find(idEqual(customerId), ctx.customers)
+})
+
+nthItem = F.flip(L.nth)
+stuff = [
+  "raygun",
+  "baseball",
+  "magazine",
+  "cigarettes",
+  "sports car",
+  "knife",
+  "sword",
+  "fireworks",
+  "test tube",
+  "ball of string"
+]
+thstuff = nthItem(stuff)
+
+itemFromId = (id) => pipe(
+  O.objOf('id'),
+  (x) => (
+    O.merge({
+      description: 'cool shit',
+      cost: 1 / (10 * x.id) + 1,
+      discounts: [],
+      name: M.fromMaybe("STUFF" ++ x.id, thstuff(x.id))
+    },
+    x)
+  )
+)(id)
+
+inventory = pipe(
+  N.range(0),
+  L.map(itemFromId)
+)(10)
+
+names = [
+  "alice",
+  "bob",
+  "caroline",
+  "david",
+  "elizabeth",
+  "frances",
+  "georgina",
+  "harold",
+  "ivy",
+  "jervey",
+  "kira",
+  "leonard",
+  "mina"
+]
+
+nthName = nthItem(names)
+
+customerFromId = (id) => ({
+  cart: [],
+  money: 100,
+  name: M.fromMaybe("CUSTOMER", nthName(id)),
+  id: id
+})
+
+customers = pipe(
+  L.len,
+  N.range(0),
+  L.map(
+    customerFromId
+  )
+)(names)
+
+ctx = {
+  inventory: inventory,
+  customers: customers,
+  sales: []
+}
+
+// pipe(
+// (where
+//   is M.Just x  : x
+//   is M.Nothing : "nah"
+// )
+// )(M.Just('shit'))
+
+grabValuesOffCrap = (x) => (#- x && x.__args && x.__args[0] -#)
+
+pipe(
+  buySomethingFromShop(ctx, 0),
+  L.of,
+  F.ap([
+    (x) => x.customer,
+    (x) => x.item
+  ]),
+  L.map(M.fromMaybe({name: 'unknown', cost: -1})),
+  (xx) => (#- xx[0].name + ' purchased ' + xx[1].name + ' for $' + xx[1].cost.toFixed(2) -#),
+  // (receipt) => P.set('sales', L.concat(receipt), ctx),
+  IO.trace('RECEIPT')
+)(0)

@@ -1,0 +1,21 @@
+export data Maybe a
+  = Just a
+  | Nothing
+
+map :: (a -> b) -> Maybe a -> Maybe b
+export map = (f, m) => (where(m) {
+  is Just x : Just(f(x))
+  is Nothing: Nothing
+})
+
+chain :: (a -> Maybe b) -> Maybe a -> Maybe b
+export chain = (f, m) => (where(m) {
+  is Just x : f(x)
+  is Nothing: Nothing
+})
+
+fromMaybe :: a -> Maybe a -> a
+export fromMaybe = (def, mabe) => (where(mabe)
+  is Just a : a
+  is Nothing: def
+)

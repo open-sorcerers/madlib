@@ -1,7 +1,7 @@
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE NamedFieldPuns #-}
-module Compile where
+module Compile.Core where
 
 import qualified Data.Map                      as M
 import           Data.Maybe                     ( fromMaybe )

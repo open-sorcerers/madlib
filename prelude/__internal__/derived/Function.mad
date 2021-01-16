@@ -1,0 +1,11 @@
+import L from "../atomic/List"
+
+ap :: List (a -> b) -> List a -> List b
+export ap = (fns, xs) => L.reduce(
+  (agg, fn) => pipe(
+    L.map(fn),
+    L.concat(agg)
+  )(xs),
+  [],
+  fns
+)

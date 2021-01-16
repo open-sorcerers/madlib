@@ -1,0 +1,45 @@
+log :: a -> a
+export log = (a) => (#- { console.log(a); return a; } -#)
+
+err :: a -> a
+export err = (e) => (#- { console.error(e); return e; } -#)
+
+warn :: a -> a
+export warn = (w) => (#- { console.warn(w); return w; } -#)
+
+bilog :: a -> b -> ()
+export bilog = (tag, val) => (#- { console.log(tag, val); return; } -#)
+
+binarySideEffect :: (a -> b -> ()) -> a -> b -> b
+export binarySideEffect = (fn, tag, a) => (#- {
+  fn(tag, a)
+  return a
+} -#)
+
+sideEffect :: (a -> ()) -> a -> a
+export sideEffect = (fn, a) => (#- {
+  fn(a)
+  return a
+} -#)
+
+trace :: String -> a -> a
+export trace = binarySideEffect(bilog) 
+
+export alias Row = { id :: String, cols :: List <String, String> }
+table :: List Row -> a -> a
+export table = (rows, a) => (#- {
+  const xSpaces = x => new Array(x).fill(' ').join('')
+
+  const longestId = rows.map(x => x.id.length).reduce((a, b) => Math.max(a, b), 0)
+
+  const readyRows = rows
+    .map(x => ({ ...x, id: x.id + xSpaces(longestId - x.id.length) }))
+    .reduce((rows, row) => {
+      return {
+        ...rows,
+        [row.id]: row.cols.reduce((o, [colName, colValue]) => { o[colName] = colValue; return o; }, {})
+      }
+    }, {})
+  console.table(readyRows)
+  return a
+} -#)
