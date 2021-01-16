@@ -17,14 +17,14 @@ occursCheck :: Substitutable a => TVar -> a -> Bool
 occursCheck a t = S.member a $ ftv t
 
 
-varBind :: TVar -> Type -> Either TypeError Substitution
+varBind :: TVar -> Type -> Infer Substitution
 varBind tv t | t == TVar tv      = return M.empty
-             | tv `elem` ftv t   = throwError $ InfiniteType tv t
-             | kind tv /= kind t = throwError $ KindError (TVar tv) t
+             | tv `elem` ftv t   = throwError $ InferError (InfiniteType tv t) NoReason
+             | kind tv /= kind t = throwError $ InferError (KindError (TVar tv) t) NoReason
              | otherwise         = return $ M.singleton tv t
 
 class Unify t where
-  unify :: t -> t -> Either TypeError Substitution
+  unify :: t -> t -> Infer Substitution
 
 instance Unify Type where
   unify (l `TApp` r) (l' `TApp` r') = do
@@ -32,7 +32,7 @@ instance Unify Type where
     s2 <- unify (apply s1 r) (apply s1 r')
     return $ compose s1 s2
 
-  unify (TRecord fields open) (TRecord fields' open')
+  unify l@(TRecord fields open) r@(TRecord fields' open')
     | open || open' = do
       let extraFields    = M.difference fields fields'
           extraFields'   = M.difference fields' fields
@@ -43,7 +43,7 @@ instance Unify Type where
           z              = zip types types'
       unifyVars M.empty z
     | M.difference fields fields' /= M.empty = throwError
-    $ UnificationError (TRecord fields open) (TRecord fields' open')
+    $ InferError (UnificationError l r) NoReason 
     | otherwise = do
       let types  = M.elems fields
           types' = M.elems fields'
@@ -53,7 +53,7 @@ instance Unify Type where
   unify (TVar tv) t              = varBind tv t
   unify t         (TVar tv)      = varBind tv t
   unify (TCon a) (TCon b) | a == b = return M.empty
-  unify t1 t2                      = throwError $ UnificationError t1 t2
+  unify t1 t2                      = throwError $ InferError (UnificationError t1 t2) NoReason 
 
 
 instance (Unify t, Substitutable t) => Unify [t] where
@@ -62,23 +62,23 @@ instance (Unify t, Substitutable t) => Unify [t] where
     s2 <- unify (apply s1 xs) (apply s1 ys)
     return (s2 <> s1)
   unify []     []     = return nullSubst
-  unify _      _      = Left FatalError
+  unify _      _      = throwError $ InferError FatalError NoReason 
 
 
 unifyVars
-  :: Substitution -> [(Type, Type)] -> Either TypeError Substitution
+  :: Substitution -> [(Type, Type)] -> Infer Substitution
 unifyVars s ((tp, tp') : xs) = do
   s1 <- unify tp tp'
   unifyVars (compose s1 s) xs
 unifyVars s _ = return s
 
 
-unifyElems :: Env -> [Type] -> Either TypeError Substitution
-unifyElems env []      = Right M.empty
-unifyElems env [ts   ] = Right M.empty
+unifyElems :: Env -> [Type] -> Infer Substitution
+unifyElems env []      = return M.empty
+unifyElems env [ts   ] = return M.empty
 unifyElems env (h : r) = unifyElems' h r
 
-unifyElems' :: Type -> [Type] -> Either TypeError Substitution
+unifyElems' :: Type -> [Type] -> Infer Substitution
 unifyElems'   _ []        = return M.empty
 unifyElems' t [t'     ] = unify t t'
 unifyElems' t (t' : xs) = do
@@ -88,7 +88,6 @@ unifyElems' t (t' : xs) = do
 
 
 
--- match :: t -> t -> m Subst
 class Match t where
   match :: t -> t -> Infer Substitution
 

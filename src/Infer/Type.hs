@@ -23,6 +23,7 @@ data Env
     { envvars        :: Vars
     , envtypes       :: TypeDecls
     , envinterfaces  :: M.Map Id Interface
+    , envmethods     :: M.Map Id Scheme
     , envcurrentpath :: FilePath
     }
     deriving(Eq, Show)
@@ -84,6 +85,12 @@ infixr      4 `fn`
 fn :: Type -> Type -> Type
 a `fn` b = TApp (TApp tArrow a) b
 
+
+predClass :: Pred -> Id
+predClass (IsIn i _) = i
+
+predType :: Pred -> Type
+predType (IsIn _ [t]) = t
 
 
 type Id = String

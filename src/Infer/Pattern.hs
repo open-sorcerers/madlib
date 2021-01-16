@@ -60,9 +60,7 @@ inferPattern env (Meta _ _ pat) = case pat of
     let ps   = foldr (<>) [] (T.beg <$> li)
     let vars = foldr (<>) M.empty (T.mid <$> li)
 
-    s <- case unifyElems (mergeVars env vars) ts of
-      Right r -> return r
-      Left  e -> throwError $ InferError e NoReason
+    s <- unifyElems (mergeVars env vars) ts
 
     return (ps, M.map (apply s) vars, TApp tList (apply s (head ts)))
 
@@ -97,8 +95,6 @@ inferPattern env (Meta _ _ pat) = case pat of
     tv             <- newTVar Star
     sc             <- lookupVar env n
     (ps' :=> t)    <- instantiate sc
-    s              <- case unify t (foldr fn tv ts) of
-      Right r -> return r
-      Left  e -> throwError $ InferError e NoReason
+    s              <- unify t (foldr fn tv ts)
 
     return (ps <> ps', vars, apply s tv)

@@ -30,29 +30,44 @@ instance Monad (Either e) {
   of = (x) => Right(x)
 }
 
-interface Read a {
-  read :: String -> a
-}
+// interface Read a {
+//   read :: String -> a
+// }
 
-instance Read Number {
-  read = (x) => (#- -#)
-}
+// instance Read Number {
+//   read = (x) => (#- -#)
+// }
 
 
-chain((x) => Just(x + 1), Just(3))
+
+// chain((x) => Just(x + 1), Just(3))
 
 doIt = (x) => map((k) => k + 1, x)
 
 doIt(Just(3))
 
-// read("3")
-doIt([3])
-doIt(Right(3))
+// chain((x) => Right(x + 1), Right(3))
 
-Just(3) |> chain((x) => Just(x + 1))
 
-map((x) => x + 1, Just(3))
-map((x) => x + 1, [1, 2, 3])
+// hideCall = (x) =>
+//   where(chain((a) => Just(a + 1), x))
+//     is Just 2: chain((a) => Right(a + 1), Right(2))
+
+// hideCall(Just(1))
+
+// show(Just(3))
+
+
+// doIt(Just(3))
+
+// // read("3")
+// doIt([3])
+// // doIt(Right(3))
+
+// Just(3) |> chain((x) => Just(x + 1))
+
+// map((x) => x + 1, Just(3))
+// map((x) => x + 1, [1, 2, 3])
 
 // show(Just(true))
 

@@ -24,7 +24,10 @@ import Debug.Trace (trace)
 
 
 instance Unify Pred where
-  unify = liftPred' unify
+  unify = liftPred unify
+
+instance Match Pred where
+   match = liftPred match
 
 addInterface :: Env -> Id -> [TVar] -> [Pred] -> Infer Env
 addInterface env id tvs ps = case M.lookup id (envinterfaces env) of
@@ -37,24 +40,16 @@ addInstance env ps p@(IsIn id ts) = case M.lookup id (envinterfaces env) of
   Nothing -> throwError $ InferError (InterfaceNotExisting id) NoReason
   Just (Interface tvs ps is)  -> do
     let ts' = TVar <$> tvs
-    s <- case unify ts' ts of
-        Right s' -> return s'
-        Left e   -> throwError $ InferError e NoReason
+    s <- unify ts' ts
+
     return env { envinterfaces = M.insert id (Interface tvs ps (Instance (ps :=> p) : is)) (envinterfaces env)}
 
 
-instance Match Pred where
-   match = liftPred match
 
 liftPred :: ([Type] -> [Type] -> Infer a) -> Pred -> Pred -> Infer a
 liftPred m (IsIn i ts) (IsIn i' ts')
          | i == i'   = m ts ts'
          | otherwise = throwError $ InferError FatalError NoReason
-
-liftPred' :: ([Type] -> [Type] -> Either TypeError a) -> Pred -> Pred -> Either TypeError a
-liftPred' m (IsIn i ts) (IsIn i' ts')
-         | i == i'   = m ts ts'
-         | otherwise = Left FatalError
 
 
 sig       :: Env -> Id -> [TVar]

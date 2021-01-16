@@ -103,6 +103,7 @@ initialEnv = Env
           , Ty.Instance $ [] :=> IsIn "Functor" [tList]
           ])
       ]
+  , envmethods = M.fromList [("map", Forall [Star, Star, Kfun Star Star] $ [IsIn "Functor" [TGen 2]] :=> ((TGen 0 `fn` TGen 1) `fn` TApp (TGen 2) (TGen 0) `fn` TApp (TGen 2) (TGen 1)))]
   , envcurrentpath = ""
   }
 
@@ -122,7 +123,7 @@ solveInterface env interface = case interface of
       then throwError $ InferError FatalError NoReason
       else addInterface env n [(\(TVar tv) -> tv) . head $ tvs] []
 
-    return env' { envvars = envvars env <> ts' }
+    return env' { envvars = envvars env <> ts', envmethods = envmethods env <> ts' }
 
 addConstraints :: Id -> Id -> Type -> Scheme
 addConstraints n tv t =

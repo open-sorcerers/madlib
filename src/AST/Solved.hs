@@ -91,6 +91,8 @@ data ListItem
 
 type Exp = Solved Exp_
 
+data PlaceholderRef = ClassRef String | MethodRef String String deriving(Eq, Show)
+
 data Exp_ = LNum String
           | LStr String
           | LBool String
@@ -108,6 +110,7 @@ data Exp_ = LNum String
           | Record [Field]
           | If Exp Exp Exp
           | Where Exp [Is]
+          | Placeholder (PlaceholderRef, Ty.Type) Exp
           deriving(Eq, Show)
 
 type Name = String
