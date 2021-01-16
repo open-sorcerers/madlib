@@ -105,5 +105,6 @@ export const fn2 = curryPowder((m) => ((__x__) => {
     const n = __x__.__args[0].__args[0];
     return n;
   }
+  else { throw 'non exhaustive patterns!'; }
 })(m));
 export default { fn, fn2 };

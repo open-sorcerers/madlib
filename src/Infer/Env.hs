@@ -50,20 +50,15 @@ extendVars :: Env -> (String, Scheme) -> Env
 extendVars env (x, s) = env { envvars = M.insert x s $ envvars env }
 
 
+safeExtendVars :: Env -> (String, Scheme) -> Infer Env
+safeExtendVars env (i, sc) = case M.lookup i (envvars env) of
+  Just _  -> throwError $ InferError (NameAlreadyDefined i) NoReason
+  Nothing -> return $ extendVars env (i, sc)
+
+
 mergeVars :: Env -> Vars -> Env
-mergeVars env vs = env { envvars = M.union (envvars env) vs }
+mergeVars env vs = env { envvars = envvars env <> vs }
 
--- lookupInstance :: Env -> String -> Type -> Maybe Ty.Instance
--- lookupInstance env interface ty =
---   let instances = envinstances env
---   in  find (\(Ty.Instance ty' interface' _ _) -> ty' `typeEq` ty && interface == interface') instances
-
--- lookupInstanceMethod :: Env -> Type -> String -> String -> Infer Src.Exp
--- lookupInstanceMethod env instanceType interface name = do
---   let inst = find (\case Ty.Instance t interface' _ _ -> interface == interface' && t `typeEq` instanceType) (envinstances env)
---   case inst of
---     Nothing -> throwError $ InferError (UnboundVariable name) NoReason
---     Just (Ty.Instance _ _ dict _) -> return $ fromMaybe undefined $ M.lookup name dict
 
 initialEnv :: Env
 initialEnv = Env
@@ -88,7 +83,6 @@ initialEnv = Env
       :=> (TGen 0 `fn` (TGen 0 `fn` TGen 1) `fn` TGen 1)
       )
     , ("show", Forall [Star] $ [IsIn "Show" [TGen 0]] :=> (TGen 0 `fn` tStr))
-    , ("map", Forall [Star, Star, Kfun Star Star] $ [IsIn "Functor" [TGen 2]] :=> ((TGen 0 `fn` TGen 1) `fn` TApp (TGen 2) (TGen 0) `fn` TApp (TGen 2) (TGen 1)))
     ]
   , envtypes       = M.fromList
                        [ ("List" , tList)
@@ -98,12 +92,8 @@ initialEnv = Env
                        ]
   , envinterfaces  = M.fromList
       [ ("Show", Ty.Interface [TV "a" Star] [] [Ty.Instance $ [] :=> IsIn "Show" [tNumber], Ty.Instance $ [] :=> IsIn "Show" [tBool], Ty.Instance $ [IsIn "Show" [TVar (TV "a" Star)]] :=> IsIn "Show" [TApp (TCon (TC "Maybe" (Kfun Star Star))) (TVar (TV "a" Star))]])
-      , ("Functor", Ty.Interface [TV "m" (Kfun Star Star)] []
-          [ Ty.Instance $ [] :=> IsIn "Functor" [TCon (TC "Maybe" (Kfun Star Star))]
-          , Ty.Instance $ [] :=> IsIn "Functor" [tList]
-          ])
       ]
-  , envmethods = M.fromList [("map", Forall [Star, Star, Kfun Star Star] $ [IsIn "Functor" [TGen 2]] :=> ((TGen 0 `fn` TGen 1) `fn` TApp (TGen 2) (TGen 0) `fn` TApp (TGen 2) (TGen 1)))]
+  , envmethods = M.empty
   , envcurrentpath = ""
   }
 
@@ -166,7 +156,6 @@ buildInitialEnv priorEnv AST { atypedecls, ainterfaces, ainstances, apath = Just
     env   <- solveInterfaces initialEnv ainterfaces
     env'  <- solveInstances (env { envtypes = M.union (envtypes initialEnv) tadts }) ainstances
     return env' { envvars        = envvars initialEnv <> vars <> envvars env
-               , envtypes       = M.union (envtypes initialEnv) tadts
-              --  , envinterfaces  = envinterfaces initialEnv
-               , envcurrentpath = apath
-               }
+                , envtypes       = M.union (envtypes initialEnv) tadts
+                , envcurrentpath = apath
+                }

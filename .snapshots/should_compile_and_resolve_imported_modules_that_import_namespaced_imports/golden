@@ -266,6 +266,7 @@ W.fulfill(IO.log, IO.log)(W.chain(FS.writeFile(`./f.zip`))(W.map(FS.BinaryData)(
     const { body: { __args: [d] } } = __x__.__args[0];
     return d;
   }
+  else { throw 'non exhaustive patterns!'; }
 })(response)))(Http.get(`https://github.com/open-sorcerers/madlib/archive/master.zip`)))));
 // file: /root/project/src/Wish.mad
 const toString = (fn, args = []) => () => (
@@ -321,22 +322,26 @@ export const map = curryPowder((f, m) => Wish(curryPowder((bad, good) => ((__x__
     const run = __x__.__args[0];
     return run(bad, curryPowder((x) => good(f(x))));
   }
+  else { throw 'non exhaustive patterns!'; }
 })(m))));
 export const chain = curryPowder((f, m) => Wish(curryPowder((bad, good) => ((__x__) => {
   if (__x__.__constructor === "Wish" && true) {
-    const run = __x__.__args[0];
-    return run(bad, curryPowder((x) => ((__x__) => {
+    const run1 = __x__.__args[0];
+    return run1(bad, curryPowder((x) => ((__x__) => {
   if (__x__.__constructor === "Wish" && true) {
-    const run = __x__.__args[0];
-    return run(bad, good);
+    const run2 = __x__.__args[0];
+    return run2(bad, good);
   }
+  else { throw 'non exhaustive patterns!'; }
 })(f(x))));
   }
+  else { throw 'non exhaustive patterns!'; }
 })(m))));
 export const fulfill = curryPowder((bad, good, m) => ((__x__) => {
   if (__x__.__constructor === "Wish" && true) {
     const run = __x__.__args[0];
     return run(bad, good);
   }
+  else { throw 'non exhaustive patterns!'; }
 })(m));
 export default { of, map, chain, fulfill, Wish };

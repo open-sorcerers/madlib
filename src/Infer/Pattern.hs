@@ -35,7 +35,8 @@ inferPattern env (Meta _ _ pat) = case pat of
   Src.PCon  n -> return ([], M.empty, TCon $ TC n Star)
 
   Src.PVar  i -> do
-    v <- newTVar Star
+    v    <- newTVar Star
+    env' <- safeExtendVars env (i, toScheme v)
     return ([], M.singleton i (toScheme v), v)
 
   Src.PAny -> do

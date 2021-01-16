@@ -62,11 +62,8 @@ infer env lexp = do
     Src.JSExp c            -> do
       t <- newTVar Star
       return (M.empty, [], t, Slv.Solved t area (Slv.JSExp c))
-  
-  return (trace ("PS: "<>ppShow ps<>"\nEXP: "<>ppShow e) r)
-  -- if not (null ps)
-  --   then return (s, ps, t, Slv.Solved t area (Slv.Placeholder (Slv.ClassRef $ predClass $ head ps, predType $ head ps) e))
-  --   else return r
+
+  return r
 
 
 applyLitSolve :: Src.Exp -> Type -> Slv.Exp
@@ -241,8 +238,9 @@ inferListConstructor env (Meta _ area (Src.ListConstructor elems)) =
       inferred <- mapM (inferListItem env) elems
       let (_, _, t1, _) = head inferred
       s <- unifyElems env ((\(_, _, t, _) -> t) <$> inferred)
+      let s' = foldr (<>) M.empty ((\(s, _, _, _) -> s) <$> inferred)
       let t = TApp tList (apply s t1)
-      return (s, [], t, Slv.Solved t area (Slv.ListConstructor ((\(_, _, _, es) -> es) <$> inferred)))
+      return (s `compose` s', [], t, Slv.Solved t area (Slv.ListConstructor ((\(_, _, _, es) -> es) <$> inferred)))
 
 
 inferListItem :: Env -> Src.ListItem -> Infer (Substitution, [Pred], Type, Slv.ListItem)
@@ -313,12 +311,12 @@ inferRecordField env field = case field of
 shouldBeOpen :: Env -> [Src.Field] -> Infer Bool
 shouldBeOpen env = foldrM
   (\field r -> case field of
-    Src.Field       _ -> return $ False || r
+    Src.Field       _ -> return r
     Src.FieldSpread e -> do
       (_, _, t, _) <- infer env e
       case t of
-        TRecord _ _ -> return $ False || r
-        TVar _      -> return $ True || r
+        TRecord _ _ -> return r
+        TVar _      -> return True
   )
   False
 
@@ -542,56 +540,6 @@ split env fs gs ps = do
     then throwError $ InferError (AmbiguousType (head as)) NoReason
     else return (ds, rs)
 
-
--- type Impl   = (Id, [Alt])
-
--- tiImpls         :: Infer [Impl] [Assump]
--- tiImpls ce as bs = do
---   ts <- mapM (\_ -> newTVar Star) bs
---   let is    = map fst bs
---       scs   = map toScheme ts
---       as'   = zipWith (:>:) is scs ++ as
---       altss = map snd bs
---   pss <- sequence (zipWith (tiAlts ce as') altss ts)
---   s   <- getSubst
---   let ps'     = apply s (concat pss)
---       ts'     = apply s ts
---       fs      = tv (apply s as)
---       vss     = map tv ts'
---       gs      = foldr1 union vss \\ fs
---   (ds,rs) <- split ce fs (foldr1 intersect vss) ps'
---   if restricted bs then
---       let gs'  = gs \\ tv rs
---           scs' = map (quantify gs' . ([]:=>)) ts'
---       in return (ds++rs, zipWith (:>:) is scs')
---     else
---       let scs' = map (quantify gs . (rs:=>)) ts'
---       in return (ds, zipWith (:>:) is scs')
-
--- isMethod :: Env -> Id -> Bool
--- isMethod env id = Just True == (M.lookup id (envmethods env) >> return True)
-
-
--- rewriteExp :: Env -> [Pred] -> Slv.Exp -> Slv.Exp
--- rewriteExp env ps e@(Slv.Solved t a exp) = case (trace ("EXP: "<>ppShow e<>"\nPS: "<>ppShow ps) exp) of
---   Slv.Var n ->
---     if isMethod env n
---       then let cls = predClass $ head ps
---                t'   = predType $ head ps
---                in case t' of
---                  TCon (TC n' _) -> Slv.Solved t a $ Slv.FieldAccess (Slv.Solved t a $ Slv.FieldAccess (Slv.Solved t a (Slv.Var cls)) (Slv.Solved t a (Slv.Var ('.':n')))) (Slv.Solved t a (Slv.Var ('.':n)))
---                  TApp (TCon (TC n' _)) _ -> Slv.Solved t a $ Slv.FieldAccess (Slv.Solved t a $ Slv.FieldAccess (Slv.Solved t a (Slv.Var cls)) (Slv.Solved t a (Slv.Var ('.':n')))) (Slv.Solved t a (Slv.Var ('.':n)))
---                  _ -> e
---       else e
---   Slv.App abs arg f -> Slv.Solved t a $ Slv.App (rewriteExp env ps abs ) (rewriteExp env ps arg) f
---   Slv.Abs p es -> Slv.Solved t a $ Slv.Abs p (rewriteExp env ps <$> es)
---   Slv.Assignment n e -> Slv.Solved t a $ Slv.Assignment n (rewriteExp env ps e)
---   Slv.Where exp iss -> Slv.Solved t a $ Slv.Where (rewriteExp env ps exp) $ rewriteIs env ps <$> iss
-
---   _ -> e
-
--- rewriteIs :: Env -> [Pred] -> Slv.Is -> Slv.Is
--- rewriteIs env ps is@(Slv.Solved t a (Slv.Is pat exp)) = Slv.Solved t a $ Slv.Is pat (rewriteExp env ps exp)
 updatePlaceholders :: Substitution  -> Slv.Exp -> Slv.Exp
 updatePlaceholders s (Slv.Solved t a e) = case e of
   Slv.Placeholder (ref, t) exp -> Slv.Solved t a $ Slv.Placeholder (ref, apply s t) exp
@@ -599,11 +547,17 @@ updatePlaceholders s (Slv.Solved t a e) = case e of
   Slv.Abs param es -> Slv.Solved t a $ Slv.Abs param (updatePlaceholders s <$> es)
   Slv.Where exp iss -> Slv.Solved t a $ Slv.Where (updatePlaceholders s exp) (updateIs s <$> iss)
   Slv.Assignment n exp -> Slv.Solved t a $ Slv.Assignment n (updatePlaceholders s exp)
+  Slv.ListConstructor li -> Slv.Solved t a $ Slv.ListConstructor (updateListItem s <$> li)
   _ -> Slv.Solved t a e
  where
    updateIs :: Substitution -> Slv.Is -> Slv.Is
    updateIs s (Slv.Solved t a is) = case is of
      Slv.Is pat exp -> Slv.Solved t a $ Slv.Is pat (updatePlaceholders s exp)
+
+   updateListItem :: Substitution -> Slv.ListItem -> Slv.ListItem
+   updateListItem s li = case li of
+     Slv.ListItem e -> Slv.ListItem $ updatePlaceholders s e
+     Slv.ListSpread e -> Slv.ListSpread $ updatePlaceholders s e
 
 isMethod :: Env -> Slv.Exp -> Bool
 isMethod env (Slv.Solved _ _ e) = case e of
@@ -612,7 +566,6 @@ isMethod env (Slv.Solved _ _ e) = case e of
 
 varName :: Slv.Exp -> String
 varName = \case Slv.Solved _ _ (Slv.Var n) -> n
-
 
 inferExps :: Env -> [Src.Exp] -> Infer [Slv.Exp]
 inferExps _   []       = return []
@@ -630,27 +583,29 @@ inferExps env (e : xs) = do
 
   let s'' = s `compose` s'
 
-  let ps' = apply s'' (trace ("SUBST: "<>ppShow s'') ps)
+  let ps' = apply s'' ps
   let t'  = apply s'' tv
   let fs  = S.toList $ ftv (apply s'' env)
   let vs  = S.toList $ ftv t'
   let gs  = vs \\ fs
   (ds, rs) <- split env fs gs ps'
 
-  -- let exp        = Slv.extractExp (trace ("PS: "<>ppShow ps<>"\nDS: "<>ppShow ds<>"\nRS: "<>ppShow rs<>"\nENV: "<>ppShow env'<>"\nEXP: "<>ppShow e') e')
   let exp        = Slv.extractExp e'
   let (gens, ks, t'') = makeGeneric M.empty [] t
   let ps'' = (\(IsIn i ts) -> IsIn i $ lst . makeGeneric gens ks <$> ts) <$> ps'
   let scheme     = Forall ks $ ps'' :=> t''
 
-  let e'' = updatePlaceholders s'' e'
-  -- let e'' = if not (null ps')
-  --     then
-  --       if isMethod env e'
-  --         then Slv.Solved t emptyArea $ Slv.Placeholder (Slv.MethodRef (varName e'), predType $ head ps') e'
-  --         else e'
-  --     -- then rewriteExp env ps' e'
-  --     else e'
+
+  let e'' = case e' of
+        Slv.Solved a t (Slv.Assignment n e'') ->
+          if not (null ps')
+            then case predType $ head ps' of
+              TVar (TV n' _) -> Slv.Solved a t $ Slv.Assignment n (Slv.Solved a t $ Slv.Placeholder (Slv.ClassRef (predClass $ head ps'), predType $ head ps') e'') 
+              _ -> e'
+            else e'
+        _ -> e'
+
+  let e''' = updatePlaceholders s'' e''
 
   let
     env' = case exp of
@@ -667,7 +622,7 @@ inferExps env (e : xs) = do
 
       _ -> env
 
-  (e'' :) <$> inferExps env' xs
+  (e''' :) <$> inferExps env' xs
 
 
 
@@ -795,7 +750,7 @@ solveImports table (imp : is) = do
 
   let generify = \e ->
         let (gens, ks, t') = makeGeneric M.empty [] e
-        in  Forall (ks) $ [] :=> t'
+        in  Forall ks $ [] :=> t'
 
 
   let genericExports = M.map generify exports
@@ -855,14 +810,16 @@ resolveInstance env (Src.Instance interface ty dict) = do
 
 inferMethod :: Env -> (Src.Name, Src.Exp) -> Infer (Slv.Name, Slv.Exp)
 inferMethod env (mn, m) = do
-  (s, _, t, e) <- infer env m
-  sc           <- lookupVar env mn
-  (ps :=> t')  <- instantiate sc
+  e <- inferExps env [m]
+  return (mn, head e)
+  -- (s, _, t, e) <- infer env m
+  -- sc           <- lookupVar env mn
+  -- (ps :=> t')  <- instantiate sc
 
-  s' <- catchError (unify t t') (const $ throwError $ InferError (MethodDoesNotMatchInterfaceType t t') NoReason)
-  let t'' = apply s' t'
+  -- s' <- catchError (unify t t') (const $ throwError $ InferError (MethodDoesNotMatchInterfaceType t t') NoReason)
+  -- let t'' = apply s' t'
 
-  return (mn, updateType e t'')
+  -- return (mn, updateType e t'')
 
 updateImport :: Src.Import -> Slv.Import
 updateImport i = case i of

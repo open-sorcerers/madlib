@@ -223,33 +223,7 @@ instance Compilable Exp where
             in  hpWrapLine coverage astPath (getStartLine abs) next
 
           buildAbs :: CompilationConfig -> Exp -> Exp -> String
-          buildAbs config abs arg = compile config abs--case methodClass abs of
-            -- Nothing -> compile config abs
-            -- Just n  -> n <> "[" <> showArgType arg <> "]" <> "." <> compile config abs
-
-          -- showArgType :: Exp -> String
-          -- showArgType exp = case exp of
-          --   Solved t _ _ -> case t of
-          --     TCon (TC "Number" _)    -> "'Number'"
-          --     TCon (TC "String" _) -> "'String'"
-          --     TComp _ n _ -> if "." `isInfixOf` n
-          --       then "'" <> (tail $ dropWhile (/= '.') n) <> "'"
-          --       else "'" <> n <> "'"
-          --     TVar _ -> "getMadlibType(" <> compile config exp <> ")"
-          --     _ -> ppShow t
-
-          -- methodClass :: Exp -> Maybe String
-          -- methodClass exp = case exp of
-          --   Solved t _ (Var _) ->
-          --     let hasConstraint = \case
-          --           TVar constraints _ -> if null constraints then Nothing else Just $ head constraints
-          --           TArr l r -> case (hasConstraint l, hasConstraint r) of
-          --             (Just n, _) -> Just n
-          --             (_, Just n) -> Just n
-          --             _           -> Nothing
-          --           _ -> Nothing
-          --     in hasConstraint t
-          --   _ -> Nothing  
+          buildAbs config abs arg = compile config abs
 
           buildParams :: [(String, Bool)] -> String
           buildParams []                    = ""
@@ -293,6 +267,17 @@ instance Compilable Exp where
         Var name -> if '.' `elem` name || name == "!" || not coverage
           then name
           else hpWrapLine coverage astPath l name
+
+        Placeholder (ClassRef cls, TCon (TC n _)) (Slv.Solved _ _ (Var name)) ->
+          name <> "(" <> cls <> "." <> n <> ")"
+        Placeholder (ClassRef cls, TVar (TV n _)) exp ->
+          "(__" <> cls <> "_" <> n <> "__) => (" <> compile config exp <> ")"
+        Placeholder (MethodRef cls method, TVar (TV n _)) (Slv.Solved _ _ (Var name)) ->
+          "__" <> cls <> "_" <> n <> "__." <> method
+        Placeholder (MethodRef cls method, TCon (TC n _)) (Slv.Solved _ _ (Var name)) ->
+          cls <> "." <> n <> "." <> method
+        Placeholder (MethodRef cls method, TApp (TCon (TC n _)) _) (Slv.Solved _ _ (Var name)) ->
+          cls <> "." <> n <> "." <> method
 
         -- Build ABS for coverage
         Assignment name abs@(Solved _ _ (Abs param body)) -> if coverage
@@ -379,6 +364,7 @@ instance Compilable Exp where
           "((__x__) => {\n  "
             <> compileIs first
             <> concat (("  else " ++) . compileIs <$> cs)
+            <> "  else { throw 'non exhaustive patterns!'; }\n"
             -- TODO: Add an else for undefined patterns error and make it throw.
             <> "})("
             <> compile config exp

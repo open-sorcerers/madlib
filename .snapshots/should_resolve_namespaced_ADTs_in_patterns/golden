@@ -86,7 +86,7 @@ Right
                                                    (Is
                                                       (PCtor "M.Just" [ PVar "a" ])
                                                       (Solved
-                                                         (TVar (TV "s" Star))
+                                                         (TVar (TV "p" Star))
                                                          (Area (Loc 109 5 19) (Loc 110 5 20))
                                                          (Var "a")))
                                                , Solved

@@ -24,6 +24,7 @@ data TypeError
   | FieldNotExisting String
   | ImportNotFound String
   | GrammarError FilePath String
+  | NameAlreadyDefined String
   | FatalError
   | ASTHasNoPath
   deriving (Show, Eq, Ord)
