@@ -1,3 +1,5 @@
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE FlexibleInstances #-}
 module Infer.Substitute where
 
@@ -7,29 +9,34 @@ import           Data.Foldable                  ( Foldable(foldl') )
 import           Infer.Type
 import           Debug.Trace                    ( trace )
 import           Text.Show.Pretty               ( ppShow )
+import Infer.Infer
+import Control.Monad.Except
+import Error.Error
+import Explain.Reason
+import Data.List (intersect)
 
 
 class Substitutable a where
-  apply :: Env -> Substitution -> a -> a
+  apply :: Substitution -> a -> a
   ftv   :: a -> S.Set TVar
 
 
 instance Substitutable Pred where
-  apply env s (IsIn i ts) = IsIn i (apply env s ts)
+  apply s (IsIn i ts) = IsIn i (apply s ts)
   ftv (IsIn i ts) = ftv ts
 
 instance Substitutable t => Substitutable (Qual t) where
-  apply env s (ps :=> t) = apply env s ps :=> apply env s t
+  apply s (ps :=> t) = apply s ps :=> apply s t
   ftv (ps :=> t) = ftv ps `S.union` ftv t
 
 instance Substitutable Type where
-  apply env _ (  TCon a      ) = TCon a
-  apply env s t@(TVar a      ) = M.findWithDefault t a s
-  apply env s (  t1 `TApp` t2) = apply env s t1 `TApp` apply env s t2
-  apply env s rec@(TRecord fields open) =
-    let applied = TRecord (apply env s <$> fields) open
-    in  if rec == applied then applied else apply env s applied
-  apply env s t = t
+  apply _ (  TCon a      ) = TCon a
+  apply s t@(TVar a      ) = M.findWithDefault t a s
+  apply s (  t1 `TApp` t2) = apply s t1 `TApp` apply s t2
+  apply s rec@(TRecord fields open) =
+    let applied = TRecord (apply s <$> fields) open
+    in  if rec == applied then applied else apply s applied
+  apply s t = t
 
   ftv TCon{}              = S.empty
   ftv (TVar a           ) = S.singleton a
@@ -38,19 +45,19 @@ instance Substitutable Type where
   ftv t                   = S.fromList []
 
 instance Substitutable Scheme where
-  apply env s (Forall ks t) = Forall ks $ apply env s t
+  apply s (Forall ks t) = Forall ks $ apply s t
   ftv (Forall _ t) = ftv t
 
 instance Substitutable a => Substitutable [a] where
-  apply env = fmap . apply env
+  apply = fmap . apply
   ftv = foldr (S.union . ftv) S.empty
 
 instance Substitutable Env where
-  apply env' s env = env { envvars = M.map (apply env' s) $ envvars env }
+  apply s env = env { envvars = M.map (apply s) $ envvars env }
   ftv env = ftv $ M.elems $ envvars env
 
-compose :: Env -> Substitution -> Substitution -> Substitution
-compose env s1 s2 = M.map (apply env s1) $ M.unionsWith mergeTypes [s2, s1]
+compose :: Substitution -> Substitution -> Substitution
+compose s1 s2 = M.map (apply s1) $ M.unionsWith mergeTypes [s2, s1]
  where
   mergeTypes :: Type -> Type -> Type
   mergeTypes t1 t2 = case (t1, t2) of
@@ -66,3 +73,8 @@ removeRecordTypes = M.filter notRecord
   notRecord t = case t of
     TRecord _ _ -> False
     _           -> True
+
+merge      ::  Substitution -> Substitution -> Infer Substitution
+merge s1 s2 = if agree then return (s1 <> s2) else throwError $ InferError FatalError NoReason
+ where agree = all (\v -> apply s1 (TVar v) == apply s2 (TVar v))
+                   (M.keys s1 `intersect` M.keys s2)

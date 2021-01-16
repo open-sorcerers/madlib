@@ -47,13 +47,13 @@ Right
                   (TApp
                      (TApp
                         (TCon (TC "(->)" (Kfun Star (Kfun Star Star))))
-                        (TVar (TV "c" Star)))
-                     (TVar (TV "c" Star)))
+                        (TVar (TV "f" Star)))
+                     (TVar (TV "f" Star)))
                   (Area (Loc 71 3 2) (Loc 81 3 12))
                   (Abs
                      "a"
                      [ Solved
-                         (TVar (TV "c" Star)) (Area (Loc 79 3 10) (Loc 80 3 11)) (Var "a")
+                         (TVar (TV "f" Star)) (Area (Loc 79 3 10) (Loc 80 3 11)) (Var "a")
                      ]))
                (Solved
                   (TApp

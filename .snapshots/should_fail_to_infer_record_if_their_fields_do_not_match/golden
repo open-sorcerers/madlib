@@ -16,7 +16,7 @@ Left
               (TCon (TC "(->)" (Kfun Star (Kfun Star Star))))
               (TRecord
                  (fromList [ ( "name" , TCon (TC "String" Star) ) ]) False))
-           (TVar (TV "a" Star))))
+           (TVar (TV "b" Star))))
      (Reason
         (WrongTypeApplied
            (Meta

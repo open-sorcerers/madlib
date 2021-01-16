@@ -32,7 +32,7 @@ Right
                                      (TApp
                                         (TApp
                                            (TCon (TC "(->)" (Kfun Star (Kfun Star Star))))
-                                           (TVar (TV "b" Star)))
+                                           (TVar (TV "c" Star)))
                                         (TCon (TC "Boolean" Star)))
                                      (Area (Loc 18 1 19) (Loc 19 1 20))
                                      (App
@@ -40,16 +40,16 @@ Right
                                            (TApp
                                               (TApp
                                                  (TCon (TC "(->)" (Kfun Star (Kfun Star Star))))
-                                                 (TVar (TV "e" Star)))
+                                                 (TVar (TV "f" Star)))
                                               (TApp
                                                  (TApp
                                                     (TCon (TC "(->)" (Kfun Star (Kfun Star Star))))
-                                                    (TVar (TV "e" Star)))
+                                                    (TVar (TV "f" Star)))
                                                  (TCon (TC "Boolean" Star))))
                                            (Area (Loc 20 1 21) (Loc 21 1 22))
                                            (Var "<"))
                                         (Solved
-                                           (TVar (TV "b" Star))
+                                           (TVar (TV "c" Star))
                                            (Area (Loc 18 1 19) (Loc 19 1 20))
                                            (Var "n"))
                                         False))
@@ -59,7 +59,7 @@ Right
                                      (LNum "2"))
                                   True))
                             (Solved
-                               (TVar (TV "b" Star)) (Area (Loc 27 1 28) (Loc 28 1 29)) (Var "n"))
+                               (TVar (TV "c" Star)) (Area (Loc 27 1 28) (Loc 28 1 29)) (Var "n"))
                             (Solved
                                (TCon (TC "Number" Star))
                                (Area (Loc 38 1 39) (Loc 48 1 49))
@@ -89,7 +89,7 @@ Right
                                            (Area (Loc 38 1 39) (Loc 48 1 49))
                                            (App
                                               (Solved
-                                                 (TVar (TV "a" Star))
+                                                 (TVar (TV "b" Star))
                                                  (Area (Loc 38 1 39) (Loc 41 1 42))
                                                  (Var "fib"))
                                               (Solved

@@ -50,10 +50,10 @@ Right
                                      (TApp
                                         (TApp
                                            (TCon (TC "(->)" (Kfun Star (Kfun Star Star))))
-                                           (TVar (TV "o" Star)))
+                                           (TVar (TV "t" Star)))
                                         (TApp
                                            (TCon (TC "Maybe" (Kfun Star Star)))
-                                           (TVar (TV "o" Star))))
+                                           (TVar (TV "t" Star))))
                                      (Area (Loc 75 3 12) (Loc 76 3 13))
                                      (FieldAccess
                                         (Solved
@@ -66,15 +66,15 @@ Right
                                                              (TC
                                                                 "(->)"
                                                                 (Kfun Star (Kfun Star Star))))
-                                                          (TVar (TV "o" Star)))
+                                                          (TVar (TV "t" Star)))
                                                        (TApp
                                                           (TCon (TC "Maybe" (Kfun Star Star)))
-                                                          (TVar (TV "o" Star)))
+                                                          (TVar (TV "t" Star)))
                                                    )
                                                  , ( "Nothing"
                                                    , TApp
                                                        (TCon (TC "Maybe" (Kfun Star Star)))
-                                                       (TVar (TV "o" Star))
+                                                       (TVar (TV "t" Star))
                                                    )
                                                  ])
                                               False)
@@ -85,9 +85,9 @@ Right
                                               (TApp
                                                  (TCon (TC "(->)" (Kfun Star (Kfun Star Star))))
                                                  (TRecord
-                                                    (fromList [ ( "Just" , TVar (TV "n" Star) ) ])
+                                                    (fromList [ ( "Just" , TVar (TV "s" Star) ) ])
                                                     True))
-                                              (TVar (TV "n" Star)))
+                                              (TVar (TV "s" Star)))
                                            (Area (Loc 77 3 14) (Loc 81 3 18))
                                            (Var ".Just"))))
                                   (Solved

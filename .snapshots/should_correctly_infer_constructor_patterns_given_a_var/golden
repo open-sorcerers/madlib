@@ -6,8 +6,8 @@ Right
             (TApp
                (TApp
                   (TCon (TC "(->)" (Kfun Star (Kfun Star Star))))
-                  (TApp (TCon (TC "Maybe" (Kfun Star Star))) (TVar (TV "d" Star))))
-               (TVar (TV "d" Star)))
+                  (TApp (TCon (TC "Maybe" (Kfun Star Star))) (TVar (TV "e" Star))))
+               (TVar (TV "e" Star)))
             (Area (Loc 32 2 1) (Loc 34 2 3))
             (Assignment
                "fn"
@@ -15,17 +15,17 @@ Right
                   (TApp
                      (TApp
                         (TCon (TC "(->)" (Kfun Star (Kfun Star Star))))
-                        (TApp (TCon (TC "Maybe" (Kfun Star Star))) (TVar (TV "d" Star))))
-                     (TVar (TV "d" Star)))
+                        (TApp (TCon (TC "Maybe" (Kfun Star Star))) (TVar (TV "e" Star))))
+                     (TVar (TV "e" Star)))
                   (Area (Loc 37 2 6) (Loc 81 6 1))
                   (Abs
                      "b"
                      [ Solved
-                         (TVar (TV "d" Star))
+                         (TVar (TV "e" Star))
                          (Area (Loc 48 3 3) (Loc 79 5 3))
                          (Where
                             (Solved
-                               (TApp (TCon (TC "Maybe" (Kfun Star Star))) (TVar (TV "d" Star)))
+                               (TApp (TCon (TC "Maybe" (Kfun Star Star))) (TVar (TV "e" Star)))
                                (Area (Loc 54 3 9) (Loc 55 3 10))
                                (Var "b"))
                             [ Solved
@@ -33,13 +33,13 @@ Right
                                    (TApp
                                       (TCon (TC "(->)" (Kfun Star (Kfun Star Star))))
                                       (TApp
-                                         (TCon (TC "Maybe" (Kfun Star Star))) (TVar (TV "d" Star))))
-                                   (TVar (TV "d" Star)))
+                                         (TCon (TC "Maybe" (Kfun Star Star))) (TVar (TV "e" Star))))
+                                   (TVar (TV "e" Star)))
                                 (Area (Loc 63 4 5) (Loc 75 4 17))
                                 (Is
                                    (PCtor "Just" [ PVar "x" ])
                                    (Solved
-                                      (TVar (TV "d" Star))
+                                      (TVar (TV "e" Star))
                                       (Area (Loc 74 4 16) (Loc 75 4 17))
                                       (Var "x")))
                             ])
@@ -52,8 +52,8 @@ Right
                   (TApp
                      (TApp
                         (TCon (TC "(->)" (Kfun Star (Kfun Star Star))))
-                        (TApp (TCon (TC "Maybe" (Kfun Star Star))) (TVar (TV "i" Star))))
-                     (TVar (TV "i" Star)))
+                        (TApp (TCon (TC "Maybe" (Kfun Star Star))) (TVar (TV "e" Star))))
+                     (TVar (TV "e" Star)))
                   (Area (Loc 82 7 1) (Loc 84 7 3))
                   (Var "fn"))
                (Solved
@@ -65,8 +65,8 @@ Right
                         (TApp
                            (TApp
                               (TCon (TC "(->)" (Kfun Star (Kfun Star Star))))
-                              (TVar (TV "k" Star)))
-                           (TApp (TCon (TC "Maybe" (Kfun Star Star))) (TVar (TV "k" Star))))
+                              (TVar (TV "l" Star)))
+                           (TApp (TCon (TC "Maybe" (Kfun Star Star))) (TVar (TV "l" Star))))
                         (Area (Loc 85 7 4) (Loc 89 7 8))
                         (Var "Just"))
                      (Solved

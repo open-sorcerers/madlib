@@ -253,7 +253,7 @@ Right
                                                                              (fromList
                                                                                 [ ( "z"
                                                                                   , TVar
-                                                                                      (TV "m" Star)
+                                                                                      (TV "n" Star)
                                                                                   )
                                                                                 ])
                                                                              True)
@@ -277,12 +277,12 @@ Right
                                                                                       [ ( "z"
                                                                                         , TVar
                                                                                             (TV
-                                                                                               "m"
+                                                                                               "n"
                                                                                                Star)
                                                                                         )
                                                                                       ])
                                                                                    True))
-                                                                             (TVar (TV "m" Star)))
+                                                                             (TVar (TV "n" Star)))
                                                                           (Area
                                                                              (Loc 76 3 50)
                                                                              (Loc 77 3 51))
@@ -296,7 +296,7 @@ Right
                                                            (Solved
                                                               (TRecord
                                                                  (fromList
-                                                                    [ ( "o" , TVar (TV "o" Star) )
+                                                                    [ ( "o" , TVar (TV "p" Star) )
                                                                     ])
                                                                  True)
                                                               (Area (Loc 80 3 54) (Loc 81 3 55))
@@ -313,11 +313,11 @@ Right
                                                                     (TRecord
                                                                        (fromList
                                                                           [ ( "o"
-                                                                            , TVar (TV "o" Star)
+                                                                            , TVar (TV "p" Star)
                                                                             )
                                                                           ])
                                                                        True))
-                                                                 (TVar (TV "o" Star)))
+                                                                 (TVar (TV "p" Star)))
                                                               (Area (Loc 82 3 56) (Loc 83 3 57))
                                                               (Var ".o"))))
                                                      True))
@@ -328,7 +328,7 @@ Right
                                             (FieldAccess
                                                (Solved
                                                   (TRecord
-                                                     (fromList [ ( "i" , TVar (TV "q" Star) ) ])
+                                                     (fromList [ ( "i" , TVar (TV "r" Star) ) ])
                                                      True)
                                                   (Area (Loc 86 3 60) (Loc 87 3 61))
                                                   (Var "c"))
@@ -339,9 +339,9 @@ Right
                                                            (TC "(->)" (Kfun Star (Kfun Star Star))))
                                                         (TRecord
                                                            (fromList
-                                                              [ ( "i" , TVar (TV "q" Star) ) ])
+                                                              [ ( "i" , TVar (TV "r" Star) ) ])
                                                            True))
-                                                     (TVar (TV "q" Star)))
+                                                     (TVar (TV "r" Star)))
                                                   (Area (Loc 88 3 62) (Loc 89 3 63))
                                                   (Var ".i"))))
                                          True)))

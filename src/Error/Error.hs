@@ -14,6 +14,10 @@ data TypeError
   | UnificationError Type Type
   | KindError Type Type
   | NoInstanceFound String Type
+  | InterfaceAlreadyDefined String
+  | InterfaceNotExisting String
+  | MethodDoesNotMatchInterfaceType Type Type
+  | AmbiguousType (TVar, [Pred])
   | ADTAlreadyDefined Type
   | UnknownType String
   | WrongSpreadType String

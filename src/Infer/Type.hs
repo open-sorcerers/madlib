@@ -11,24 +11,18 @@ import           Debug.Trace                    ( trace )
 type Vars = M.Map String Scheme
 type TypeDecls = M.Map String Type
 
--- Instance:
---   Type:           type the instance handles
---   String:         The interface it instantiates
---   Map String Exp: The dictionary of exps from the instance
---   [String]:       The constraints on the instance ? Not clear yet.
-data Instance = Instance Type String (M.Map String Exp) [String] deriving(Eq, Show)
-type Instances = [Instance]
 
-data Interface = Interface String String (M.Map String Type) deriving(Eq, Show)
-type Interfaces = [Interface]
+
+data Interface = Interface [TVar] [Pred] [Instance] deriving(Eq, Show)
+
+newtype Instance = Instance (Qual Pred) deriving(Eq, Show)
 
 
 data Env
   = Env
     { envvars        :: Vars
     , envtypes       :: TypeDecls
-    , envinterfaces  :: Interfaces
-    , envinstances   :: Instances
+    , envinterfaces  :: M.Map Id Interface
     , envcurrentpath :: FilePath
     }
     deriving(Eq, Show)
@@ -97,7 +91,7 @@ type Id = String
 data Kind  = Star | Kfun Kind Kind
              deriving (Eq, Show, Ord)
 
-data Pred   = IsIn Id Type
+data Pred   = IsIn Id [Type]
               deriving (Eq, Show, Ord)
 
 data Qual t = [Pred] :=> t
@@ -108,6 +102,9 @@ data Scheme = Forall [Kind] (Qual Type)
 
 
 type Substitution = M.Map TVar Type
+
+nullSubst :: Substitution
+nullSubst = M.empty
 
 
 qualType :: Qual t -> t
@@ -133,3 +130,13 @@ instance HasKind Type where
     (Kfun _ k) -> k
   kind _ = Star
 
+buildKind :: Int -> Kind
+buildKind n | n > 0     = Kfun Star $ buildKind (n - 1)
+            | otherwise = Star
+
+countGens :: Type -> Int
+countGens t = case t of
+  TApp    l  r -> countGens l + countGens r
+  TRecord fs _ -> sum $ countGens <$> M.elems fs
+  TGen _       -> 1
+  _            -> 0

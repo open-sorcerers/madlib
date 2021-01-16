@@ -64,7 +64,7 @@ inferPattern env (Meta _ _ pat) = case pat of
       Right r -> return r
       Left  e -> throwError $ InferError e NoReason
 
-    return (ps, M.map (apply env s) vars, TApp tList (apply env s (head ts)))
+    return (ps, M.map (apply s) vars, TApp tList (apply s (head ts)))
 
    where
     inferPListItem :: Env -> Src.Pattern -> Infer ([Pred], Vars, Type)
@@ -97,8 +97,8 @@ inferPattern env (Meta _ _ pat) = case pat of
     tv             <- newTVar Star
     sc             <- lookupVar env n
     (ps' :=> t)    <- instantiate sc
-    s              <- case unify env t (foldr fn tv ts) of
+    s              <- case unify t (foldr fn tv ts) of
       Right r -> return r
       Left  e -> throwError $ InferError e NoReason
 
-    return (ps <> ps', vars, apply env s tv)
+    return (ps <> ps', vars, apply s tv)

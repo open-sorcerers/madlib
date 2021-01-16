@@ -39,12 +39,16 @@ typingToType env (Meta _ _ (Src.TRSingle t))
       t                -> return t
 
 
-typingToType env (Meta info area (Src.TRComp t ts)) = do
-  h      <- lookupADT env t
-  params <- mapM (typingToType env) ts
-  case h of
-    (TAlias _ _ _ t) -> updateAliasVars h params
-    t                -> return $ foldl TApp t params
+typingToType env (Meta info area (Src.TRComp t ts)) 
+  | isLower . head $ t = do
+      params <- mapM (typingToType env) ts
+      return $ foldl TApp (TVar $ TV t (buildKind (length ts))) params
+  | otherwise = do
+      h      <- lookupADT env t
+      params <- mapM (typingToType env) ts
+      case h of
+        (TAlias _ _ _ t) -> updateAliasVars h params
+        t                -> return $ foldl TApp t params
 
 
 typingToType env (Meta _ _ (Src.TRArr l r)) = do

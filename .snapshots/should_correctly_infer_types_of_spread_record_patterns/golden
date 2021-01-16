@@ -79,15 +79,15 @@ Right
                          (Area (Loc 116 3 22) (Loc 122 3 28))
                          (FieldAccess
                             (Solved
-                               (TRecord (fromList [ ( "name" , TVar (TV "e" Star) ) ]) True)
+                               (TRecord (fromList [ ( "name" , TVar (TV "f" Star) ) ]) True)
                                (Area (Loc 116 3 22) (Loc 117 3 23))
                                (Var "b"))
                             (Solved
                                (TApp
                                   (TApp
                                      (TCon (TC "(->)" (Kfun Star (Kfun Star Star))))
-                                     (TRecord (fromList [ ( "name" , TVar (TV "e" Star) ) ]) True))
-                                  (TVar (TV "e" Star)))
+                                     (TRecord (fromList [ ( "name" , TVar (TV "f" Star) ) ]) True))
+                                  (TVar (TV "f" Star)))
                                (Area (Loc 118 3 24) (Loc 122 3 28))
                                (Var ".name")))))
                ])

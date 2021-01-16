@@ -59,15 +59,15 @@ Right
                          (Area (Loc 54 2 25) (Loc 60 2 31))
                          (FieldAccess
                             (Solved
-                               (TRecord (fromList [ ( "z" , TVar (TV "c" Star) ) ]) True)
+                               (TRecord (fromList [ ( "z" , TVar (TV "d" Star) ) ]) True)
                                (Area (Loc 54 2 25) (Loc 58 2 29))
                                (Var "rest"))
                             (Solved
                                (TApp
                                   (TApp
                                      (TCon (TC "(->)" (Kfun Star (Kfun Star Star))))
-                                     (TRecord (fromList [ ( "z" , TVar (TV "c" Star) ) ]) True))
-                                  (TVar (TV "c" Star)))
+                                     (TRecord (fromList [ ( "z" , TVar (TV "d" Star) ) ]) True))
+                                  (TVar (TV "d" Star)))
                                (Area (Loc 59 2 30) (Loc 60 2 31))
                                (Var ".z")))))
                ])

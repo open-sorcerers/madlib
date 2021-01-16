@@ -8,7 +8,7 @@ import qualified Data.Set                      as S
 
 
 quantify :: [TVar] -> Qual Type -> Scheme
-quantify vs qt = Forall ks (apply Env{} s qt)
+quantify vs qt = Forall ks (apply s qt)
  where
   vs' = [ v | v <- S.toList $ ftv qt, v `elem` vs ]
   ks  = map kind vs'

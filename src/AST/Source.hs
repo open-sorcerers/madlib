@@ -128,3 +128,6 @@ getImportAbsolutePath imp = case imp of
 getImportPath :: Import -> (Import, FilePath)
 getImportPath imp@(Meta _ _ (NamedImport   _ p _)) = (imp, p)
 getImportPath imp@(Meta _ _ (DefaultImport _ p _)) = (imp, p)
+
+extractExp :: Exp -> Exp_
+extractExp (Meta _ _ e) = e

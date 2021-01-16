@@ -10,7 +10,7 @@ Left
            (TApp
               (TCon (TC "(->)" (Kfun Star (Kfun Star Star))))
               (TCon (TC "Number" Star)))
-           (TVar (TV "g" Star))))
+           (TVar (TV "i" Star))))
      (Reason
         (WrongTypeApplied
            (Meta

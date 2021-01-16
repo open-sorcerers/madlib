@@ -87,17 +87,6 @@ resolveADTConstructor priorEnv astPath typeDecls n params (Constructor cname cpa
           [(cname, Forall (replicate (countGens ctype) Star) ([] :=> ctype))]
     return vars
 
-buildKind :: Int -> Kind
-buildKind n | n > 0     = Kfun Star $ buildKind (n - 1)
-            | otherwise = Star
-
-countGens :: Type -> Int
-countGens t = case t of
-  TApp    l  r -> countGens l + countGens r
-  TRecord fs _ -> sum $ countGens <$> M.elems fs
-  TGen _       -> 1
-  _            -> 0
-
 
 argToType
   :: Env

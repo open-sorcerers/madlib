@@ -17,8 +17,8 @@ Right
                         (TApp
                            (TApp
                               (TCon (TC "(->)" (Kfun Star (Kfun Star Star))))
-                              (TVar (TV "c" Star)))
-                           (TApp (TCon (TC "Result" (Kfun Star Star))) (TVar (TV "c" Star))))
+                              (TVar (TV "d" Star)))
+                           (TApp (TCon (TC "Result" (Kfun Star Star))) (TVar (TV "d" Star))))
                         (Area (Loc 47 4 10) (Loc 54 4 17))
                         (Var "Success"))
                      (Solved

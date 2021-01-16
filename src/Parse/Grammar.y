@@ -118,15 +118,16 @@ interface :: { Src.Interface }
 
 methodDefs :: { M.Map Src.Name Src.Typing }
   : name '::' typings            { M.fromList [(strV $1, $3)] }
-  | methodDefs name '::' typings { M.union (M.fromList [(strV $2, $4)]) $1 }
+  | methodDefs rets name '::' typings { M.union (M.fromList [(strV $3, $5)]) $1 }
 
 instance :: { Src.Instance }
-  : 'instance' name name '{' rets methodImpls rets '}' { Src.Instance (strV $2) (Meta emptyInfos (tokenToArea $3) (Src.TRSingle $ strV $3)) $6 }
-  | 'instance' name name '.' name '{' rets methodImpls rets '}' { Src.Instance (strV $2) (Meta emptyInfos (tokenToArea $3) (Src.TRComp (strV $3<>"."<>strV $5) [])) $8 }
+  : 'instance' name typing '{' rets methodImpls rets '}' { Src.Instance (strV $2) $3 $6 }
+  | 'instance' name '(' compositeTyping ')' '{' rets methodImpls rets '}' { Src.Instance (strV $2) $4 $8 }
+  -- | 'instance' name name '.' name '{' rets methodImpls rets '}' { Src.Instance (strV $2) (Meta emptyInfos (tokenToArea $3) (Src.TRComp (strV $3<>"."<>strV $5) [])) $8 }
 
 methodImpls :: { M.Map Src.Name Src.Exp }
   : name '=' exp { M.fromList [(strV $1, $3)] }
-  | methodImpls name '=' exp { M.union (M.fromList [(strV $2, $4)]) $1 }
+  | methodImpls rets name '=' exp { M.union (M.fromList [(strV $3, $5)]) $1 }
 
 rets :: { [TokenClass] }
   : 'ret'       %shift{ [] }

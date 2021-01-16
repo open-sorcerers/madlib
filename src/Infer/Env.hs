@@ -1,4 +1,3 @@
-{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE RankNTypes #-}
@@ -15,14 +14,17 @@ import           Explain.Reason
 import           Error.Error
 import qualified Data.Set                      as S
 import           Infer.Substitute               ( Substitutable(ftv) )
-import           Infer.Typing                   ( typingToType )
+import           Infer.Typing                   (collectVars, typingToScheme,  typingToType )
 import           Data.List                      ( isInfixOf
                                                 , find
                                                 )
-import           Data.Maybe                     ( fromMaybe )
+import           Data.Maybe                     (mapMaybe,  fromMaybe )
 import           Text.Show.Pretty               ( ppShow )
 import           Debug.Trace                    ( trace )
-import           Infer.Scheme                   ( toScheme )
+import           Infer.Scheme                   (quantify,  toScheme )
+import Control.Monad (foldM)
+import Control.Monad (msum)
+import Infer.Pred (addInstance, addInterface)
 
 
 lookupVar :: Env -> String -> Infer Scheme
@@ -85,6 +87,8 @@ initialEnv = Env
       $   []
       :=> (TGen 0 `fn` (TGen 0 `fn` TGen 1) `fn` TGen 1)
       )
+    , ("show", Forall [Star] $ [IsIn "Show" [TGen 0]] :=> (TGen 0 `fn` tStr))
+    , ("map", Forall [Star, Star, Kfun Star Star] $ [IsIn "Functor" [TGen 2]] :=> ((TGen 0 `fn` TGen 1) `fn` TApp (TGen 2) (TGen 0) `fn` TApp (TGen 2) (TGen 1)))
     ]
   , envtypes       = M.fromList
                        [ ("List" , tList)
@@ -92,55 +96,76 @@ initialEnv = Env
                        , ("(,,)" , tTuple3)
                        , ("(,,,)", tTuple4)
                        ]
-  , envinterfaces  = []
-  , envinstances   = []
+  , envinterfaces  = M.fromList
+      [ ("Show", Ty.Interface [TV "a" Star] [] [Ty.Instance $ [] :=> IsIn "Show" [tNumber], Ty.Instance $ [] :=> IsIn "Show" [tBool], Ty.Instance $ [IsIn "Show" [TVar (TV "a" Star)]] :=> IsIn "Show" [TApp (TCon (TC "Maybe" (Kfun Star Star))) (TVar (TV "a" Star))]])
+      , ("Functor", Ty.Interface [TV "m" (Kfun Star Star)] []
+          [ Ty.Instance $ [] :=> IsIn "Functor" [TCon (TC "Maybe" (Kfun Star Star))]
+          , Ty.Instance $ [] :=> IsIn "Functor" [tList]
+          ])
+      ]
   , envcurrentpath = ""
   }
 
+solveInterfaces :: Env -> [Src.Interface] -> Infer Env
+solveInterfaces = foldM solveInterface
 
-solveInstances :: Env -> [Src.Instance] -> Infer [Ty.Instance]
-solveInstances env = mapM (solveInstance env)
 
-solveInstance :: Env -> Src.Instance -> Infer Ty.Instance
-solveInstance env inst = case inst of
-  Src.Instance cls t dict -> do
-    t' <- typingToType env t
-    return $ Ty.Instance t' cls dict []
-
-solveInterfaces :: Env -> [Src.Interface] -> Infer [Ty.Interface]
-solveInterfaces env = mapM (solveInterface env)
-
-solveInterface :: Env -> Src.Interface -> Infer Ty.Interface
+solveInterface :: Env -> Src.Interface -> Infer Env
 solveInterface env interface = case interface of
-  Src.Interface name var methods -> do
-    ts <- mapM (typingToType env) methods
-    let ts' = M.map (addConstraints name var) ts
-    return $ Ty.Interface name var ts'
+  Src.Interface n tv ms -> do
+    ts  <- mapM (typingToType env) ms
+    let ts' = addConstraints n tv <$> ts
 
-addConstraints :: String -> String -> Type -> Type
-addConstraints interfaceName var t = case t of
-  TVar (TV n _) -> if n == var then TVar (TV n Star) else t
-  TApp l r      -> TApp (addConstraints interfaceName var l)
-                        (addConstraints interfaceName var r)
-  _ -> t
+    let tvs = mapMaybe (searchVarInType tv) (M.elems ts)
 
--- getInterfaceMethods :: Ty.Interface -> M.Map String Scheme
--- getInterfaceMethods interface = case interface of
---   Ty.Interface _ _ methods -> M.map (\m -> Forall (S.toList $ ftv m) m) methods
+    env' <- if null tvs
+      then throwError $ InferError FatalError NoReason
+      else addInterface env n [(\(TVar tv) -> tv) . head $ tvs] []
 
--- getInterfacesMethods :: [Ty.Interface] -> M.Map String Scheme
--- getInterfacesMethods = foldr (M.union . getInterfaceMethods) M.empty
+    return env' { envvars = envvars env <> ts' }
+
+addConstraints :: Id -> Id -> Type -> Scheme
+addConstraints n tv t =
+  let tv' = searchVarInType tv t
+      qt  = case tv' of
+        Just tv'' -> [IsIn n [tv'']] :=> t
+        Nothing   -> [] :=> t
+      vars = collectVars t
+  in  quantify vars qt
+
+searchVarInType :: Id -> Type -> Maybe Type
+searchVarInType id t = case t of
+  TVar (TV n _) -> if n == id then Just t else Nothing
+  TCon _        -> Nothing
+  TApp l r      ->
+    let l' = searchVarInType id l
+        r' = searchVarInType id r
+    in  case (l', r') of
+      (Just x, _) -> Just x
+      (_, Just x) -> Just x
+      _           -> Nothing
+
+
+solveInstances :: Env -> [Src.Instance] -> Infer Env
+solveInstances = foldM solveInstance
+
+
+solveInstance :: Env -> Src.Instance -> Infer Env
+solveInstance env inst = case inst of
+  Src.Instance n typing _ -> do
+    t <- typingToType env typing
+    addInstance env [] $ IsIn n [t]
+
 
 buildInitialEnv :: Env -> AST -> Infer Env
 buildInitialEnv priorEnv AST { atypedecls, ainterfaces, ainstances, apath = Just apath }
   = do
-    tadts      <- buildTypeDecls priorEnv apath atypedecls
-    vars       <- resolveTypeDecls priorEnv apath tadts atypedecls
-    interfaces <- solveInterfaces priorEnv ainterfaces
-    instances  <- solveInstances priorEnv ainstances
-    return Env { envvars        = M.union (envvars initialEnv) vars
+    tadts <- buildTypeDecls priorEnv apath atypedecls
+    vars  <- resolveTypeDecls priorEnv apath tadts atypedecls
+    env   <- solveInterfaces initialEnv ainterfaces
+    env'  <- solveInstances (env { envtypes = M.union (envtypes initialEnv) tadts }) ainstances
+    return env' { envvars        = envvars initialEnv <> vars <> envvars env
                , envtypes       = M.union (envtypes initialEnv) tadts
-               , envinterfaces  = interfaces
-               , envinstances   = instances
+              --  , envinterfaces  = envinterfaces initialEnv
                , envcurrentpath = apath
                }

@@ -17,8 +17,8 @@ Right
                         (TApp
                            (TApp
                               (TCon (TC "(->)" (Kfun Star (Kfun Star Star))))
-                              (TVar (TV "c" Star)))
-                           (TApp (TCon (TC "Maybe" (Kfun Star Star))) (TVar (TV "c" Star))))
+                              (TVar (TV "d" Star)))
+                           (TApp (TCon (TC "Maybe" (Kfun Star Star))) (TVar (TV "d" Star))))
                         (Area (Loc 42 2 11) (Loc 46 2 15))
                         (Var "Just"))
                      (Solved

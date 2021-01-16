@@ -20,25 +20,25 @@ Right
                         (TApp
                            (TApp
                               (TCon (TC "(->)" (Kfun Star (Kfun Star Star))))
-                              (TVar (TV "f" Star)))
+                              (TVar (TV "g" Star)))
                            (TApp
                               (TApp
                                  (TApp
                                     (TCon (TC "Wish" (Kfun Star (Kfun Star (Kfun Star Star)))))
                                     (TCon (TC "Number" Star)))
                                  (TCon (TC "Number" Star)))
-                              (TVar (TV "f" Star))))
+                              (TVar (TV "g" Star))))
                         (Area (Loc 50 2 15) (Loc 51 2 16))
                         (App
                            (Solved
                               (TApp
                                  (TApp
                                     (TCon (TC "(->)" (Kfun Star (Kfun Star Star))))
-                                    (TVar (TV "e" Star)))
+                                    (TVar (TV "f" Star)))
                                  (TApp
                                     (TApp
                                        (TCon (TC "(->)" (Kfun Star (Kfun Star Star))))
-                                       (TVar (TV "f" Star)))
+                                       (TVar (TV "g" Star)))
                                     (TApp
                                        (TApp
                                           (TApp
@@ -46,23 +46,23 @@ Right
                                                 (TC
                                                    "Wish" (Kfun Star (Kfun Star (Kfun Star Star)))))
                                              (TCon (TC "Number" Star)))
-                                          (TVar (TV "e" Star)))
-                                       (TVar (TV "f" Star)))))
+                                          (TVar (TV "f" Star)))
+                                       (TVar (TV "g" Star)))))
                               (Area (Loc 42 2 7) (Loc 55 2 20))
                               (App
                                  (Solved
                                     (TApp
                                        (TApp
                                           (TCon (TC "(->)" (Kfun Star (Kfun Star Star))))
-                                          (TVar (TV "d" Star)))
+                                          (TVar (TV "e" Star)))
                                        (TApp
                                           (TApp
                                              (TCon (TC "(->)" (Kfun Star (Kfun Star Star))))
-                                             (TVar (TV "e" Star)))
+                                             (TVar (TV "f" Star)))
                                           (TApp
                                              (TApp
                                                 (TCon (TC "(->)" (Kfun Star (Kfun Star Star))))
-                                                (TVar (TV "f" Star)))
+                                                (TVar (TV "g" Star)))
                                              (TApp
                                                 (TApp
                                                    (TApp
@@ -71,9 +71,9 @@ Right
                                                             "Wish"
                                                             (Kfun
                                                                Star (Kfun Star (Kfun Star Star)))))
-                                                      (TVar (TV "d" Star)))
-                                                   (TVar (TV "e" Star)))
-                                                (TVar (TV "f" Star))))))
+                                                      (TVar (TV "e" Star)))
+                                                   (TVar (TV "f" Star)))
+                                                (TVar (TV "g" Star))))))
                                     (Area (Loc 42 2 7) (Loc 46 2 11))
                                     (Var "Wish"))
                                  (Solved

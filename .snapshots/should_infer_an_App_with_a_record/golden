@@ -94,7 +94,7 @@ Right
                                      (FieldAccess
                                         (Solved
                                            (TRecord
-                                              (fromList [ ( "x" , TVar (TV "f" Star) ) ]) True)
+                                              (fromList [ ( "x" , TVar (TV "h" Star) ) ]) True)
                                            (Area (Loc 36 2 18) (Loc 37 2 19))
                                            (Var "r"))
                                         (Solved
@@ -102,9 +102,9 @@ Right
                                               (TApp
                                                  (TCon (TC "(->)" (Kfun Star (Kfun Star Star))))
                                                  (TRecord
-                                                    (fromList [ ( "x" , TVar (TV "f" Star) ) ])
+                                                    (fromList [ ( "x" , TVar (TV "h" Star) ) ])
                                                     True))
-                                              (TVar (TV "f" Star)))
+                                              (TVar (TV "h" Star)))
                                            (Area (Loc 38 2 20) (Loc 39 2 21))
                                            (Var ".x"))))
                                   False))
@@ -113,7 +113,7 @@ Right
                                (Area (Loc 42 2 24) (Loc 45 2 27))
                                (FieldAccess
                                   (Solved
-                                     (TRecord (fromList [ ( "y" , TVar (TV "h" Star) ) ]) True)
+                                     (TRecord (fromList [ ( "y" , TVar (TV "j" Star) ) ]) True)
                                      (Area (Loc 42 2 24) (Loc 43 2 25))
                                      (Var "r"))
                                   (Solved
@@ -121,8 +121,8 @@ Right
                                         (TApp
                                            (TCon (TC "(->)" (Kfun Star (Kfun Star Star))))
                                            (TRecord
-                                              (fromList [ ( "y" , TVar (TV "h" Star) ) ]) True))
-                                        (TVar (TV "h" Star)))
+                                              (fromList [ ( "y" , TVar (TV "j" Star) ) ]) True))
+                                        (TVar (TV "j" Star)))
                                      (Area (Loc 44 2 26) (Loc 45 2 27))
                                      (Var ".y"))))
                             True)

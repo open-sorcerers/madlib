@@ -19,7 +19,7 @@ Right
                                                 (fromList
                                                    [ ( "d"
                                                      , TRecord
-                                                         (fromList [ ( "e" , TVar (TV "l" Star) ) ])
+                                                         (fromList [ ( "e" , TVar (TV "m" Star) ) ])
                                                          True
                                                      )
                                                    ])
@@ -33,7 +33,7 @@ Right
                           )
                         ])
                      True))
-               (TVar (TV "l" Star)))
+               (TVar (TV "m" Star)))
             (Area (Loc 0 1 1) (Loc 1 1 2))
             (Assignment
                "f"
@@ -55,7 +55,7 @@ Right
                                                          [ ( "d"
                                                            , TRecord
                                                                (fromList
-                                                                  [ ( "e" , TVar (TV "l" Star) ) ])
+                                                                  [ ( "e" , TVar (TV "m" Star) ) ])
                                                                True
                                                            )
                                                          ])
@@ -69,37 +69,37 @@ Right
                                 )
                               ])
                            True))
-                     (TVar (TV "l" Star)))
+                     (TVar (TV "m" Star)))
                   (Area (Loc 4 1 5) (Loc 24 1 25))
                   (Abs
                      "x"
                      [ Solved
-                         (TVar (TV "l" Star))
+                         (TVar (TV "m" Star))
                          (Area (Loc 12 1 13) (Loc 23 1 24))
                          (FieldAccess
                             (Solved
-                               (TRecord (fromList [ ( "e" , TVar (TV "c" Star) ) ]) True)
+                               (TRecord (fromList [ ( "e" , TVar (TV "d" Star) ) ]) True)
                                (Area (Loc 12 1 13) (Loc 21 1 22))
                                (FieldAccess
                                   (Solved
-                                     (TRecord (fromList [ ( "d" , TVar (TV "d" Star) ) ]) True)
+                                     (TRecord (fromList [ ( "d" , TVar (TV "e" Star) ) ]) True)
                                      (Area (Loc 12 1 13) (Loc 19 1 20))
                                      (FieldAccess
                                         (Solved
                                            (TRecord
-                                              (fromList [ ( "c" , TVar (TV "e" Star) ) ]) True)
+                                              (fromList [ ( "c" , TVar (TV "f" Star) ) ]) True)
                                            (Area (Loc 12 1 13) (Loc 17 1 18))
                                            (FieldAccess
                                               (Solved
                                                  (TRecord
-                                                    (fromList [ ( "b" , TVar (TV "f" Star) ) ])
+                                                    (fromList [ ( "b" , TVar (TV "g" Star) ) ])
                                                     True)
                                                  (Area (Loc 12 1 13) (Loc 15 1 16))
                                                  (FieldAccess
                                                     (Solved
                                                        (TRecord
                                                           (fromList
-                                                             [ ( "a" , TVar (TV "g" Star) ) ])
+                                                             [ ( "a" , TVar (TV "h" Star) ) ])
                                                           True)
                                                        (Area (Loc 12 1 13) (Loc 13 1 14))
                                                        (Var "x"))
@@ -112,9 +112,9 @@ Right
                                                                    (Kfun Star (Kfun Star Star))))
                                                              (TRecord
                                                                 (fromList
-                                                                   [ ( "a" , TVar (TV "g" Star) ) ])
+                                                                   [ ( "a" , TVar (TV "h" Star) ) ])
                                                                 True))
-                                                          (TVar (TV "g" Star)))
+                                                          (TVar (TV "h" Star)))
                                                        (Area (Loc 14 1 15) (Loc 15 1 16))
                                                        (Var ".a"))))
                                               (Solved
@@ -124,9 +124,9 @@ Right
                                                           (TC "(->)" (Kfun Star (Kfun Star Star))))
                                                        (TRecord
                                                           (fromList
-                                                             [ ( "b" , TVar (TV "f" Star) ) ])
+                                                             [ ( "b" , TVar (TV "g" Star) ) ])
                                                           True))
-                                                    (TVar (TV "f" Star)))
+                                                    (TVar (TV "g" Star)))
                                                  (Area (Loc 16 1 17) (Loc 17 1 18))
                                                  (Var ".b"))))
                                         (Solved
@@ -134,9 +134,9 @@ Right
                                               (TApp
                                                  (TCon (TC "(->)" (Kfun Star (Kfun Star Star))))
                                                  (TRecord
-                                                    (fromList [ ( "c" , TVar (TV "e" Star) ) ])
+                                                    (fromList [ ( "c" , TVar (TV "f" Star) ) ])
                                                     True))
-                                              (TVar (TV "e" Star)))
+                                              (TVar (TV "f" Star)))
                                            (Area (Loc 18 1 19) (Loc 19 1 20))
                                            (Var ".c"))))
                                   (Solved
@@ -144,16 +144,16 @@ Right
                                         (TApp
                                            (TCon (TC "(->)" (Kfun Star (Kfun Star Star))))
                                            (TRecord
-                                              (fromList [ ( "d" , TVar (TV "d" Star) ) ]) True))
-                                        (TVar (TV "d" Star)))
+                                              (fromList [ ( "d" , TVar (TV "e" Star) ) ]) True))
+                                        (TVar (TV "e" Star)))
                                      (Area (Loc 20 1 21) (Loc 21 1 22))
                                      (Var ".d"))))
                             (Solved
                                (TApp
                                   (TApp
                                      (TCon (TC "(->)" (Kfun Star (Kfun Star Star))))
-                                     (TRecord (fromList [ ( "e" , TVar (TV "c" Star) ) ]) True))
-                                  (TVar (TV "c" Star)))
+                                     (TRecord (fromList [ ( "e" , TVar (TV "d" Star) ) ]) True))
+                                  (TVar (TV "d" Star)))
                                (Area (Loc 22 1 23) (Loc 23 1 24))
                                (Var ".e")))
                      ])))

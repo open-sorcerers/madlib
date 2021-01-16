@@ -121,7 +121,7 @@ Right
                                                                  (TC
                                                                     "(->)"
                                                                     (Kfun Star (Kfun Star Star))))
-                                                              (TVar (TV "j" Star)))
+                                                              (TVar (TV "k" Star)))
                                                            (TApp
                                                               (TApp
                                                                  (TCon
@@ -129,7 +129,7 @@ Right
                                                                        "(->)"
                                                                        (Kfun
                                                                           Star (Kfun Star Star))))
-                                                                 (TVar (TV "j" Star)))
+                                                                 (TVar (TV "k" Star)))
                                                               (TCon (TC "Boolean" Star))))
                                                         (Area (Loc 85 4 21) (Loc 86 4 22))
                                                         (Var ">"))
@@ -267,14 +267,14 @@ Right
                                                      (TApp
                                                         (TCon
                                                            (TC "(->)" (Kfun Star (Kfun Star Star))))
-                                                        (TVar (TV "v" Star)))
+                                                        (TVar (TV "w" Star)))
                                                      (TApp
                                                         (TApp
                                                            (TCon
                                                               (TC
                                                                  "(->)"
                                                                  (Kfun Star (Kfun Star Star))))
-                                                           (TVar (TV "v" Star)))
+                                                           (TVar (TV "w" Star)))
                                                         (TCon (TC "Boolean" Star))))
                                                   (Area (Loc 157 6 23) (Loc 159 6 25))
                                                   (Var "=="))
