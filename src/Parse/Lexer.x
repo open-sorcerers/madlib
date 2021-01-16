@@ -25,13 +25,16 @@ module Parse.Lexer
   )
 where
 
+import           Control.Monad.State
 import           System.Exit
 import qualified Data.Text     as T
 import           Explain.Location
 import           Text.Regex.TDFA
+import Debug.Trace (trace)
+import           Text.Show.Pretty (ppShow)
 }
 
-%wrapper "monad"
+%wrapper "monadUserState"
 
 $alpha    = [a-zA-Z]                        -- alphabetic characters
 $empty    = [\ \t\f\v\r]                    -- equivalent to $white but without line return
@@ -54,6 +57,8 @@ tokens :-
   if                                    { mapToken (\_ -> TokenIf) }
   else                                  { mapToken (\_ -> TokenElse) }
   where                                 { mapToken (\_ -> TokenWhere) }
+  interface                             { mapToken (\_ -> TokenInterface ) }
+  instance                              { mapToken (\_ -> TokenInstance ) }
   pipe                                  { mapToken (\_ -> TokenPipeKeyword) }
   return                                { mapToken (\_ -> TokenReturnKeyword) }
   is                                    { mapToken (\_ -> TokenIs) }
@@ -80,13 +85,12 @@ tokens :-
   \|                                    { mapToken (\_ -> TokenPipe) }
   \;                                    { mapToken (\_ -> TokenSemiColon) }
   [\n]                                  { mapToken (\_ -> TokenReturn) }
-  [$alpha \_] [$alpha $digit \_ \']*    { mapToken (\s -> TokenName s) }
+  <0> [$alpha \_] [$alpha $digit \_ \']*    { mapToken (\s -> TokenName s) }
   $head*\+                              { mapToken (\_ -> TokenPlus) }
   $head*\+\+                            { mapToken (\_ -> TokenDoublePlus) }
   \-                                    { mapToken (\_ -> TokenDash) }
   $head*\?                              { mapToken (\_ -> TokenQuestionMark) }
   \n[\ ]*\-                             { mapToken (\_ -> TokenDash) }
-  $head*\*                              { mapToken (\_ -> TokenStar) }
   $head*\/                              { mapToken (\_ -> TokenSlash) }
   $head*\%                              { mapToken (\_ -> TokenPercent) }
   $head*\|\>                            { mapToken (\_ -> TokenPipeOperator) }
@@ -105,6 +109,10 @@ tokens :-
     { mapToken (\s -> TokenJSBlock (sanitizeJSBlock s)) }
   [\ \n]*"//".*                         ; -- Comments
   $empty+                               ;
+  <0,comment> \/\*                      { beginComment }
+  <comment>   [.\n]                     ;
+  <comment>   \*\/                      { endComment }
+  <0>       $head*\*                    { mapToken (\_ -> TokenStar) }
 
 {
 blackList :: String
@@ -114,11 +122,39 @@ blackList = "\\`[\ \t \n]*(where|if|else|is|data|alias|export|}|[a-zA-Z0-9]+[\ \
 whiteList :: String
 whiteList = "\\`[\ \t \n]*[a-zA-Z0-9\"]+[\\(]?.*"
 
+-- comments!
+
+data AlexUserState = AlexUserState Int deriving(Eq, Show)
+
+alexInitUserState :: AlexUserState
+alexInitUserState = AlexUserState 0
+
+grab :: Alex Int
+grab = Alex $ \s@AlexState{alex_ust = AlexUserState n} -> Right (s, n)
+
+grabFull :: Alex Int
+grabFull = Alex $ \s@AlexState{alex_scd = n} -> Right (s, n)
+
+shunt :: Int -> Alex ()
+shunt n = Alex $ \s -> Right (s{alex_ust = AlexUserState n, alex_scd = if n > 0 then comment else 0 }, ())
+
+beginComment :: AlexInput -> Int -> Alex Token
+beginComment input n = do
+  cd <- grab
+  shunt $ cd + 1
+  mapToken (\_ -> TokenSkip) input n
+
+endComment :: AlexInput -> Int -> Alex Token
+endComment input n = do
+  cd <- grab
+  shunt $ cd - 1
+  mapToken (\_ -> TokenSkip) input n
 
 --type AlexAction result = AlexInput -> Int -> Alex result
 mapToken :: (String -> TokenClass) -> AlexInput -> Int -> Alex Token
 mapToken tokenizer (posn, prevChar, pending, input) len = do
-  return $ Token (makeArea posn (take len input)) token
+  s <- grabFull
+  return $ Token (makeArea posn (take len input)) (trace (ppShow token ++ "shit\n" ++ ppShow s) token)
   
   -- where token = tokenizer (take len input)
   where
@@ -169,6 +205,8 @@ data TokenClass
  | TokenBool String
  | TokenIf
  | TokenElse
+ | TokenInterface
+ | TokenInstance
  | TokenWhere
  | TokenIs
  | TokenReturnKeyword
@@ -214,6 +252,7 @@ data TokenClass
  | TokenLeftChevronEq
  | TokenExclamationMark
  | TokenPipeKeyword
+ | TokenSkip
  deriving (Eq, Show)
 
 

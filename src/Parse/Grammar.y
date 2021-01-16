@@ -70,6 +70,7 @@ import           Explain.Meta
   '>='     { Token _ TokenRightChevronEq }
   '<='     { Token _ TokenLeftChevronEq }
   '!'      { Token _ TokenExclamationMark }
+  '~~~'    { Token _ TokenSkip }
 
 
 %nonassoc LOWEST
@@ -502,7 +503,9 @@ nameToPattern area n | n == "_"      = Meta emptyInfos area Src.PAny
 
 
 lexerWrap :: (Token -> Alex a) -> Alex a
-lexerWrap f = alexMonadScan >>= f
+lexerWrap f = alexMonadScan >>= (\x -> case x of
+  (Token _ (TokenSkip)) -> alexMonadScan >>= f
+  t -> f t)
 
 parseError :: Token -> Alex a
 parseError (Token (Area (Loc a l c) _) cls) =
