@@ -9,6 +9,8 @@ import           Debug.Trace                    ( trace )
 
 
 type Vars = M.Map String Scheme
+type Interfaces = M.Map Id Interface
+type Methods = M.Map String Scheme
 type TypeDecls = M.Map String Type
 
 
@@ -22,8 +24,8 @@ data Env
   = Env
     { envvars        :: Vars
     , envtypes       :: TypeDecls
-    , envinterfaces  :: M.Map Id Interface
-    , envmethods     :: M.Map Id Scheme
+    , envinterfaces  :: Interfaces
+    , envmethods     :: Methods
     , envcurrentpath :: FilePath
     }
     deriving(Eq, Show)

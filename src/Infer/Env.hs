@@ -41,7 +41,7 @@ lookupVar env x
           Nothing -> throwError $ InferError (UnboundVariable x) NoReason
 
       Nothing -> throwError $ InferError (UnboundVariable x) NoReason
-  | otherwise = case M.lookup x (envvars env) of
+  | otherwise = case M.lookup x (envvars env <> envmethods env) of
     Just x  -> return x
     Nothing -> throwError $ InferError (UnboundVariable x) NoReason
 
@@ -115,6 +115,7 @@ solveInterface env interface = case interface of
 
     return env' { envvars = envvars env <> ts', envmethods = envmethods env <> ts' }
 
+
 addConstraints :: Id -> Id -> Type -> Scheme
 addConstraints n tv t =
   let tv' = searchVarInType tv t
@@ -153,7 +154,7 @@ buildInitialEnv priorEnv AST { atypedecls, ainterfaces, ainstances, apath = Just
   = do
     tadts <- buildTypeDecls priorEnv apath atypedecls
     vars  <- resolveTypeDecls priorEnv apath tadts atypedecls
-    env   <- solveInterfaces initialEnv ainterfaces
+    env   <- solveInterfaces priorEnv ainterfaces
     env'  <- solveInstances (env { envtypes = M.union (envtypes initialEnv) tadts }) ainstances
     return env' { envvars        = envvars initialEnv <> vars <> envvars env
                 , envtypes       = M.union (envtypes initialEnv) tadts

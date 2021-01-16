@@ -42,13 +42,19 @@ instance Monad (Either e) {
   of = (x) => Right(x)
 }
 
-// interface Read a {
-//   read :: String -> a
-// }
+interface Read a {
+  read :: String -> a
+}
 
-// instance Read Number {
-//   read = (x) => (#- -#)
-// }
+instance Read Number {
+  read = (s) => (#- parseFloat(s, 10) -#)
+}
+
+// read("3")
+r = (read("3") :: Number) + 1
+
+IO.log(r)
+
 
 inc = (a) => a + 1
 

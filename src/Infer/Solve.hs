@@ -137,7 +137,10 @@ inferVar env exp@(Meta _ area (Src.Var n)) = case n of
         then
           if isMethod env e
             then Slv.Solved t emptyArea $ Slv.Placeholder (Slv.MethodRef (predClass $ head ps) n, predType $ head ps) e
-            else Slv.Solved t emptyArea $ Slv.Placeholder (Slv.ClassRef (predClass $ head ps), predType $ head ps) e
+            else 
+              case predType $ head ps of
+                TVar _ -> Slv.Solved t emptyArea $ Slv.Placeholder (Slv.ClassRef (predClass $ head ps), predType $ head ps) e
+                _ -> e
         else e
 
     return (M.empty, ps, t, e')
@@ -541,13 +544,14 @@ split env fs gs ps = do
     else return (ds, rs)
 
 updatePlaceholders :: Substitution  -> Slv.Exp -> Slv.Exp
-updatePlaceholders s (Slv.Solved t a e) = case e of
+updatePlaceholders s (Slv.Solved t a e) = case (trace ("SUBST: "<>ppShow s<>"\nE: "<>ppShow e) e) of
   Slv.Placeholder (ref, t) exp -> Slv.Solved t a $ Slv.Placeholder (ref, apply s t) exp
   Slv.App abs arg final -> Slv.Solved t a $ Slv.App (updatePlaceholders s abs) (updatePlaceholders s arg) final
   Slv.Abs param es -> Slv.Solved t a $ Slv.Abs param (updatePlaceholders s <$> es)
   Slv.Where exp iss -> Slv.Solved t a $ Slv.Where (updatePlaceholders s exp) (updateIs s <$> iss)
   Slv.Assignment n exp -> Slv.Solved t a $ Slv.Assignment n (updatePlaceholders s exp)
   Slv.ListConstructor li -> Slv.Solved t a $ Slv.ListConstructor (updateListItem s <$> li)
+  Slv.TypedExp exp typing -> Slv.Solved t a $ Slv.TypedExp (updatePlaceholders s exp) typing
   _ -> Slv.Solved t a e
  where
    updateIs :: Substitution -> Slv.Is -> Slv.Is
@@ -634,21 +638,23 @@ solveTable table ast = do
 solveTable' :: Src.Table -> Src.AST -> Infer (Slv.Table, Env)
 solveTable' table ast@Src.AST { Src.aimports } = do
   -- First we resolve imports to update the env
-  (inferredASTs, adts, vars) <- solveImports table aimports
+  (inferredASTs, adts, vars, interfaces, methods) <- solveImports table aimports
 
   let importEnv = Env { envtypes       = adts
                       , envvars        = vars
-                      , envinterfaces  = M.empty
                       , envcurrentpath = fromMaybe "" (Src.apath ast)
+                      , envinterfaces  = interfaces
+                      , envmethods     = methods
                       }
 
   -- Then we infer the ast
   env <- buildInitialEnv importEnv ast
   let envWithImports = env { envtypes = M.union (envtypes env) adts
                            , envvars  = M.union (envvars env) vars
+                          --  , envmethods = envmethods env <> methods
                            }
 
-  inferredAST <- inferAST envWithImports ast
+  inferredAST <- inferAST envWithImports (trace ("ENV: "<>(ppShow $ Src.apath ast)<>"\n"<>ppShow envWithImports) ast)
 
   case Slv.apath inferredAST of
     Just fp -> return (M.insert fp inferredAST inferredASTs, envWithImports)
@@ -679,7 +685,7 @@ exportedADTs Slv.AST { Slv.atypedecls } =
   Slv.adtName <$> filter Slv.adtExported atypedecls
 
 
-solveImports :: Src.Table -> [Src.Import] -> Infer (Slv.Table, TypeDecls, Vars)
+solveImports :: Src.Table -> [Src.Import] -> Infer (Slv.Table, TypeDecls, Vars, Interfaces, Methods)
 solveImports table (imp : is) = do
   let modulePath = Src.getImportAbsolutePath imp
 
@@ -735,7 +741,7 @@ solveImports table (imp : is) = do
       throwError $ InferError (ImportNotFound modulePath) NoReason
 
 
-  (nextTable, nextADTs, nextVars) <- solveImports table is
+  (nextTable, nextADTs, nextVars, nextInterfaces, nextMethods) <- solveImports table is
 
   mergedADTs                      <- do
     withNamespaces <- case imp of
@@ -767,9 +773,11 @@ solveImports table (imp : is) = do
     ( M.insert modulePath solvedAST (M.union solvedTable nextTable)
     , mergedADTs
     , M.map generify allVarsT
+    , envinterfaces envSolved <> nextInterfaces
+    , envmethods envSolved <> nextMethods
     )
 
-solveImports _ [] = return (M.empty, envtypes initialEnv, envvars initialEnv)
+solveImports _ [] = return (M.empty, envtypes initialEnv, envvars initialEnv, envinterfaces initialEnv, envmethods initialEnv)
 
 isADT :: Slv.TypeDecl -> Bool
 isADT Slv.ADT{} = True
