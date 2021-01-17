@@ -68,7 +68,7 @@ bySuper env p@(IsIn i ts)
          s      = M.fromList $ zip (sig env i) ts
 
 byInst                   :: Env -> Pred -> Infer [Pred]
-byInst env p@(IsIn i t)    = tryInsts (insts env i)
+byInst env p@(IsIn interface t)    = tryInsts (insts env interface)
    where
     tryInst (Instance (ps :=> h)) = do
         u <- match h p
@@ -81,7 +81,7 @@ byInst env p@(IsIn i t)    = tryInsts (insts env i)
 
     tryInsts [] = case head t of
       TVar _ -> return []
-      _ -> throwError $ InferError (NoInstanceFound i (head t)) NoReason
+      _ -> throwError $ InferError (NoInstanceFound interface (head t)) NoReason
     tryInsts (inst:is) = catchError (tryInst inst) (\e -> tryInsts is)
 
 

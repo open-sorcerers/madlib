@@ -11,6 +11,7 @@ import J from "Json"
 import E from "Either"
 import S from "System"
 import String from "String"
+import F from "Function"
 
 
 IO.log("Installing dependencies ...")
@@ -44,7 +45,7 @@ installPackages = pipe(
       W.parallel
     )(depMap)
   ),
-  W.fulfill(IO.log, IO.log)
+  W.fulfill(pipe(IO.log, F.always(())), pipe(IO.log, F.always(())))
 )
 
 

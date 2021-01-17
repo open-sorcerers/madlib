@@ -19,7 +19,7 @@ testFilePath = W.chain(
 madlibPath :: W.Wish String String
 madlibPath = S.getEnv("MADLIB_PATH") |> W.chainRej((x) => (W.of("madlib")))
 
-prepare :: W.Wish e <String, String, String>
+prepare :: W.Wish String <String, String, String>
 prepare = pipe(
   W.parallel,
   W.map(where
@@ -34,11 +34,11 @@ prepare
   |> W.chain(where {
        is <entry, dest, madlib>:
          S.exec(madlib ++ " compile -i " ++ entry ++ " -o .tests/")
-           |> W.chain((_) => (S.spawn("node " ++ dest)))
+           |> W.andDo(S.spawn("node " ++ dest))
            |> W.mapRej((rej) => where(rej) is S.CommandError _ msg: msg)
            |> W.chain((a) => {
                S.exec("rm -r .tests")
                return W.of(a)
              })
      })
-  |> W.fulfill(IO.err, F.identity)
+  |> W.fulfill(pipe(IO.err, F.always(())), F.always(()))

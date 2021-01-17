@@ -188,7 +188,8 @@ inferApp :: Env -> Src.Exp -> Infer (Substitution, [Pred], Type, Slv.Exp)
 inferApp env (Meta _ area (Src.App abs arg final)) = do
   tv                  <- newTVar Star
   (s1, ps1, t1, eabs) <- infer env abs
-  (s2, ps2, t2, earg) <- infer (apply (removeRecordTypes s1) env) arg
+  (s2, ps2, t2, earg) <- infer env arg
+  -- (s2, ps2, t2, earg) <- infer (apply (removeRecordTypes s1) env) arg
 
   s3             <- catchError (unify (apply s2 t1) (t2 `fn` tv)) (\case
         InferError (UnificationError _ _) _ ->
@@ -518,10 +519,13 @@ makeGeneric gens ks t = case t of
     in  (gens'', ks'', TApp l' r')
 
   TRecord fs o ->
-    let update = M.map (makeGeneric gens ks) fs
-        fs'    = M.map lst update
-        gens'  = foldr M.union gens $ M.elems $ M.map beg update
-        ks'    = concat $ M.elems $ M.map mid update
+    let (gens', ks', fs') = M.foldrWithKey (\k t (gens'', ks'', fs'') ->
+            let (gens''', ks''', t') = makeGeneric gens'' ks'' t
+            in  (gens''', ks''', M.insert k t' fs'')
+          ) (gens, ks, M.empty) fs
+        -- fs'    = M.map lst update
+        -- gens'  = foldr M.union gens $ M.elems $ M.map beg update
+        -- ks'    = concat $ M.elems $ M.map mid update
     in  (gens', ks', TRecord fs' o)
 
   TGen _ -> (gens, ks, t)
@@ -597,45 +601,26 @@ inferImplicitlyTyped env exp = do
         Nothing -> env
 
   (s, ps, t, e) <- infer env' exp
-  s'            <- (s `compose`) <$> unify tv t
-  let ps' = apply s' ps
-      t'  = apply s' tv
-      fs  = ftv (apply s' env')
+  s'            <- unify t tv
+  let s'' = s `compose` s'
+      ps' = apply s'' ps
+      t'  = apply s'' tv
+      fs  = ftv (apply s'' env)
       vs  = ftv t'
       gs  = vs \\ fs
   (ds, rs) <- split env' fs vs ps'
 
   case getExpName exp of
-    Just n  -> return (s', ds, extendVars env' (n, quantify gs $ rs :=> t'), e)
-    Nothing -> return (s', ds ++ rs, env', e)
+    -- Just n  -> return (s'', ds, extendVars env' (n, Forall [] $ ps' :=> t'), e)
+    Just n  -> return (s'', ds, extendVars env' (n, quantify gs $ ps' :=> t'), e)
+    Nothing -> return (s'', ds ++ rs, env', e)
 
-
--- type Expl = (Id, Scheme, [Alt])
-
--- tiExpl :: ClassEnv -> [Assump] -> Expl -> TI [Pred]
--- tiExpl ce as (i, sc, alts)
--- = do (qs :=> t) <- freshInst sc
---       ps         <- tiAlts ce as alts t
---       s          <- getSubst
---       let qs'     = apply s qs
---           t'      = apply s t
---           fs      = tv (apply s as)
---           gs      = tv t' \\ fs
---           sc'     = quantify gs (qs':=>t')
---           ps'     = filter (not . entail ce qs') (apply s ps)
---       (ds,rs)    <- split ce fs gs ps'
---       if sc /= sc' then
---           fail "signature too general"
---         else if not (null rs) then
---           fail "context too weak"
---         else
---           return ds
 
 inferExplicitlyTyped :: Env -> Src.Exp -> Infer (Substitution, [Pred], Env, Slv.Exp)
 inferExplicitlyTyped env e@(Meta _ a (Src.TypedExp exp typing)) = do
   sc            <- typingToScheme env typing
 
-  let env' = case getExpName exp of
+  let env' = case getExpName (trace ("SC: "<>ppShow sc) exp) of
         Just n  -> extendVars env (n, sc)
         Nothing -> env
 
@@ -645,15 +630,15 @@ inferExplicitlyTyped env e@(Meta _ a (Src.TypedExp exp typing)) = do
 
   let qs' = apply s' qs
       t'' = apply s' t'
-      fs  = ftv (apply s' env')
+      fs  = ftv (apply s' env)
       gs  = ftv t'' \\ fs
       sc' = quantify gs (qs' :=> t'')
   ps' <- filterM ((not <$>) . entail env' qs') (apply s' ps)
-  (ds, rs) <- split env' fs gs (trace ("T'': "<>ppShow t''<>"\nGS: "<>ppShow gs<>"\nT': "<>ppShow t') ps')
+  (ds, rs) <- split env' fs gs ps'
 
   if sc /= sc' then
     throwError $ InferError (SignatureTooGeneral sc sc') (SimpleReason (envcurrentpath env') a)
-  else if not (null rs) then
+  else  if not (null rs) then
     throwError $ InferError ContextTooWeak NoReason
   else do
     let e' = updateType e t''
@@ -682,6 +667,59 @@ inferExps env (e : xs) = do
   let e''' = updatePlaceholders s e''
 
   (e''' :) <$> inferExps env' xs
+
+-- inferExps env (e : xs) = do
+--   tv <- newTVar Star
+--   let sc = toScheme tv
+--   let env' = case Src.extractExp e of
+--           Src.Assignment name _ -> extendVars env (name, sc)
+--           _                     -> env
+
+--   i@(s, ps, t, e') <- infer env' e
+
+--   s' <- unify t tv
+
+--   let s'' = s `compose` s'
+
+--   let ps' = apply s'' ps
+--   let t'  = apply s'' tv
+--   let fs  = ftv (apply s'' env)
+--   let vs  = ftv t'
+--   let gs  = vs \\ fs
+--   (ds, rs) <- split env fs gs ps'
+
+--   let exp        = Slv.extractExp e'
+--   let scheme = quantify (collectQualTypeVars $ ps' :=> t') $ ps' :=> t'
+
+--   let e'' = if not (null ps')
+--       then case e' of
+--         Slv.Solved a t (Slv.Assignment n e'') -> case predType $ head ps' of
+--           TVar (TV n' _) -> Slv.Solved a t $ Slv.Assignment n (Slv.Solved a t $ Slv.Placeholder (Slv.ClassRef (predClass $ head ps'), predType $ head ps') e'') 
+--           _ -> e'
+--         Slv.Solved a t (Slv.TypedExp (Slv.Solved a' t' (Slv.Assignment n e'')) _) -> case predType $ head ps' of
+--           TVar (TV n' _) -> Slv.Solved a t $ Slv.Assignment n (Slv.Solved a t $ Slv.Placeholder (Slv.ClassRef (predClass $ head ps'), predType $ head ps') e'') 
+--           _ -> e'
+--         _ -> e'
+--       else e'
+
+--   let e''' = updatePlaceholders s'' e''
+
+--   let
+--     env' = case exp of
+--       Slv.Assignment name _ -> extendVars env (name, Forall [] $ ps' :=> t')
+
+--       Slv.TypedExp (Slv.Solved _ _ (Slv.Assignment name _)) _ ->
+--         extendVars env (name, scheme)
+
+--       Slv.TypedExp (Slv.Solved _ _ (Slv.Export (Slv.Solved _ _ (Slv.Assignment name _)))) _
+--         -> extendVars env (name, scheme)
+
+--       Slv.Export (Slv.Solved _ _ (Slv.Assignment name _)) ->
+--         extendVars env (name, Forall [] $ ps' :=> t')
+
+--       _ -> env
+
+--   (e''' :) <$> inferExps env' (trace ("E''': "<>ppShow e''') xs)
 
 
 solveTable :: Src.Table -> Src.AST -> Infer Slv.Table

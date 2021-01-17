@@ -100,6 +100,7 @@ argToType _ gens typeDecls _ params (Meta _ _ (TRSingle n))
   | n == "Number" = return tNumber
   | n == "Boolean" = return tBool
   | n == "String" = return tStr
+  | n == "()" = return tUnit 
   | isLower (head n) = return
   $ fromMaybe (TGen 0) (M.lookup n (M.fromList gens))
   | otherwise = case M.lookup n typeDecls of

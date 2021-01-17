@@ -21,7 +21,7 @@ export insert = (k, v, m) => (where(m)
   is Map_ items:
     L.reject(
       (item) => (where(item)
-        is <kk, v>: kk == k
+        is <kk, _>: kk == k
       )
       , items
     )
@@ -35,7 +35,7 @@ export get = (k, m) => (where(m)
   is Map_ items:
     L.find(
       (item) => (where(item)
-        is <kk, v>: k == kk
+        is <kk, _>: k == kk
       ),
       items
     )

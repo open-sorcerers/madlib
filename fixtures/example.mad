@@ -1,10 +1,13 @@
-flip :: (a -> b -> c) -> (b -> a -> c)
-export flip = (fn) => (
-  (b, a) => fn(a, b)
-)
+import W  from "Wish"
+import IO from "IO"
+import F  from "Function"
 
-
-export alias Wish e a = (e -> m) -> (a -> n) -> ()
-
-of :: a -> Wish e a
-export of = (a) => ((bad, good) => (good(a)))
+pipe(
+  W.of,
+  W.map((x) => x + 1),
+  W.chain((x) => W.of(3)),
+  W.fulfill(
+    F.always(()),
+    pipe(IO.log, F.always(()))
+  )
+)(3)

@@ -17,6 +17,7 @@ import           Debug.Trace                    ( trace )
 import           Text.Show.Pretty               ( ppShow )
 import           Infer.Instantiate              ( newTVar )
 import qualified Data.Set as S
+import Data.List (nub, union)
 
 
 typingToScheme :: Env -> Src.Typing -> Infer Scheme
@@ -92,19 +93,19 @@ lookupADT env x = do
 
 collectQualTypeVars :: Qual Type -> [TVar]
 collectQualTypeVars (ps :=> t) =
-  S.toList $ S.fromList $ collectVars t <> concat (collectPredVars <$> ps)
+  S.toList $ S.fromList $ collectVars t ++ concat (collectPredVars <$> ps)
 
 
 collectVars :: Type -> [TVar]
 collectVars t = case t of
   TVar tv      -> [tv]
-  TApp    l  r -> collectVars l <> collectVars r
-  TRecord fs _ -> concat $ collectVars <$> M.elems fs
+  TApp    l  r -> collectVars l `union` collectVars r
+  TRecord fs _ -> nub $ concat $ collectVars <$> M.elems fs
   _            -> []
 
 
 collectPredVars :: Pred -> [TVar]
-collectPredVars (IsIn _ ts) = concat $ collectVars <$> ts
+collectPredVars (IsIn _ ts) = nub $ concat $ collectVars <$> ts
 
 
 updateAliasVars :: Type -> [Type] -> Infer Type
@@ -117,7 +118,7 @@ updateAliasVars t args = do
           update ty = case ty of
             TVar tv -> case M.lookup tv instArgs of
               Just x  -> return x
-              Nothing -> newTVar Star
+              Nothing -> return ty
             TApp l r -> do
               l' <- update l
               r' <- update r

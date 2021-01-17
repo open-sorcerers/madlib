@@ -77,17 +77,15 @@ updateFnh = (section) => (
 collectFnh :: Lcov.LcovInfo -> Lcov.LcovInfo
 collectFnh = (lcov) => L.map(updateFnh, lcov)
 
-collect :: List a -> Lcov.LcovInfo -> Lcov.LcovInfo
+// collect :: List HP.HitPoint -> Lcov.LcovInfo -> Lcov.LcovInfo
 collect = (hps, lcov) =>
   L.reduceL(
-    (currLcov, hp) =>
-      where(hp)
-        is HP.FunctionHit astPath name: addFunctionHit(astPath, name, currLcov)
-        is HP.LineHit astPath line: addLineHit(astPath, line, currLcov),
+    (currLcov) => where
+      is HP.FunctionHit astPath name: addFunctionHit(astPath, name, currLcov)
+      is HP.LineHit astPath line: addLineHit(astPath, line, currLcov),
     lcov,
-    hps)
-  |> collectLh
-  |> collectFnh
+    hps
+  ) |> collectLh |> collectFnh
 
 
 buildRow :: String -> Number -> Number -> IO.Row
@@ -151,7 +149,7 @@ formatFailureOutput = (description, result) =>
         ++ S.show(actual)
       )
 
-test :: String -> (x -> W.Wish AssertionError String) -> W.Wish String String
+test :: String -> (String -> W.Wish AssertionError String) -> W.Wish String String
 export test = (description) => pipe(
   (run) => run(description),
   W.map(formatSuccessOutput(description)),
@@ -195,12 +193,16 @@ export runTests = (tests) => {
 
   return pipe(
     W.parallel,
-    W.fulfill(F.identity, (results) => pipe(
-      W.chain(where
-        is true : collectCoverage(results)
-        is false: W.of(<results, []>)
-      ),
-      W.fulfill(F.identity, displayResults)
-    )(isCoverageEnabled))
+    W.fulfill(F.always(()), (results) => {
+      pipe(
+        W.chain(where
+          is true : collectCoverage(results)
+          is false: W.of(<results, []>)
+        ),
+        W.fulfill(F.always(()), pipe(displayResults, F.always(())))
+      )(isCoverageEnabled)
+
+      return ()
+    })
   )(tests)
 }

@@ -52,8 +52,8 @@ Right
                   (TApp
                      (TApp
                         (TCon (TC "(->)" (Kfun Star (Kfun Star Star))))
-                        (TApp (TCon (TC "Maybe" (Kfun Star Star))) (TVar (TV "k" Star))))
-                     (TVar (TV "k" Star)))
+                        (TApp (TCon (TC "Maybe" (Kfun Star Star))) (TVar (TV "e" Star))))
+                     (TVar (TV "e" Star)))
                   (Area (Loc 82 7 1) (Loc 84 7 3))
                   (Var "fn"))
                (Solved
@@ -65,8 +65,8 @@ Right
                         (TApp
                            (TApp
                               (TCon (TC "(->)" (Kfun Star (Kfun Star Star))))
-                              (TVar (TV "m" Star)))
-                           (TApp (TCon (TC "Maybe" (Kfun Star Star))) (TVar (TV "m" Star))))
+                              (TVar (TV "l" Star)))
+                           (TApp (TCon (TC "Maybe" (Kfun Star Star))) (TVar (TV "l" Star))))
                         (Area (Loc 85 7 4) (Loc 89 7 8))
                         (Var "Just"))
                      (Solved

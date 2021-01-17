@@ -50,7 +50,7 @@ instance Substitutable Scheme where
 
 instance Substitutable a => Substitutable [a] where
   apply = fmap . apply
-  ftv = foldr (union . ftv) []
+  ftv = nub . concatMap ftv
 
 instance Substitutable Env where
   apply s env = env { envvars = M.map (apply s) $ envvars env }

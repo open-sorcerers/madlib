@@ -510,7 +510,7 @@ spec = do
               [ "data Maybe a = Just a | Nothing"
               , "flip :: (a -> b -> c) -> (b -> a -> c)"
               , "export flip = (fn) => ("
-              , "  (a, b) => (fn(b, a))"
+              , "  (b, a) => (fn(a, b))"
               , ")"
               , ""
               , "nth :: Number -> List a -> Maybe a"

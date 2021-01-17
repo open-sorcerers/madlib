@@ -7,7 +7,7 @@ export data CommandError = CommandError Number String
 
 exec :: String -> W.Wish CommandError String
 export exec = (command) => (#-
-  (bad, good) => {
+  W.Wish((bad, good) => {
     execJs(command, (err, stdout, stderr) => {
       if (err) {
         bad(CommandError(err.code, err.message))
@@ -16,12 +16,12 @@ export exec = (command) => (#-
         good(stdout)
       }
     })
-  }
+  })
 -#)
 
 spawn :: String -> W.Wish CommandError Number
 export spawn = (command) => (#-
-  (bad, good) => {
+  W.Wish((bad, good) => {
     const split = command.split(" ")
     const spawned = spawnJs(split[0], split.slice(1));
 
@@ -41,7 +41,7 @@ export spawn = (command) => (#-
         bad(code)
       }
     });
-  }
+  })
 -#)
 
 
