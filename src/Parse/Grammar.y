@@ -184,6 +184,11 @@ typings :: { Src.Typing }
   | compositeTyping              %shift { $1 }
   | typing                       %shift { $1 }
   | constraint '=>' typings      %shift { Meta emptyInfos (mergeAreas (getArea $1) (getArea $3)) (Src.TRConstrained [$1] $3) }
+  | '(' constraints ')' '=>' typings      %shift { Meta emptyInfos (mergeAreas (tokenToArea $1) (getArea $5)) (Src.TRConstrained $2 $5) }
+
+constraints :: { [Src.Typing] }
+  : constraint { [$1] }
+  | constraints ',' constraint { $1 <> [$3] }
 
 constraint :: { Src.Typing }
   : name name { Meta emptyInfos (mergeAreas (tokenToArea $1) (tokenToArea $2)) (Src.TRComp (strV $1) [Meta emptyInfos (tokenToArea $2) (Src.TRSingle (strV $2))]) }

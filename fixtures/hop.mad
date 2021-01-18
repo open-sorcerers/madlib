@@ -51,37 +51,32 @@ instance Read Number {
 }
 
 // read("3")
-r = (read("3") :: Number) + 1
+(read("3") :: Number)
 
-IO.log(r)
+// IO.log(r)
 
 
-inc = (a) => a + 1
+// inc = (a) => a + 1
 
-map(inc, [1, 2 ,3]) |> IO.log
+// map(inc, [1, 2 ,3]) |> IO.log
 
-chain((x) => Just(x + 1), Just(3))
+// chain((x) => Just(x + 1), Just(3))
 
-doIt :: Functor m => m Number -> m Number
-doIt = (x) => map((k) => k + 1, x)
+doIt :: (Monad m, Functor m) => m Number -> m Number
+doIt = (x) => chain((k) => of(k + 1), x)
 
 doIt(Just(3)) |> map(IO.log)
 
-p = 1
+// doIt(Just(3)) |> map(IO.log)
+
+// p = 1
 
 
-fn = map(inc)
+// fn = map(inc)
 
-fn(Just(3)) |> IO.log
-fn([4, 5, 6]) |> IO.log
-// fn(Right(4)) |> IO.log
+// fn(Just(3)) |> IO.log
+// fn([4, 5, 6]) |> IO.log
 
 hideCall = (x) =>
   where(chain((a) => Just(a + 1), x))
     is Just 2: chain((a) => Right(a + 1), Right(2))
-
-
-shadow = where
-  is Just x : x
-  is Nothing: 1
-

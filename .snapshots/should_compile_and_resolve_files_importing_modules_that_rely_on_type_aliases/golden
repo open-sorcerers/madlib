@@ -102,4 +102,4 @@ const getMadlibType = (value) => {
     return '__UNKNOWN__';
   }
 };
-W.fulfill(curryPowder((a) => a), curryPowder((a) => a))(W.map(curryPowder((x) => x + `!`))(W.chain(curryPowder((x) => W.of(`finally a string`)))(W.chain(curryPowder((x) => W.of(x * 3)))(W.map(curryPowder((x) => x % 2))(W.of(3))))));
+W.fulfill(curryPowder((a) => ({ __constructor: "Unit", __args: [] })), curryPowder((a) => ({ __constructor: "Unit", __args: [] })))(W.map(curryPowder((x) => x + `!`))(W.chain(curryPowder((x) => W.of(`finally a string`)))(W.chain(curryPowder((x) => W.of(x * 3)))(W.map(curryPowder((x) => x % 2))(W.of(3))))));

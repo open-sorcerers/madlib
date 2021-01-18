@@ -135,21 +135,39 @@ inferVar env exp@(Meta _ area (Src.Var n)) = case n of
 
     let e = Slv.Solved t area $ Slv.Var n
 
-    let e' = if not (null ps)
-        then
-          if isMethod env e
-            then Slv.Solved t emptyArea $ Slv.Placeholder (Slv.MethodRef (predClass $ head ps) n, predType $ head ps) e
-            else 
-              case predType $ head ps of
-                TVar _ -> Slv.Solved t emptyArea $ Slv.Placeholder (Slv.ClassRef (predClass $ head ps), predType $ head ps) e
-                _ -> e
-        else e
+    -- let e' = if not (null ps)
+    --     then
+    --       if isMethod env e
+    --         then Slv.Solved t emptyArea $ Slv.Placeholder (Slv.MethodRef (predClass $ head ps) n, predType $ head ps) e
+    --         else 
+    --           case predType $ head ps of
+    --             TVar _ -> Slv.Solved t emptyArea $ Slv.Placeholder (Slv.ClassRef (predClass $ head ps), predType $ head ps) e
+    --             _ -> e
+    --     else e
+    let e' = insertVarPlaceholders env e ps
 
     return (M.empty, ps, t, e')
 
 enhanceVarError :: Env -> Src.Exp -> Area -> InferError -> Infer Scheme
 enhanceVarError env exp area (InferError e _) = throwError
   $ InferError e (Reason (VariableNotDeclared exp) (envcurrentpath env) area)
+
+
+insertVarPlaceholders :: Env -> Slv.Exp -> [Pred] -> Slv.Exp
+insertVarPlaceholders _ exp [] = exp
+
+insertVarPlaceholders env exp@(Slv.Solved t a e) (p:ps) =
+  -- let exp' =
+        if isMethod env exp
+          then case e of
+            Slv.Var n -> Slv.Solved t a $ Slv.Placeholder (Slv.MethodRef (predClass p) n, predType p) exp
+            _ -> exp
+          else
+            let exp' = case predType p of
+                  TVar _ -> Slv.Solved t a $ Slv.Placeholder (Slv.ClassRef (predClass p), predType p) exp
+                  _ -> exp
+            in insertVarPlaceholders env exp' ps
+  -- in  insertVarPlaceholders env exp' ps
 
 
 
@@ -188,8 +206,7 @@ inferApp :: Env -> Src.Exp -> Infer (Substitution, [Pred], Type, Slv.Exp)
 inferApp env (Meta _ area (Src.App abs arg final)) = do
   tv                  <- newTVar Star
   (s1, ps1, t1, eabs) <- infer env abs
-  (s2, ps2, t2, earg) <- infer env arg
-  -- (s2, ps2, t2, earg) <- infer (apply (removeRecordTypes s1) env) arg
+  (s2, ps2, t2, earg) <- infer (apply (removeRecordTypes s1) env) arg
 
   s3             <- catchError (unify (apply s2 t1) (t2 `fn` tv)) (\case
         InferError (UnificationError _ _) _ ->
@@ -483,8 +500,8 @@ extendRecord s t = case t of
 
 inferTypedExp :: Env -> Src.Exp -> Infer (Substitution, [Pred], Type, Slv.Exp)
 inferTypedExp env (Meta _ area (Src.TypedExp exp typing)) = do
-  s          <- typingToScheme env typing
-  (ps :=> t) <- instantiate s
+  sc          <- typingToScheme env typing
+  (ps :=> t) <- instantiate sc
 
   (s1, ps1, t1, e1) <- infer env exp
   s2           <- catchError (unify t t1) (\(InferError e _) ->
@@ -496,7 +513,7 @@ inferTypedExp env (Meta _ area (Src.TypedExp exp typing)) = do
 
   return
     ( s1 `compose` s2
-    , ps ++ ps1
+    , ps
     , t
     , Slv.Solved
       t
@@ -548,7 +565,7 @@ split env fs gs ps = do
 
 updatePlaceholders :: Substitution  -> Slv.Exp -> Slv.Exp
 updatePlaceholders s (Slv.Solved t a e) = case e of
-  Slv.Placeholder (ref, t) exp -> Slv.Solved t a $ Slv.Placeholder (ref, apply s t) exp
+  Slv.Placeholder (ref, t) exp -> Slv.Solved t a $ Slv.Placeholder (ref, apply s t) (updatePlaceholders s exp)
   Slv.App abs arg final -> Slv.Solved t a $ Slv.App (updatePlaceholders s abs) (updatePlaceholders s arg) final
   Slv.Abs param es -> Slv.Solved t a $ Slv.Abs param (updatePlaceholders s <$> es)
   Slv.Where exp iss -> Slv.Solved t a $ Slv.Where (updatePlaceholders s exp) (updateIs s <$> iss)
@@ -611,22 +628,24 @@ inferImplicitlyTyped env exp = do
   (ds, rs) <- split env' fs vs ps'
 
   case getExpName exp of
-    -- Just n  -> return (s'', ds, extendVars env' (n, Forall [] $ ps' :=> t'), e)
-    Just n  -> return (s'', ds, extendVars env' (n, quantify gs $ ps' :=> t'), e)
-    Nothing -> return (s'', ds ++ rs, env', e)
+    -- TODO: Return two lists of [Pred], one for composing all remaining preds in a Let, and one for generating Placeholders in inferExps.
+    Just n  -> return (s'', ps', extendVars env' (n, quantify gs $ ps' :=> t'), e)
+    Nothing -> return (s'', ps', env', e)
+    -- Just n  -> return (s'', ds, extendVars env' (n, quantify gs $ ps' :=> t'), e)
+    -- Nothing -> return (s'', ds ++ rs, env', e)
 
 
 inferExplicitlyTyped :: Env -> Src.Exp -> Infer (Substitution, [Pred], Env, Slv.Exp)
 inferExplicitlyTyped env e@(Meta _ a (Src.TypedExp exp typing)) = do
   sc            <- typingToScheme env typing
 
-  let env' = case getExpName (trace ("SC: "<>ppShow sc) exp) of
+  let env' = case getExpName exp of
         Just n  -> extendVars env (n, sc)
         Nothing -> env
 
   (s, ps, t, e) <- infer env' exp
   (qs :=> t')  <- instantiate sc
-  s' <- (s `compose`) <$> unify t' t
+  s' <- (`compose` s) <$> unify t' (trace ("QT: "<>ppShow (qs :=> t')<>"\nINST-QT: "<>ppShow (ps :=> t)) t)
 
   let qs' = apply s' qs
       t'' = apply s' t'
@@ -642,6 +661,7 @@ inferExplicitlyTyped env e@(Meta _ a (Src.TypedExp exp typing)) = do
     throwError $ InferError ContextTooWeak NoReason
   else do
     let e' = updateType e t''
+    -- return (s', ps, env', Slv.Solved t'' a (Slv.TypedExp e' (updateTyping typing)))
     return (s', qs', env', Slv.Solved t'' a (Slv.TypedExp e' (updateTyping typing)))
 
 
@@ -653,73 +673,30 @@ inferExps env (e : xs) = do
     Meta _ _ (Src.TypedExp _ _) -> inferExplicitlyTyped env e
     _                           -> inferImplicitlyTyped env e
 
-  let e'' = if not (null ps)
-      then case e' of
-        Slv.Solved a t (Slv.Assignment n e'') -> case predType $ head ps of
-          TVar (TV n' _) -> Slv.Solved a t $ Slv.Assignment n (Slv.Solved a t $ Slv.Placeholder (Slv.ClassRef (predClass $ head ps), predType $ head ps) e'') 
-          _ -> e'
-        Slv.Solved a t (Slv.TypedExp (Slv.Solved a' t' (Slv.Assignment n e'')) _) -> case predType $ head ps of
-          TVar (TV n' _) -> Slv.Solved a t $ Slv.Assignment n (Slv.Solved a t $ Slv.Placeholder (Slv.ClassRef (predClass $ head ps), predType $ head ps) e'') 
-          _ -> e'
-        _ -> e'
-      else e'
+  let e'' = insertClassPlaceholders e' ps
 
   let e''' = updatePlaceholders s e''
 
   (e''' :) <$> inferExps env' xs
 
--- inferExps env (e : xs) = do
---   tv <- newTVar Star
---   let sc = toScheme tv
---   let env' = case Src.extractExp e of
---           Src.Assignment name _ -> extendVars env (name, sc)
---           _                     -> env
 
---   i@(s, ps, t, e') <- infer env' e
+insertClassPlaceholders :: Slv.Exp -> [Pred] -> Slv.Exp
+insertClassPlaceholders exp []     = exp
+insertClassPlaceholders exp (p:ps) = case exp of
+  Slv.Solved a t (Slv.Assignment n e) -> case predType p of
+    TVar (TV n' _) -> 
+      let exp' = Slv.Solved a t $ Slv.Assignment n (Slv.Solved a t $ Slv.Placeholder (Slv.ClassRef (predClass p), predType p) e) 
+      in  insertClassPlaceholders exp' ps
+    _ -> exp
 
---   s' <- unify t tv
+  Slv.Solved a t (Slv.TypedExp (Slv.Solved a' t' (Slv.Assignment n e)) _) -> case predType p of
+    TVar (TV n' _) ->
+      let exp' = Slv.Solved a t $ Slv.Assignment n (Slv.Solved a t $ Slv.Placeholder (Slv.ClassRef (predClass p), predType p) e) 
+      in  insertClassPlaceholders exp' ps
+    _ -> exp
 
---   let s'' = s `compose` s'
+  _ -> exp
 
---   let ps' = apply s'' ps
---   let t'  = apply s'' tv
---   let fs  = ftv (apply s'' env)
---   let vs  = ftv t'
---   let gs  = vs \\ fs
---   (ds, rs) <- split env fs gs ps'
-
---   let exp        = Slv.extractExp e'
---   let scheme = quantify (collectQualTypeVars $ ps' :=> t') $ ps' :=> t'
-
---   let e'' = if not (null ps')
---       then case e' of
---         Slv.Solved a t (Slv.Assignment n e'') -> case predType $ head ps' of
---           TVar (TV n' _) -> Slv.Solved a t $ Slv.Assignment n (Slv.Solved a t $ Slv.Placeholder (Slv.ClassRef (predClass $ head ps'), predType $ head ps') e'') 
---           _ -> e'
---         Slv.Solved a t (Slv.TypedExp (Slv.Solved a' t' (Slv.Assignment n e'')) _) -> case predType $ head ps' of
---           TVar (TV n' _) -> Slv.Solved a t $ Slv.Assignment n (Slv.Solved a t $ Slv.Placeholder (Slv.ClassRef (predClass $ head ps'), predType $ head ps') e'') 
---           _ -> e'
---         _ -> e'
---       else e'
-
---   let e''' = updatePlaceholders s'' e''
-
---   let
---     env' = case exp of
---       Slv.Assignment name _ -> extendVars env (name, Forall [] $ ps' :=> t')
-
---       Slv.TypedExp (Slv.Solved _ _ (Slv.Assignment name _)) _ ->
---         extendVars env (name, scheme)
-
---       Slv.TypedExp (Slv.Solved _ _ (Slv.Export (Slv.Solved _ _ (Slv.Assignment name _)))) _
---         -> extendVars env (name, scheme)
-
---       Slv.Export (Slv.Solved _ _ (Slv.Assignment name _)) ->
---         extendVars env (name, Forall [] $ ps' :=> t')
-
---       _ -> env
-
---   (e''' :) <$> inferExps env' (trace ("E''': "<>ppShow e''') xs)
 
 
 solveTable :: Src.Table -> Src.AST -> Infer Slv.Table

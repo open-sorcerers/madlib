@@ -10,7 +10,7 @@ export data Body = TextBody String
 
 get :: String -> W.Wish e Response
 export get = (url) => (#- {
-  return (bad, good) => {
+  return W.Wish((bad, good) => {
     const req = https.request(url, (response) => {
       if (response.statusCode === 302) {
         W.fulfill(bad, good, get(response.headers.location))
@@ -44,5 +44,5 @@ export get = (url) => (#- {
     });
     req.on('error', bad)
     req.end();
-  };
+  });
 } -#)

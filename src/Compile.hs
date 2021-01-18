@@ -268,6 +268,8 @@ instance Compilable Exp where
           then name
           else hpWrapLine coverage astPath l name
 
+        Placeholder (ClassRef cls1, TCon (TC n1 _)) (Slv.Solved _ _ (Placeholder (ClassRef cls2, TCon (TC n2 _)) (Slv.Solved _ _ (Var name)))) ->
+          name <> "(" <> cls1 <> "." <> n1 <> ")(" <> cls2 <> "." <> n2 <> ")"
         Placeholder (ClassRef cls, TCon (TC n _)) (Slv.Solved _ _ (Var name)) ->
           name <> "(" <> cls <> "." <> n <> ")"
         Placeholder (ClassRef cls, TVar (TV n _)) exp ->
@@ -539,7 +541,7 @@ instance Compilable Exp where
           compileCtorArg scope _ (x, p) =
             compilePattern (scope <> ".__args[" <> show x <> "]") p
 
-        _ -> "// Not implemented\n"
+        _ -> "/* Not implemented: "<> ppShow exp <>"*/\n"
 
 
 removeNamespace :: String -> String

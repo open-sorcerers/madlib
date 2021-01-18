@@ -265,7 +265,7 @@ spec = do
 
     it "should allow aliasing of types" $ do
       let codeA = unlines
-            [ "export alias Wish e a = (e -> m) -> (a -> n) -> o"
+            [ "export alias Wish e a = (e -> ()) -> (a -> ()) -> ()"
             , ""
             , "of :: a -> Wish e a"
             , "export of = (a) => ((bad, good) => (good(a)))"
@@ -286,21 +286,21 @@ spec = do
             , "  )"
             , ")"
             , ""
-            , "chain :: (a -> Wish f b) -> Wish e a -> Wish f b"
+            , "chain :: (a -> Wish f b) -> Wish f a -> Wish f b"
             , "export chain = (f, run) => ("
             , "  (bad, good) => ("
             , "    run(bad, (x) => (f(x)(bad, good)))"
             , "  )"
             , ")"
             , ""
-            , "chainRej :: (e -> Wish f b) -> Wish e a -> Wish f b"
+            , "chainRej :: (e -> Wish f a) -> Wish e a -> Wish f a"
             , "export chainRej = (f, run) => ("
             , "  (bad, good) => ("
             , "    run((x) => (f(x)(bad, good)), good)"
             , "  )"
             , ")"
             , ""
-            , "fulfill :: (e -> m) -> (a -> n) -> Wish e a -> o"
+            , "fulfill :: (e -> ()) -> (a -> ()) -> Wish e a -> ()"
             , "export fulfill = (bad, good, run) => ("
             , "  run(bad, good)"
             , ")"
@@ -311,7 +311,7 @@ spec = do
             , "W.of(3)"
             , "  |> W.map((x) => (x + 3))"
             , "  |> W.chain((x) => (W.of(x * 3)))"
-            , "  |> W.fulfill((a) => (a), (a) => (a))"
+            , "  |> W.fulfill((a) => (()), (a) => (()))"
             ]
           astB   = buildAST "./ModuleB" codeB
           actual = case (astA, astB) of
@@ -322,6 +322,43 @@ spec = do
             (_     , Left e) -> Left e
       snapshotTest "should allow aliasing of types" actual
 
+    ---------------------------------------------------------------------------
+
+
+
+    -- Interfaces:
+
+    it "should fail when the type is ambiguous" $ do
+      let code   = unlines
+            [ "interface Read a {"
+            , "  read :: String -> a"
+            , "}"
+            , ""
+            , "instance Read Number {"
+            , "  read = (s) => (#- parseFloat(s, 10) -#)"
+            , "}"
+            , ""
+            , "read('3')"
+            ]
+          actual = tester code
+      snapshotTest "should fail when the type is ambiguous" actual
+
+    it "should resolve ambiguity with type annotations" $ do
+      let code   = unlines
+            [ "interface Read a {"
+            , "  read :: String -> a"
+            , "}"
+            , ""
+            , "instance Read Number {"
+            , "  read = (s) => (#- parseFloat(s, 10) -#)"
+            , "}"
+            , ""
+            , "(read('3') :: Number)"
+            ]
+          actual = tester code
+      snapshotTest "should resolve ambiguity with type annotations" actual
+    
+    
     ---------------------------------------------------------------------------
 
 

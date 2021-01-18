@@ -77,7 +77,7 @@ updateFnh = (section) => (
 collectFnh :: Lcov.LcovInfo -> Lcov.LcovInfo
 collectFnh = (lcov) => L.map(updateFnh, lcov)
 
-// collect :: List HP.HitPoint -> Lcov.LcovInfo -> Lcov.LcovInfo
+collect :: List HP.HitPoint -> Lcov.LcovInfo -> Lcov.LcovInfo
 collect = (hps, lcov) =>
   L.reduceL(
     (currLcov) => where

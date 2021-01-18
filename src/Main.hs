@@ -47,7 +47,7 @@ import           Data.String.Utils
 
 
 main :: IO ()
-main = run =<< execParser opts
+main = execParser opts >>= run
 
 isCoverageEnabled :: IO Bool
 isCoverageEnabled = do

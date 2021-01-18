@@ -23,7 +23,7 @@ import Data.List (nub, union)
 typingToScheme :: Env -> Src.Typing -> Infer Scheme
 typingToScheme env typing = do
   (ps :=> t) <- qualTypingToQualType env typing
-  let vars = S.toList $ S.fromList $ collectVars (trace ("TYPING T: "<>ppShow t) t) <> concat (collectPredVars <$> ps)
+  let vars = S.toList $ S.fromList $ collectVars t <> concat (collectPredVars <$> ps)
   return $ quantify vars (ps :=> t)
 
 
