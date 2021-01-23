@@ -45,7 +45,7 @@ const getMadlibType = (value) => {
     return '__UNKNOWN__';
   }
 };
-const Show = {};
+export const Show = {};
 Show['Boolean'] = {
   show: curryPowder((b) => (b ? `True` : `False`))
 };

@@ -45,8 +45,8 @@ const getMadlibType = (value) => {
     return '__UNKNOWN__';
   }
 };
-const Functor = {};
-const Monad = {};
+export const Functor = {};
+export const Monad = {};
 Functor['Maybe'] = {
   map: curryPowder((f, __x__) => ((__x__) => {
   if (__x__.__constructor === "Just" && true) {
