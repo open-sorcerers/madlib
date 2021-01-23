@@ -10,7 +10,7 @@ import qualified Data.Map                      as M
 import qualified Data.Set                      as S
 import           Control.Monad.Except
 import           Control.Monad.State
-import           Data.Foldable                  ( foldrM )
+import           Data.Foldable                  (foldlM,  foldrM )
 import qualified Parse.AST                     as AST
 import qualified AST.Source                    as Src
 import qualified AST.Solved                    as Slv
@@ -134,16 +134,6 @@ inferVar env exp@(Meta _ area (Src.Var n)) = case n of
     (ps :=> t) <- instantiate sc
 
     let e = Slv.Solved t area $ Slv.Var n
-
-    -- let e' = if not (null ps)
-    --     then
-    --       if isMethod env e
-    --         then Slv.Solved t emptyArea $ Slv.Placeholder (Slv.MethodRef (predClass $ head ps) n, predType $ head ps) e
-    --         else 
-    --           case predType $ head ps of
-    --             TVar _ -> Slv.Solved t emptyArea $ Slv.Placeholder (Slv.ClassRef (predClass $ head ps), predType $ head ps) e
-    --             _ -> e
-    --     else e
     let e' = insertVarPlaceholders env e ps
 
     return (M.empty, ps, t, e')
@@ -157,17 +147,15 @@ insertVarPlaceholders :: Env -> Slv.Exp -> [Pred] -> Slv.Exp
 insertVarPlaceholders _ exp [] = exp
 
 insertVarPlaceholders env exp@(Slv.Solved t a e) (p:ps) =
-  -- let exp' =
-        if isMethod env exp
-          then case e of
-            Slv.Var n -> Slv.Solved t a $ Slv.Placeholder (Slv.MethodRef (predClass p) n, predType p) exp
+  if isMethod env exp
+    then case e of
+      Slv.Var n -> Slv.Solved t a $ Slv.Placeholder (Slv.MethodRef (predClass p) n, predType p) exp
+      _ -> exp
+    else
+      let exp' = case predType p of
+            TVar _ -> Slv.Solved t a $ Slv.Placeholder (Slv.ClassRef (predClass p), predType p) exp
             _ -> exp
-          else
-            let exp' = case predType p of
-                  TVar _ -> Slv.Solved t a $ Slv.Placeholder (Slv.ClassRef (predClass p), predType p) exp
-                  _ -> exp
-            in insertVarPlaceholders env exp' ps
-  -- in  insertVarPlaceholders env exp' ps
+      in insertVarPlaceholders env exp' ps
 
 
 
@@ -540,28 +528,8 @@ makeGeneric gens ks t = case t of
             let (gens''', ks''', t') = makeGeneric gens'' ks'' t
             in  (gens''', ks''', M.insert k t' fs'')
           ) (gens, ks, M.empty) fs
-        -- fs'    = M.map lst update
-        -- gens'  = foldr M.union gens $ M.elems $ M.map beg update
-        -- ks'    = concat $ M.elems $ M.map mid update
     in  (gens', ks', TRecord fs' o)
 
-  TGen _ -> (gens, ks, t)
-  _      -> (gens, ks, t)
-
-
-type Ambiguity       = (TVar, [Pred])
-
-ambiguities         :: [TVar] -> [Pred] -> [Ambiguity]
-ambiguities vs ps = [ (v, filter (elem v . ftv) ps) | v <- ftv ps \\ vs ]
-
-split :: Env -> [TVar] -> [TVar] -> [Pred] -> Infer ([Pred], [Pred])
-split env fs gs ps = do
-  ps' <- reduce env ps
-  let (ds, rs) = partition (all (`elem` fs) . ftv) ps'
-  let as = ambiguities (fs ++ gs) rs
-  if not (null as)
-    then throwError $ InferError (AmbiguousType (head as)) NoReason
-    else return (ds, rs)
 
 updatePlaceholders :: Substitution  -> Slv.Exp -> Slv.Exp
 updatePlaceholders s (Slv.Solved t a e) = case e of
@@ -588,9 +556,6 @@ isMethod env (Slv.Solved _ _ e) = case e of
   Slv.Var n -> Just True == (M.lookup n (envmethods env) >> return True)
   _ -> False
 
-varName :: Slv.Exp -> String
-varName = \case Slv.Solved _ _ (Slv.Var n) -> n
-
 
 getExpName :: Src.Exp -> Maybe String
 getExpName (Meta _ _ exp) = case exp of
@@ -609,6 +574,30 @@ getExpName (Meta _ _ exp) = case exp of
   _ -> Nothing
 
 
+type Ambiguity       = (TVar, [Pred])
+
+ambiguities         :: [TVar] -> [Pred] -> [Ambiguity]
+ambiguities vs ps = [ (v, filter (elem v . ftv) ps) | v <- ftv ps \\ vs ]
+
+split :: Env -> [TVar] -> [TVar] -> [Pred] -> Infer ([Pred], [Pred])
+split env fs gs ps = do
+  ps' <- reduce env ps
+  let (ds, rs) = partition (all (`elem` fs) . ftv) ps'
+  let as = ambiguities (fs ++ gs) rs
+  if not (null as)
+    then throwError $ InferError (AmbiguousType (head as)) NoReason
+    else return (ds, rs)
+
+verifyPred :: Type -> Pred -> Infer Bool
+verifyPred t p@(IsIn n [t']) = case t of
+  TApp l _ -> verifyPred l p
+  TCon (TC "(->)" _) -> return True
+  _ -> case t' of
+      TCon _ -> return True
+      TApp l _ -> verifyPred t (IsIn n [l])
+      TVar x -> throwError $ InferError (AmbiguousType (x, [IsIn n [t']])) NoReason
+
+
 inferImplicitlyTyped :: Env -> Src.Exp -> Infer (Substitution, [Pred], Env, Slv.Exp)
 inferImplicitlyTyped env exp = do
   tv            <- newTVar Star
@@ -625,14 +614,13 @@ inferImplicitlyTyped env exp = do
       fs  = ftv (apply s'' env)
       vs  = ftv t'
       gs  = vs \\ fs
-  (ds, rs) <- split env' fs vs ps'
+  (ds, rs) <- split env' fs vs (trace ("QT: "<>ppShow (ps :=> t)<>"\nS'': "<>ppShow s''<>"\nFS: "<>ppShow fs<>"\nVS: "<>ppShow vs<>"\nPS': "<>ppShow ps') ps')
+
+  mapM_ (verifyPred t') rs
 
   case getExpName exp of
-    -- TODO: Return two lists of [Pred], one for composing all remaining preds in a Let, and one for generating Placeholders in inferExps.
     Just n  -> return (s'', ps', extendVars env' (n, quantify gs $ ps' :=> t'), e)
     Nothing -> return (s'', ps', env', e)
-    -- Just n  -> return (s'', ds, extendVars env' (n, quantify gs $ ps' :=> t'), e)
-    -- Nothing -> return (s'', ds ++ rs, env', e)
 
 
 inferExplicitlyTyped :: Env -> Src.Exp -> Infer (Substitution, [Pred], Env, Slv.Exp)
@@ -645,7 +633,7 @@ inferExplicitlyTyped env e@(Meta _ a (Src.TypedExp exp typing)) = do
 
   (s, ps, t, e) <- infer env' exp
   (qs :=> t')  <- instantiate sc
-  s' <- (`compose` s) <$> unify t' (trace ("QT: "<>ppShow (qs :=> t')<>"\nINST-QT: "<>ppShow (ps :=> t)) t)
+  s' <- (`compose` s) <$> unify t' t
 
   let qs' = apply s' qs
       t'' = apply s' t'
@@ -661,8 +649,15 @@ inferExplicitlyTyped env e@(Meta _ a (Src.TypedExp exp typing)) = do
     throwError $ InferError ContextTooWeak NoReason
   else do
     let e' = updateType e t''
-    -- return (s', ps, env', Slv.Solved t'' a (Slv.TypedExp e' (updateTyping typing)))
-    return (s', qs', env', Slv.Solved t'' a (Slv.TypedExp e' (updateTyping typing)))
+
+    let qt = ps :=> t
+    let qt' = apply s' qt
+    let sc'' = quantify (ftv qt') qt'
+    let env'' = case getExpName exp of
+          Just n  -> extendVars env' (n, sc'')
+          Nothing -> env'
+
+    return (s', ps, env'', Slv.Solved t'' a (Slv.TypedExp e' (updateTyping typing)))
 
 
 inferExps :: Env -> [Src.Exp] -> Infer [Slv.Exp]
@@ -694,6 +689,24 @@ insertClassPlaceholders exp (p:ps) = case exp of
       let exp' = Slv.Solved a t $ Slv.Assignment n (Slv.Solved a t $ Slv.Placeholder (Slv.ClassRef (predClass p), predType p) e) 
       in  insertClassPlaceholders exp' ps
     _ -> exp
+
+  -- Might need to move this into insertMethodClassPlaceholders
+  Slv.Solved a t (Slv.Placeholder (ref, t') e) -> case predType p of
+    TApp (TApp (TApp _ t1@(TCon (TC _ _))) t2@(TCon (TC _ _))) t3@(TCon (TC _ _)) ->
+      let exp' = Slv.Solved a t $ Slv.Placeholder (Slv.ClassRef (predClass p), t3) (Slv.Solved a t $ Slv.Placeholder (Slv.ClassRef (predClass p), t2) (Slv.Solved a t $ Slv.Placeholder (Slv.ClassRef (predClass p), t1) exp))
+      in  insertClassPlaceholders exp' ps
+
+    TApp (TApp _ t1@(TCon (TC _ _))) t2@(TCon (TC _ _)) ->
+      let exp' = Slv.Solved a t $ Slv.Placeholder (Slv.ClassRef (predClass p), t2) (Slv.Solved a t $ Slv.Placeholder (Slv.ClassRef (predClass p), t1) exp)
+      in  insertClassPlaceholders exp' ps
+
+    TApp _ t'@(TCon (TC n' _)) ->
+      let exp' = Slv.Solved a t $ Slv.Placeholder (Slv.ClassRef (predClass p), t') exp
+      in  insertClassPlaceholders exp' ps
+
+    _ -> exp
+
+  Slv.Solved a t (Slv.App abs arg close) -> Slv.Solved a t (Slv.App (insertClassPlaceholders abs (p:ps)) (insertClassPlaceholders arg (p:ps)) close)
 
   _ -> exp
 
@@ -862,8 +875,8 @@ mergeTypeDecl namespace absPath adts key = case M.lookup key adts of
 
 
 updateInterface :: Src.Interface -> Slv.Interface
-updateInterface (Src.Interface name var methods) =
-  Slv.Interface name var (updateTyping <$> methods)
+updateInterface (Src.Interface constraints name var methods) =
+  Slv.Interface (updateTyping <$> constraints) name var (updateTyping <$> methods)
 
 inferAST :: Env -> Src.AST -> Infer Slv.AST
 inferAST env Src.AST { Src.aexps, Src.apath, Src.aimports, Src.atypedecls, Src.ainstances, Src.ainterfaces }
@@ -880,15 +893,55 @@ inferAST env Src.AST { Src.aexps, Src.apath, Src.aimports, Src.atypedecls, Src.a
                    , Slv.ainstances  = inferredInstances
                    }
 
-resolveInstance :: Env -> Src.Instance -> Infer Slv.Instance
-resolveInstance env (Src.Instance interface ty dict) = do
-  dict' <- M.fromList <$> mapM (inferMethod env) (M.toList dict)
-  return $ Slv.Instance interface (updateTyping ty) dict'
 
-inferMethod :: Env -> (Src.Name, Src.Exp) -> Infer (Slv.Name, Slv.Exp)
-inferMethod env (mn, m) = do
-  e <- inferExps env [m]
-  return (mn, head e)
+buildInstanceConstraint :: Src.Typing -> Pred
+buildInstanceConstraint typing = case typing of
+  (Meta _ _ (Src.TRComp n [Meta _ _ (Src.TRSingle var)])) ->
+    IsIn n [TVar $ TV var Star]
+
+resolveInstance :: Env -> Src.Instance -> Infer Slv.Instance
+resolveInstance env (Src.Instance constraints interface ty dict) = do
+  instanceType <- typingToType env ty
+  let instancePred = IsIn interface [instanceType]
+  let constraintPreds = buildInstanceConstraint <$> constraints
+  dict' <- M.fromList <$> mapM (inferMethod env instancePred constraintPreds) (M.toList dict)
+  return $ Slv.Instance (updateTyping <$> constraints) interface (updateTyping ty) dict'
+
+inferMethod :: Env -> Pred -> [Pred] -> (Src.Name, Src.Exp) -> Infer (Slv.Name, Slv.Exp)
+inferMethod env instancePred constraintPreds (mn, m) = do
+  sc' <- lookupVar env mn
+  qt@(mps :=> mt) <- instantiate sc'
+  s1 <- unify mps [instancePred]
+  let (mps' :=> mt') = apply s1 qt
+  let qt'@(qs :=> t') = (mps' <> constraintPreds) :=> mt'
+
+  let sc = quantify (ftv qt') qt'
+
+  (s, ps, t, e) <- infer env m
+  (qs :=> t')  <- instantiate sc
+  s' <- (`compose` s) <$> unify t' t
+
+  let qs' = apply s' qs
+      t'' = apply s' t'
+      fs  = ftv (apply s' env)
+      gs  = ftv t'' \\ fs
+      sc' = quantify gs (qs' :=> t'')
+  ps' <- filterM ((not <$>) . entail env qs') (apply s' ps)
+  (ds, rs) <- split env fs gs ps'
+
+  if sc /= sc' then
+    throwError $ InferError (SignatureTooGeneral sc sc') (SimpleReason (envcurrentpath env) emptyArea)
+  else if not (null rs) then
+    throwError $ InferError ContextTooWeak NoReason
+  else do
+    let e'  = updateType e t''
+        (Slv.Solved _ _ (Slv.Assignment _ e'')) =
+          insertClassPlaceholders (Slv.Solved t emptyArea $ Slv.Assignment mn e') (apply s' ps)
+        e''' = updatePlaceholders s' e''
+    return (mn, e''')
+
+  -- e <- inferExps env [m]
+  -- return (mn, head e)
 
 
 updateImport :: Src.Import -> Slv.Import
@@ -923,12 +976,6 @@ updateADT alias@Src.Alias{} =
 updateADTConstructor :: Src.Constructor -> Slv.Constructor
 updateADTConstructor (Src.Constructor cname cparams) =
   Slv.Constructor cname $ updateTyping <$> cparams
-
--- TODO: Should get rid of that and handle the Either correctly where it is called
-unifyToInfer :: Env -> Either TypeError Substitution -> Infer Substitution
-unifyToInfer _ u = case u of
-  Right s -> return s
-  Left  e -> throwError $ InferError e NoReason
 
 
 -- -- TODO: Make it call inferAST so that inferAST can return an (Infer TBD)

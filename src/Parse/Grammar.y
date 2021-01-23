@@ -114,15 +114,20 @@ importNames :: { [Src.Name] }
 
 
 interface :: { Src.Interface }
-  : 'interface' name name '{' rets methodDefs rets '}' { Src.Interface (strV $2) (strV $3) $6 }
+  : 'interface' name name '{' rets methodDefs rets '}'                 { Src.Interface [] (strV $2) (strV $3) $6 }
+  | 'interface' constraint '=>' name name '{' rets methodDefs rets '}' { Src.Interface [$2] (strV $4) (strV $5) $8 }
 
 methodDefs :: { M.Map Src.Name Src.Typing }
   : name '::' typings            { M.fromList [(strV $1, $3)] }
   | methodDefs rets name '::' typings { M.union (M.fromList [(strV $3, $5)]) $1 }
 
 instance :: { Src.Instance }
-  : 'instance' name typing '{' rets methodImpls rets '}' { Src.Instance (strV $2) $3 $6 }
-  | 'instance' name '(' compositeTyping ')' '{' rets methodImpls rets '}' { Src.Instance (strV $2) $4 $8 }
+  : 'instance' name typing '{' rets methodImpls rets '}' { Src.Instance [] (strV $2) $3 $6 }
+  | 'instance' constraint '=>' name typing '{' rets methodImpls rets '}' { Src.Instance [$2] (strV $4) $5 $8 }
+  | 'instance' '(' constraints ')' '=>' name typing '{' rets methodImpls rets '}' { Src.Instance $3 (strV $6) $7 $10 }
+  | 'instance' name '(' compositeTyping ')' '{' rets methodImpls rets '}' { Src.Instance [] (strV $2) $4 $8 }
+  | 'instance' constraint '=>' name '(' compositeTyping ')' '{' rets methodImpls rets '}' { Src.Instance [$2] (strV $4) $6 $10 }
+  | 'instance' '(' constraints ')' '=>' name '(' compositeTyping ')' '{' rets methodImpls rets '}' { Src.Instance $3 (strV $6) $8 $12 }
   -- | 'instance' name name '.' name '{' rets methodImpls rets '}' { Src.Instance (strV $2) (Meta emptyInfos (tokenToArea $3) (Src.TRComp (strV $3<>"."<>strV $5) [])) $8 }
 
 methodImpls :: { M.Map Src.Name Src.Exp }

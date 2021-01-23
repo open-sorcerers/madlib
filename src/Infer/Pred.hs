@@ -13,6 +13,8 @@ import Error.Error
 import Explain.Reason
 import Text.Show.Pretty (ppShow)
 import Debug.Trace (trace)
+import Data.Maybe
+import Data.List
 
 
 -- defined :: Maybe a -> Bool
@@ -38,12 +40,24 @@ addInterface env id tvs ps = case M.lookup id (envinterfaces env) of
 addInstance :: Env -> [Pred] -> Pred -> Infer Env
 addInstance env ps p@(IsIn id ts) = case M.lookup id (envinterfaces env) of
   Nothing -> throwError $ InferError (InterfaceNotExisting id) NoReason
-  Just (Interface tvs ps is)  -> do
+
+  Just (Interface tvs ps' is) -> do
     let ts' = TVar <$> tvs
-    s <- unify ts' ts
+    s <- match ts' ts
+    mapM_ (isInstanceDefined env s) ps'
+    return env { envinterfaces = M.insert
+      id
+      (Interface tvs ps' (Instance (ps :=> p) : is))
+      (envinterfaces env)}
 
-    return env { envinterfaces = M.insert id (Interface tvs ps (Instance (ps :=> p) : is)) (envinterfaces env)}
 
+isInstanceDefined :: Env -> Substitution -> Pred -> Infer Bool
+isInstanceDefined env subst (IsIn id ts) = do
+  let is    = insts env id
+      found = find (\(Instance (_ :=> (IsIn _ ts'))) -> apply subst ts' == apply subst ts) is
+  case found of
+    Just _  -> return True
+    Nothing -> throwError $ InferError (NoInstanceFound id (apply subst $ head ts)) NoReason
 
 
 liftPred :: ([Type] -> [Type] -> Infer a) -> Pred -> Pred -> Infer a

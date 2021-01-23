@@ -268,18 +268,40 @@ instance Compilable Exp where
           then name
           else hpWrapLine coverage astPath l name
 
-        Placeholder (ClassRef cls1, TCon (TC n1 _)) (Slv.Solved _ _ (Placeholder (ClassRef cls2, TCon (TC n2 _)) (Slv.Solved _ _ (Var name)))) ->
-          name <> "(" <> cls1 <> "." <> n1 <> ")(" <> cls2 <> "." <> n2 <> ")"
-        Placeholder (ClassRef cls, TCon (TC n _)) (Slv.Solved _ _ (Var name)) ->
-          name <> "(" <> cls <> "." <> n <> ")"
-        Placeholder (ClassRef cls, TVar (TV n _)) exp ->
-          "(__" <> cls <> "_" <> n <> "__) => (" <> compile config exp <> ")"
+
+        Placeholder (ClassRef cls, t) exp' -> case t of
+          TCon _ -> insertPlaceholderArgs "" e
+          TApp _ _ -> insertPlaceholderArgs "" e
+          TVar (TV n _) ->
+            "(__" <> cls <> "_" <> n <> "__) => (" <> compile config exp' <> ")"
+          where
+            insertPlaceholderArgs :: String -> Exp -> String
+            insertPlaceholderArgs prev exp' = case exp' of
+              Slv.Solved _ _ (Placeholder (ClassRef cls, TCon (TC n _)) exp'') ->
+                insertPlaceholderArgs (prev <> "(" <> cls <> "." <> n <> ")") exp''
+
+              Slv.Solved _ _ (Placeholder (ClassRef cls, TApp (TCon (TC n _)) _) exp'') ->
+                insertPlaceholderArgs (prev <> "(" <> cls <> "." <> n <> ")") exp''
+              
+              -- Slv.Solved _ _ (Placeholder (ClassRef cls, TApp (TApp (TCon (TC n _)) _) _) exp'') ->
+              --   let n' = if n == "(,)" then "Tuple_2" else n
+              --   in  insertPlaceholderArgs (prev <> "(" <> cls <> "." <> n' <> ")") exp''
+
+              _ -> compile config exp' <> prev
+
+
         Placeholder (MethodRef cls method, TVar (TV n _)) (Slv.Solved _ _ (Var name)) ->
           "__" <> cls <> "_" <> n <> "__." <> method
         Placeholder (MethodRef cls method, TCon (TC n _)) (Slv.Solved _ _ (Var name)) ->
           cls <> "." <> n <> "." <> method
         Placeholder (MethodRef cls method, TApp (TCon (TC n _)) _) (Slv.Solved _ _ (Var name)) ->
           cls <> "." <> n <> "." <> method
+        Placeholder (MethodRef cls method, TApp (TApp (TCon (TC n _)) _) _) (Slv.Solved _ _ (Var name)) ->
+          let n' = if n == "(,)" then "Tuple_2" else n
+          in  cls <> "." <> n' <> "." <> method
+        Placeholder (MethodRef cls method, TApp (TApp (TApp (TCon (TC n _)) _) _) _) (Slv.Solved _ _ (Var name)) ->
+          let n' = if n == "(,,)" then "Tuple_3" else n
+          in  cls <> "." <> n' <> "." <> method
 
         -- Build ABS for coverage
         Assignment name abs@(Solved _ _ (Abs param body)) -> if coverage
@@ -614,11 +636,11 @@ updateASTPath astPath config = config { ccastPath = astPath }
 
 instance Compilable Slv.Interface where
   compile _ interface = case interface of
-    Slv.Interface name _ _ -> "const " <> name <> " = {};\n"
+    Slv.Interface _ name _ _ -> "export const " <> name <> " = {};\n"
 
 instance Compilable Slv.Instance where
   compile config inst = case inst of
-    Slv.Instance interface ty dict ->
+    Slv.Instance _ interface ty dict ->
       interface
         <> "['"
         <> typingToStr ty
@@ -634,6 +656,7 @@ typingToStr :: Typing -> String
 typingToStr t = case t of
   TRSingle n -> n
   TRComp n _ -> if "." `isInfixOf` n then tail $ dropWhile (/= '.') n else n
+  TRTuple ts -> "Tuple_" <> show (length ts)
 
 instance Compilable AST where
   compile config ast =

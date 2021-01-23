@@ -1,4 +1,5 @@
 import IO from "IO"
+import L  from "List"
 
 data Maybe a = Just a | Nothing
 
@@ -21,7 +22,7 @@ instance Functor List {
     is []       : []
 }
 
-interface Monad m {
+interface Functor m => Monad m {
   chain :: (a -> m b) -> m a -> m b
   of :: a -> m a
 }
@@ -32,6 +33,12 @@ instance Monad Maybe {
     is Nothing: Nothing
 
   of = (x) => Just(x)
+}
+
+instance Functor (Either e) {
+  map = (f) => where
+    is Right x: Right(f(x))
+    is Left e : Left(e)
 }
 
 instance Monad (Either e) {
@@ -50,33 +57,92 @@ instance Read Number {
   read = (s) => (#- parseFloat(s, 10) -#)
 }
 
+
 // read("3")
 (read("3") :: Number)
 
-// IO.log(r)
+
+interface Show a {
+  show :: a -> String
+}
+
+instance Show Boolean {
+  show = (b) => b ? "True" : "False"
+}
+
+instance Show Number {
+  show = (n) => (#- new Number(n).toString() -#)
+}
+
+instance (Show a, Show b) => Show <a, b> {
+  show = where is <a, b>: "<" ++ show(a) ++ ", " ++ show(b) ++ ">"
+}
+
+show(<1, false>) |> IO.log
+
+instance (Show a, Show b, Show c) => Show <a, b, c> {
+  show = where is <a, b, c>: "<" ++ show(a) ++ ", " ++ show(b) ++ ", " ++ show(c) ++ ">"
+}
+
+instance (Show e, Show a) => Show (Either e a) {
+  show = where
+    is Right a: "Right " ++ show(a)
+    is Left  e: "Left " ++ show(e)
+}
+
+show((Right(3) :: Either Number Number)) |> IO.log
 
 
-// inc = (a) => a + 1
+show(<1, 1>) |> IO.log
+show(<false, 42, true>) |> IO.log
 
-// map(inc, [1, 2 ,3]) |> IO.log
 
-// chain((x) => Just(x + 1), Just(3))
+instance Show a => Show (List a) {
+  show = (xs) => "[" ++ L.reduceL((s, a) => s ++ "," ++ show(a), "", xs) ++ "]"
+}
 
-doIt :: (Monad m, Functor m) => m Number -> m Number
+show([3]) |> IO.log
+
+
+
+
+inc = (a) => a + 1
+
+map(inc, [1, 2 ,3]) |> IO.log
+
+chain((x) => Just(x + 1), Just(3))
+
+doIt :: (Monad m) => m Number -> m Number
 doIt = (x) => chain((k) => of(k + 1), x)
 
+add :: Number -> Number -> Number
+add = (a, b) => a + b
+
 doIt(Just(3)) |> map(IO.log)
-
-// doIt(Just(3)) |> map(IO.log)
-
-// p = 1
+doIt(Right(3)) |> map(IO.log)
 
 
-// fn = map(inc)
 
-// fn(Just(3)) |> IO.log
-// fn([4, 5, 6]) |> IO.log
+fn = map(inc)
+
+fn(Just(3)) |> map(IO.log)
+fn([4, 5, 6]) |> IO.log
 
 hideCall = (x) =>
   where(chain((a) => Just(a + 1), x))
     is Just 2: chain((a) => Right(a + 1), Right(2))
+
+hideCall(Just(1))
+
+useBoth :: Monad m => m String -> m String
+useBoth = (s) => (chain((x) => of(x), s) |> map((x) => x ++ " !"))
+
+useBoth(Just("Hello World")) |> map(IO.log)
+
+ambiguity :: Monad m => String -> m String
+ambiguity = (s) => of(s) |> map((x) => x ++ " !")
+
+ambiguity("fail")
+
+// (ambiguity("Hello") :: Maybe String) |> map(IO.log)
+

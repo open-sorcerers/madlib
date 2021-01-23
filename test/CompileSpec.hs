@@ -298,7 +298,7 @@ spec = do
             , ""
             , "p = 1"
             , ""
-            , ""
+            , "fn :: Functor m => m Number -> m Number"
             , "fn = map(inc)"
             , ""
             , "fn(Just(3))"
@@ -310,6 +310,47 @@ spec = do
             ]
           actual = tester code
       snapshotTest "should compile interfaces and instances" actual
+
+    it "should compile constrained instances and resolve their dictionary parameters" $ do
+      let code   = unlines
+            [ "data Either e a = Right a | Left e"
+            , ""
+            , "interface Show a {"
+            , "  show :: a -> String"
+            , "}"
+            , ""
+            , "instance Show Boolean {"
+            , "  show = (b) => b ? 'True' : 'False'"
+            , "}"
+            , ""
+            , "instance Show Number {"
+            , "  show = (n) => (#- new Number(n).toString() -#)"
+            , "}"
+            , ""
+            , "instance (Show a, Show b) => Show <a, b> {"
+            , "  show = where is <a, b>: '<' ++ show(a) ++ ', ' ++ show(b) ++ '>'"
+            , "}"
+            , ""
+            , "show(<1, false>)"
+            , ""
+            , "instance (Show a, Show b, Show c) => Show <a, b, c> {"
+            , "  show = where is <a, b, c>: '<' ++ show(a) ++ ', ' ++ show(b) ++ ', ' ++ show(c) ++ '>'"
+            , "}"
+            , ""
+            , "instance (Show e, Show a) => Show (Either e a) {"
+            , "  show = where"
+            , "    is Right a: 'Right ' ++ show(a)"
+            , "    is Left  e: 'Left ' ++ show(e)"
+            , "}"
+            , ""
+            , "show((Right(3) :: Either Number Number))"
+            , ""
+            , ""
+            , "show(<1, 1>)"
+            , "show(<false, 42, true>)"
+            ]
+          actual = tester code
+      snapshotTest "should compile constrained instances and resolve their dictionary parameters" actual
 
     it "should compile imports and exports" $ do
       let codeA = "export singleton = (a) => ([a])"

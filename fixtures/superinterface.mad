@@ -1,0 +1,60 @@
+data Maybe a = Just a | Nothing
+data Either e a = Right a | Left e
+
+interface Functor m {
+  map :: (a -> b) -> m a -> m b
+}
+
+instance Functor Maybe {
+  map = (f) => where
+    is Just x : Just(f(x))
+    is Nothing: Nothing
+}
+
+instance Functor List {
+  map = (f) => where
+    is [h, ...t]: [f(h), ...map(f, t)]
+    is [l]      : [f(l)]
+    is []       : []
+}
+
+interface Functor m => Monad m {
+  chain :: (a -> m b) -> m a -> m b
+  of :: a -> m a
+}
+
+instance Monad Maybe {
+  chain = (f) => where
+    is Just x : f(x)
+    is Nothing: Nothing
+
+  of = (x) => Just(x)
+}
+
+instance Functor (Either e) {
+  map = (f) => where
+    is Right x: Right(f(x))
+    is Left e : Left(e)
+}
+
+instance Monad (Either e) {
+  chain = (f) => where
+    is Right x: f(x)
+    is Left e : Left(e)
+
+  of = (x) => Right(x)
+}
+
+interface Read a {
+  read :: String -> a
+}
+
+instance Read Number {
+  read = (s) => (#- parseFloat(s, 10) -#)
+}
+
+doIt :: (Monad m) => m Number -> m Number
+doIt = (x) => map((k) => k + 1, x)
+
+doIt(Right(3))
+doIt(Right(3))

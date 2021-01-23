@@ -357,6 +357,53 @@ spec = do
             ]
           actual = tester code
       snapshotTest "should resolve ambiguity with type annotations" actual
+
+    it "should resolve constrained instances" $ do
+      let code   = unlines
+            [ "interface Show a {"
+            , "  show :: a -> String"
+            , "}"
+            , ""
+            , "instance Show Boolean {"
+            , "  show = (b) => b ? 'True' : 'False'"
+            , "}"
+            , ""
+            , "instance Show Number {"
+            , "  show = (n) => (#- new Number(n).toString() -#)"
+            , "}"
+            , ""
+            , "instance (Show a, Show b) => Show <a, b> {"
+            , "  show = where is <a, b>: '<' ++ show(a) ++ ', ' ++ show(b) ++ '>'"
+            , "}"
+            , ""
+            , "show(<1, false>)"
+            ]
+          actual = tester code
+      snapshotTest "should resolve constrained instances" actual
+
+    it "should fail for instances missing constrains" $ do
+      let code   = unlines
+            [ "interface Show a {"
+            , "  show :: a -> String"
+            , "}"
+            , ""
+            , "instance Show Boolean {"
+            , "  show = (b) => b ? 'True' : 'False'"
+            , "}"
+            , ""
+            , "instance Show Number {"
+            , "  show = (n) => (#- new Number(n).toString() -#)"
+            , "}"
+            , ""
+            , "instance Show <a, b> {"
+            , "  show = where is <a, b>: '<' ++ show(a) ++ ', ' ++ show(b) ++ '>'"
+            , "}"
+            , ""
+            , "show(<1, false>)"
+            ]
+          actual = tester code
+      snapshotTest "should fail for instances missing constrains" actual
+
     
     
     ---------------------------------------------------------------------------

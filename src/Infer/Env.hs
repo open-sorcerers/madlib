@@ -25,6 +25,7 @@ import           Infer.Scheme                   (quantify,  toScheme )
 import Control.Monad (foldM)
 import Control.Monad (msum)
 import Infer.Pred (addInstance, addInterface)
+import Explain.Meta
 
 
 lookupVar :: Env -> String -> Infer Scheme
@@ -44,6 +45,12 @@ lookupVar env x
   | otherwise = case M.lookup x (envvars env <> envmethods env) of
     Just x  -> return x
     Nothing -> throwError $ InferError (UnboundVariable x) NoReason
+
+
+-- findInstance :: Env -> Id -> Type -> Infer Instance
+-- findInstance env id t = case M.lookup id (envinterfaces env) of
+--   Just (Interface _ _ is) -> do
+--     find ()
 
 
 extendVars :: Env -> (String, Scheme) -> Env
@@ -82,7 +89,6 @@ initialEnv = Env
       $   []
       :=> (TGen 0 `fn` (TGen 0 `fn` TGen 1) `fn` TGen 1)
       )
-    , ("show", Forall [Star] $ [IsIn "Show" [TGen 0]] :=> (TGen 0 `fn` tStr))
     ]
   , envtypes       = M.fromList
                        [ ("List" , tList)
@@ -90,9 +96,7 @@ initialEnv = Env
                        , ("(,,)" , tTuple3)
                        , ("(,,,)", tTuple4)
                        ]
-  , envinterfaces  = M.fromList
-      [ ("Show", Ty.Interface [TV "a" Star] [] [Ty.Instance $ [] :=> IsIn "Show" [tNumber], Ty.Instance $ [] :=> IsIn "Show" [tBool], Ty.Instance $ [IsIn "Show" [TVar (TV "a" Star)]] :=> IsIn "Show" [TApp (TCon (TC "Maybe" (Kfun Star Star))) (TVar (TV "a" Star))]])
-      ]
+  , envinterfaces  = M.empty
   , envmethods = M.empty
   , envcurrentpath = ""
   }
@@ -103,15 +107,19 @@ solveInterfaces = foldM solveInterface
 
 solveInterface :: Env -> Src.Interface -> Infer Env
 solveInterface env interface = case interface of
-  Src.Interface n tv ms -> do
+  Src.Interface constraints n tv ms -> do
     ts  <- mapM (typingToType env) ms
     let ts' = addConstraints n tv <$> ts
 
     let tvs = mapMaybe (searchVarInType tv) (M.elems ts)
 
+    let supers = (\(Meta _ _ (Src.TRComp interface' [Meta _ _ (Src.TRSingle v)])) ->
+            IsIn interface' [head tvs]
+          ) <$> constraints
+
     env' <- if null tvs
       then throwError $ InferError FatalError NoReason
-      else addInterface env n [(\(TVar tv) -> tv) . head $ tvs] []
+      else addInterface env n [(\(TVar tv) -> tv) . head $ tvs] supers
 
     return env' { envvars = envvars env <> ts', envmethods = envmethods env <> ts' }
 
@@ -132,9 +140,14 @@ solveInstances = foldM solveInstance
 
 solveInstance :: Env -> Src.Instance -> Infer Env
 solveInstance env inst = case inst of
-  Src.Instance n typing _ -> do
+  Src.Instance constraints n typing _ -> do
     t <- typingToType env typing
-    addInstance env [] $ IsIn n [t]
+
+    let ps = (\(Meta _ _ (Src.TRComp interface' [Meta _ _ (Src.TRSingle v)])) ->
+            IsIn interface' [TVar $ TV v Star]
+          ) <$> constraints
+
+    addInstance env ps $ IsIn n [t]
 
 
 buildInitialEnv :: Env -> AST -> Infer Env

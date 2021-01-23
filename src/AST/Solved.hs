@@ -30,9 +30,9 @@ data Import
   | DefaultImport Name FilePath FilePath
   deriving(Eq, Show)
 
-data Interface = Interface Name Name (M.Map Name Typing) deriving(Eq, Show)
+data Interface = Interface Constraints Name Name (M.Map Name Typing) deriving(Eq, Show)
 
-data Instance = Instance Name Typing (M.Map Name Exp) deriving(Eq, Show)
+data Instance = Instance Constraints Name Typing (M.Map Name Exp) deriving(Eq, Show)
 
 data TypeDecl
   = ADT
@@ -53,13 +53,15 @@ data Constructor
   = Constructor Name [Typing]
   deriving(Eq, Show)
 
+type Constraints = [Typing]
+
 data Typing
   = TRSingle Name
   | TRComp Name [Typing]
   | TRArr Typing Typing
   | TRRecord (M.Map Name Typing)
   | TRTuple [Typing]
-  | TRConstrained [Typing] Typing -- List of constrains and the typing it applies to
+  | TRConstrained Constraints Typing -- List of constrains and the typing it applies to
   deriving(Eq, Show)
 
 

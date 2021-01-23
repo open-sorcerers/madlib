@@ -40,7 +40,8 @@ qualTypingToQualType env t@(Meta _ _ typing) = case typing of
 constraintToPredicate :: Env -> Type -> Src.Typing -> Infer Pred
 constraintToPredicate env t (Meta _ _ (Src.TRComp n [Meta _ _ (Src.TRSingle var)])) =
   case searchVarInType var t of
-    Just v -> return $ IsIn n [v]
+    Just v  -> return $ IsIn n [v]
+    Nothing -> return $ IsIn n [TVar $ TV var Star]
     -- Nothing -> throwError $ ...
 
 

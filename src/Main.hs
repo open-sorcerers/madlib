@@ -45,9 +45,49 @@ import           Data.List                      ( isInfixOf
                                                 )
 import           Data.String.Utils
 
+-- data EEither e a = ERight a | ELeft e
+
+-- class MM m where
+--   mm :: (a -> b) -> m a -> m b
+
+-- instance MM (EEither e) where
+--   mm = undefined
+
+-- class ShowK a where
+--   showK :: a -> String
+
+-- instance ShowK (Maybe a) where
+--   showK (Just x) = undefined
+--   -- showK (Just x) = showK x
+
+
+-- instance (ShowK e, ShowK a) => ShowK (Either e a) where
+--   showK (Right x) = showK x
+--   showK (Left x) = showK x
+
+
+-- instance ShowK Int where
+--   showK = show
+
+-- instance Monad m => ShowK (m Int) where
+--   showK m = "Monad"
+
+-- instance ShowK [a] where
+--   showK xs = concat $ showK <$> xs
+
+-- ambiguity :: Monad m => String -> m String
+-- ambiguity = (s) => of(s) //|> map((x) => x ++ " !"))
+
+-- ambiguity("fail")
+
+ambiguity :: Monad m => String -> m String
+ambiguity s = (++ " !") <$> return s
+
+-- x = ambiguity "ok"
 
 main :: IO ()
-main = execParser opts >>= run
+main = do
+  execParser opts >>= run
 
 isCoverageEnabled :: IO Bool
 isCoverageEnabled = do
