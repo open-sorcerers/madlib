@@ -142,7 +142,12 @@ useBoth(Just("Hello World")) |> map(IO.log)
 ambiguity :: Monad m => String -> m String
 ambiguity = (s) => of(s) |> map((x) => x ++ " !")
 
-ambiguity("fail")
+// ambiguity("fail")
+
+ambi :: String -> String
+ambi = (a) => show(3)
+
+ambi("OK") |> IO.log
 
 // (ambiguity("Hello") :: Maybe String) |> map(IO.log)
 

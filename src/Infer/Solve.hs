@@ -668,7 +668,7 @@ inferExps env (e : xs) = do
     Meta _ _ (Src.TypedExp _ _) -> inferExplicitlyTyped env e
     _                           -> inferImplicitlyTyped env e
 
-  let e'' = insertClassPlaceholders e' ps
+  let e'' = insertClassPlaceholders e' (apply s ps)
 
   let e''' = updatePlaceholders s e''
 
