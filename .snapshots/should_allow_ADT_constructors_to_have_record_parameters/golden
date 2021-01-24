@@ -44,36 +44,7 @@ Right
                                         (TCon (TC "Number" Star))))
                                   (TCon (TC "Point" Star)))
                                (Area (Loc 30 2 5) (Loc 31 2 6))
-                               (FieldAccess
-                                  (Solved
-                                     (TRecord
-                                        (fromList
-                                           [ ( "Point"
-                                             , TApp
-                                                 (TApp
-                                                    (TCon (TC "(->)" (Kfun Star (Kfun Star Star))))
-                                                    (TApp
-                                                       (TApp
-                                                          (TCon
-                                                             (TC
-                                                                "(,)" (Kfun Star (Kfun Star Star))))
-                                                          (TCon (TC "Number" Star)))
-                                                       (TCon (TC "Number" Star))))
-                                                 (TCon (TC "Point" Star))
-                                             )
-                                           ])
-                                        False)
-                                     (Area (Loc 30 2 5) (Loc 31 2 6))
-                                     (Var "P"))
-                                  (Solved
-                                     (TApp
-                                        (TApp
-                                           (TCon (TC "(->)" (Kfun Star (Kfun Star Star))))
-                                           (TRecord
-                                              (fromList [ ( "Point" , TVar (TV "k" Star) ) ]) True))
-                                        (TVar (TV "k" Star)))
-                                     (Area (Loc 32 2 7) (Loc 37 2 12))
-                                     (Var ".Point"))))
+                               (Var "P.Point"))
                             (Solved
                                (TApp
                                   (TApp

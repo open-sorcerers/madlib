@@ -11,6 +11,7 @@ import Math from "Math"
 import Maybe from "Maybe"
 import T from "Tuple"
 import Lcov from "LcovDotInfo"
+import { andDo } from "Monad"
 
 
 colorString :: String -> String -> String
@@ -128,12 +129,12 @@ collectCoverage = (received) =>
   FS.readFile(".coverage/lcov.info")
     |> map(Lcov.parseLcov)
     |> map(collect(HP.getHitPoints("")))
-    |> W.chain((lcov) =>
-         W.of(lcov)
+    |> chain((lcov) =>
+         of(lcov)
            |> map(Lcov.stringify)
            |> map(FS.TextData)
-           |> W.chain(FS.writeFile(".coverage/lcov.info"))
-           |> W.andDo(W.of(<received, stdoutReport(lcov)>))
+           |> chain(FS.writeFile(".coverage/lcov.info"))
+           |> andDo(of(<received, stdoutReport(lcov)>))
        )
 
 formatSuccessOutput = (description, result) => green("\u2713 " ++ description)
@@ -141,7 +142,7 @@ formatSuccessOutput = (description, result) => green("\u2713 " ++ description)
 formatFailureOutput = (description, result) =>
   where(result)
     is AssertionError expected actual:
-      W.of(
+      of(
         red("\u00d7 " ++ description)
         ++ "\n    expected:\n      "
         ++ S.show(expected)
@@ -158,14 +159,14 @@ export test = (description) => pipe(
 
 assertEquals :: a -> a -> W.Wish AssertionError String
 export assertEquals = (actual, expected) => actual == expected
-  ? W.of("")
+  ? of("")
   : W.bad(AssertionError(expected, actual))
 
 isCoverageEnabled :: W.Wish String Boolean
 isCoverageEnabled = pipe(
   System.getEnv,
   map(F.equals("on")),
-  W.chainRej(F.always(W.of(false)))
+  W.chainRej(F.always(of(false)))
 )("COVERAGE_MODE")
 
 displayResults :: <List String, List IO.Row> -> List IO.Row
@@ -195,9 +196,9 @@ export runTests = (tests) => {
     W.parallel,
     W.fulfill(F.always(()), (results) => {
       pipe(
-        W.chain(where
+        chain(where
           is true : collectCoverage(results)
-          is false: W.of(<results, []>)
+          is false: of(<results, []>)
         ),
         W.fulfill(F.always(()), pipe(displayResults, F.always(())))
       )(isCoverageEnabled)

@@ -46,10 +46,10 @@ export spawn = (command) => (#-
 
 
 getArgs :: W.Wish String (List String)
-export getArgs = (#- W.of(process.argv.slice(2)) -#)
+export getArgs = (#- Monad.Wish.of(process.argv.slice(2)) -#)
 
 getEnv :: String -> W.Wish String String
 export getEnv = (name) => (#- {
   const envVar = process.env[name];
-  return envVar === undefined ? W.bad("Not found") : W.of(envVar)
+  return envVar === undefined ? W.bad("Not found") : Monad.Wish.of(envVar)
 } -#)

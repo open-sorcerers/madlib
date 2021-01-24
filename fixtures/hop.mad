@@ -105,49 +105,49 @@ show([3]) |> IO.log
 
 
 
-inc = (a) => a + 1
+// inc = (a) => a + 1
 
-map(inc, [1, 2 ,3]) |> IO.log
+// map(inc, [1, 2 ,3]) |> IO.log
 
-chain((x) => Just(x + 1), Just(3))
+// chain((x) => Just(x + 1), Just(3))
 
-doIt :: (Monad m) => m Number -> m Number
-doIt = (x) => chain((k) => of(k + 1), x)
+// doIt :: (Monad m) => m Number -> m Number
+// doIt = (x) => chain((k) => of(k + 1), x)
 
-add :: Number -> Number -> Number
-add = (a, b) => a + b
+// add :: Number -> Number -> Number
+// add = (a, b) => a + b
 
-doIt(Just(3)) |> map(IO.log)
-doIt(Right(3)) |> map(IO.log)
+// doIt(Just(3)) |> map(IO.log)
+// doIt(Right(3)) |> map(IO.log)
 
 
 
-fn = map(inc)
+// fn = map(inc)
 
-fn(Just(3)) |> map(IO.log)
-fn([4, 5, 6]) |> IO.log
+// fn(Just(3)) |> map(IO.log)
+// fn([4, 5, 6]) |> IO.log
 
-hideCall = (x) =>
-  where(chain((a) => Just(a + 1), x))
-    is Just 2: chain((a) => Right(a + 1), Right(2))
+// hideCall = (x) =>
+//   where(chain((a) => Just(a + 1), x))
+//     is Just 2: chain((a) => Right(a + 1), Right(2))
 
-hideCall(Just(1))
+// hideCall(Just(1))
 
-useBoth :: Monad m => m String -> m String
-useBoth = (s) => (chain((x) => of(x), s) |> map((x) => x ++ " !"))
+// useBoth :: Monad m => m String -> m String
+// useBoth = (s) => (chain((x) => of(x), s) |> map((x) => x ++ " !"))
 
-useBoth(Just("Hello World")) |> map(IO.log)
+// useBoth(Just("Hello World")) |> map(IO.log)
 
-ambiguity :: Monad m => String -> m String
-ambiguity = (s) => of(s) |> map((x) => x ++ " !")
+// ambiguity :: Monad m => String -> m String
+// ambiguity = (s) => of(s) |> map((x) => x ++ " !")
 
-// read("3")
-// ambiguity("fail")
+// // read("3")
+// // ambiguity("fail")
 
-ambi :: String -> String
-ambi = (a) => show(3)
+// ambi :: String -> String
+// ambi = (a) => show(3)
 
-ambi("OK") |> IO.log
+// ambi("OK") |> IO.log
 
 // (ambiguity("Hello") :: Maybe String) |> map(IO.log)
 

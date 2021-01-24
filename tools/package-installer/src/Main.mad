@@ -12,6 +12,7 @@ import E from "Either"
 import S from "System"
 import String from "String"
 import F from "Function"
+import { andDo } from "Monad"
 
 
 IO.log("Installing dependencies ...")
@@ -21,7 +22,7 @@ installPackages = pipe(
   FS.readFile,
   W.mapRej((_) => ("The madlib.json file was not found, verify that you have created one or that you run the command from the right directory.")),
   map(J.parse(J.field("dependencies", J.map(J.string)))),
-  W.chain(where
+  chain(where
     is E.Left e: W.bad(e)
     is E.Right depMap: pipe(
       M.keys,
@@ -29,16 +30,16 @@ installPackages = pipe(
       map((key) => pipe(
         (k) => M.get(k, depMap),
         where
-          is Maybe.Just p : Http.get(p)
-          is Maybe.Nothing: W.bad("ERR"),
+          is Maybe.Just p : Http.get(p),
+          // is Maybe.Nothing: W.bad("ERR"),
         map(where is Http.Response { body: Http.BinaryBody d }: d),
         map(FS.BinaryData),
-        W.chain(FS.writeFile(key ++ ".zip")),
-        W.chain((a) => S.exec("mv " ++ a ++ " ./madlib_modules/")),
-        W.andDo(S.exec("unzip -d ./madlib_modules/" ++ key ++ "-tmp ./madlib_modules/" ++ key ++ ".zip")),
-        W.andDo(S.exec("mv ./madlib_modules/" ++ key ++ "-tmp/* ./madlib_modules/" ++ key ++ "-tmp/" ++ key)),
-        W.andDo(S.exec("cp -R ./madlib_modules/" ++ key++"-tmp/"++key++" ./madlib_modules/")),
-        W.andDo(S.exec("rm -r ./madlib_modules/" ++ key ++ ".zip ./madlib_modules/" ++ key ++ "-tmp")),
+        chain(FS.writeFile(key ++ ".zip")),
+        chain((a) => S.exec("mv " ++ a ++ " ./madlib_modules/")),
+        andDo(S.exec("unzip -d ./madlib_modules/" ++ key ++ "-tmp ./madlib_modules/" ++ key ++ ".zip")),
+        andDo(S.exec("mv ./madlib_modules/" ++ key ++ "-tmp/* ./madlib_modules/" ++ key ++ "-tmp/" ++ key)),
+        andDo(S.exec("cp -R ./madlib_modules/" ++ key++"-tmp/"++key++" ./madlib_modules/")),
+        andDo(S.exec("rm -r ./madlib_modules/" ++ key ++ ".zip ./madlib_modules/" ++ key ++ "-tmp")),
         map((a) => "package " ++ key ++ " installed"),
         W.mapRej((_) => "Error installing package '" ++ key ++ "'")
       )(key)),

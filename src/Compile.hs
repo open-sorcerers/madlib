@@ -647,7 +647,7 @@ instance Compilable Slv.Instance where
         <> typingToStr ty
         <> "']"
         <> " = {\n"
-        <> intercalate ",\n" (uncurry compileMethod <$> M.toList dict)
+        <> intercalate ",\n" (uncurry compileMethod <$> M.toList (M.map fst dict))
         <> "\n};\n"
    where
     compileMethod :: Name -> Exp -> String
@@ -702,9 +702,9 @@ instance Compilable AST where
       infoComment
       <> compiledImports
       <> helpers
+      <> compiledAdts
       <> compiledInterfaces
       <> compiledInstances
-      <> compiledAdts
       <> compiledExps
       <> defaultExport
    where

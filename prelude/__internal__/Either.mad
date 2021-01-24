@@ -1,4 +1,4 @@
-import _ from "Functor"
+import _ from "Monad"
 
 export data Either e a
   = Left e
@@ -10,16 +10,24 @@ instance Functor (Either e) {
     is Left  e: Left(e)
 }
 
+instance Applicative (Either e) {
+  pure = Right
+  ap = (mf, m) => where(mf)
+    is Left e : Left(e)
+    is Right f: map(f, m)
+}
+
+instance Monad (Either e) {
+  of = pure
+  chain = (f) => where
+    is Right a: f(a)
+    is Left  e: Left(e)
+}
+
 mapLeft :: (e -> f) -> Either e a -> Either f a
 export mapLeft = (f, m) => (where(m) {
   is Right a: Right(a)
   is Left  e: Left(f(e))
-})
-
-bind :: (a -> Either e b) -> Either e a -> Either e b
-export bind = (f, m) => (where(m) {
-  is Right a: f(a)
-  is Left  e: Left(e)
 })
 
 isLeft :: Either e a -> Boolean

@@ -10,6 +10,8 @@ import           Infer.Substitute
 import           Error.Error
 import Infer.Infer
 import Explain.Reason
+import Debug.Trace (trace)
+import Text.Show.Pretty (ppShow)
 
 
 occursCheck :: Substitutable a => TVar -> a -> Bool
@@ -55,13 +57,13 @@ instance Unify Type where
   unify t1 t2                      = throwError $ InferError (UnificationError t1 t2) NoReason 
 
 
-instance (Unify t, Substitutable t) => Unify [t] where
+instance (Unify t, Show t, Substitutable t) => Unify [t] where
   unify (x:xs) (y:ys) = do
     s1 <- unify x y
     s2 <- unify (apply s1 xs) (apply s1 ys)
     return (s2 <> s1)
   unify []     []     = return nullSubst
-  unify _      _      = throwError $ InferError FatalError NoReason 
+  unify a      b      = throwError $ InferError (trace ("A: "<>ppShow a<>"\nB: "<>ppShow b) FatalError) NoReason 
 
 
 unifyVars

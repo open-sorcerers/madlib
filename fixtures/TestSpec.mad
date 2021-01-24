@@ -14,7 +14,7 @@ t2 = T.test("It should work", (x) => (
 
 t3 = T.test("It should also work", (x) => (
   W.after(2000, <1, 3>)
-    |> W.chain((res) => (T.assertEquals(res, <1, 3>)))
+    |> chain((res) => (T.assertEquals(res, <1, 3>)))
 ))
 
 t4 = T.test("It should also work for records", (x) => (

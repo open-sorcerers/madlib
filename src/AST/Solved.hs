@@ -32,7 +32,7 @@ data Import
 
 data Interface = Interface Constraints Name Name (M.Map Name Typing) deriving(Eq, Show)
 
-data Instance = Instance Constraints Name Typing (M.Map Name Exp) deriving(Eq, Show)
+data Instance = Instance Constraints Name Typing (M.Map Name (Exp, Ty.Scheme)) deriving(Eq, Show)
 
 data TypeDecl
   = ADT

@@ -62,35 +62,10 @@ Right
                          (TApp
                             (TApp
                                (TCon (TC "(->)" (Kfun Star (Kfun Star Star))))
-                               (TVar (TV "n" Star)))
-                            (TApp (TCon (TC "List" (Kfun Star Star))) (TVar (TV "n" Star))))
+                               (TVar (TV "f" Star)))
+                            (TApp (TCon (TC "List" (Kfun Star Star))) (TVar (TV "f" Star))))
                          (Area (Loc 26 2 1) (Loc 27 2 2))
-                         (FieldAccess
-                            (Solved
-                               (TRecord
-                                  (fromList
-                                     [ ( "singleton"
-                                       , TApp
-                                           (TApp
-                                              (TCon (TC "(->)" (Kfun Star (Kfun Star Star))))
-                                              (TVar (TV "n" Star)))
-                                           (TApp
-                                              (TCon (TC "List" (Kfun Star Star)))
-                                              (TVar (TV "n" Star)))
-                                       )
-                                     ])
-                                  False)
-                               (Area (Loc 26 2 1) (Loc 27 2 2))
-                               (Var "L"))
-                            (Solved
-                               (TApp
-                                  (TApp
-                                     (TCon (TC "(->)" (Kfun Star (Kfun Star Star))))
-                                     (TRecord
-                                        (fromList [ ( "singleton" , TVar (TV "m" Star) ) ]) True))
-                                  (TVar (TV "m" Star)))
-                               (Area (Loc 28 2 3) (Loc 37 2 12))
-                               (Var ".singleton"))))
+                         (Var "L.singleton"))
                       (Solved
                          (TCon (TC "Number" Star))
                          (Area (Loc 38 2 13) (Loc 39 2 14))
