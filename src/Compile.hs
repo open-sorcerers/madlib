@@ -38,6 +38,7 @@ data CompilationConfig
       , ccastPath :: FilePath
       , ccoutputPath :: FilePath
       , cccoverage :: Bool
+      -- , ccinterfaces :: Interfaces
       }
 
 class Compilable a where
@@ -636,7 +637,7 @@ updateASTPath astPath config = config { ccastPath = astPath }
 
 instance Compilable Slv.Interface where
   compile _ interface = case interface of
-    Slv.Interface _ name _ _ -> "export const " <> name <> " = {};\n"
+    Slv.Interface _ name _ _ -> "global." <> name <> " = {};\n"
 
 instance Compilable Slv.Instance where
   compile config inst = case inst of
@@ -719,7 +720,7 @@ buildDefaultExport as es =
         <$> concat (adtconstructors <$> filter isADTExport as)
       allDefaultExports = expExportNames <> adtExportNames
   in  case allDefaultExports of
-        []      -> ""
+        []      -> "export default {};\n"
         exports -> "export default { " <> intercalate ", " exports <> " };\n"
 
  where

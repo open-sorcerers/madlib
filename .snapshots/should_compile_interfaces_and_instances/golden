@@ -45,8 +45,8 @@ const getMadlibType = (value) => {
     return '__UNKNOWN__';
   }
 };
-export const Functor = {};
-export const Monad = {};
+global.Functor = {};
+global.Monad = {};
 Functor['Maybe'] = {
   map: curryPowder((f, __x__) => ((__x__) => {
   if (__x__.__constructor === "Just" && true) {
@@ -110,10 +110,10 @@ const Left = curryPowder((a) => ({ __constructor: "Left", __args: [ a ] }));
 const inc = curryPowder((a) => a + 1);
 Functor.List.map(inc, ([1, 2, 3]));
 Monad.Maybe.chain(curryPowder((x) => Just(x + 1)), Just(3));
-const doIt = (__Functor_ae__) => (curryPowder((x) => __Functor_ae__.map(curryPowder((k) => k + 1), x)));
+const doIt = (__Functor_af__) => (curryPowder((x) => __Functor_af__.map(curryPowder((k) => k + 1), x)));
 doIt(Functor.Maybe)(Just(3));
 const p = 1;
-const fn = (__Functor_av__) => (__Functor_av__.map(inc));
+const fn = (__Functor_aw__) => (__Functor_aw__.map(inc));
 fn(Functor.Maybe)(Just(3));
 fn(Functor.List)(([4, 5, 6]));
 const hideCall = curryPowder((x) => ((__x__) => {
@@ -122,3 +122,4 @@ const hideCall = curryPowder((x) => ((__x__) => {
   }
   else { throw 'non exhaustive patterns!'; }
 })(Monad.Maybe.chain(curryPowder((a) => Just(a + 1)), x)));
+export default {};

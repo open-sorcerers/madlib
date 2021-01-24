@@ -1,12 +1,14 @@
+import _ from "Functor"
+
 export data Either e a
   = Left e
   | Right a
 
-map :: (a -> b) -> Either e a -> Either e b
-export map = (f, m) => (where(m) {
-  is Right a: Right(f(a))
-  is Left  e: Left(e)
-})
+instance Functor (Either e) {
+  map = (f) => where
+    is Right a: Right(f(a))
+    is Left  e: Left(e)
+}
 
 mapLeft :: (e -> f) -> Either e a -> Either f a
 export mapLeft = (f, m) => (where(m) {

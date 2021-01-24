@@ -16,11 +16,11 @@ import F from "Function"
 
 IO.log("Installing dependencies ...")
 
-installPackages :: String -> ()
+// installPackages :: String -> ()
 installPackages = pipe(
   FS.readFile,
   W.mapRej((_) => ("The madlib.json file was not found, verify that you have created one or that you run the command from the right directory.")),
-  W.map(J.parse(J.field("dependencies", J.map(J.string)))),
+  map(J.parse(J.field("dependencies", J.map(J.string)))),
   W.chain(where
     is E.Left e: W.bad(e)
     is E.Right depMap: pipe(
@@ -31,15 +31,15 @@ installPackages = pipe(
         where
           is Maybe.Just p : Http.get(p)
           is Maybe.Nothing: W.bad("ERR"),
-        W.map(where is Http.Response { body: Http.BinaryBody d }: d),
-        W.map(FS.BinaryData),
+        map(where is Http.Response { body: Http.BinaryBody d }: d),
+        map(FS.BinaryData),
         W.chain(FS.writeFile(key ++ ".zip")),
         W.chain((a) => S.exec("mv " ++ a ++ " ./madlib_modules/")),
         W.andDo(S.exec("unzip -d ./madlib_modules/" ++ key ++ "-tmp ./madlib_modules/" ++ key ++ ".zip")),
         W.andDo(S.exec("mv ./madlib_modules/" ++ key ++ "-tmp/* ./madlib_modules/" ++ key ++ "-tmp/" ++ key)),
         W.andDo(S.exec("cp -R ./madlib_modules/" ++ key++"-tmp/"++key++" ./madlib_modules/")),
         W.andDo(S.exec("rm -r ./madlib_modules/" ++ key ++ ".zip ./madlib_modules/" ++ key ++ "-tmp")),
-        W.map((a) => "package " ++ key ++ " installed"),
+        map((a) => "package " ++ key ++ " installed"),
         W.mapRej((_) => "Error installing package '" ++ key ++ "'")
       )(key)),
       W.parallel

@@ -98,3 +98,4 @@ const getMadlibType = (value) => {
   }
 };
 L.singleton(3);
+export default {};

@@ -148,3 +148,4 @@ const getMadlibType = (value) => {
   }
 };
 R.random(3);
+export default {};

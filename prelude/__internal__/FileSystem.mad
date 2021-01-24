@@ -38,8 +38,8 @@ export writeFile = (path, d) => (where(d) {
 })
 
 readFile :: String -> W.Wish e String
-export readFile = (path) => (#- 
-  W.Wish((bad, good) => {
+export readFile = (path) => 
+  W.Wish((bad, good) => (#- {
     fs.readFile(path, "utf8", (err, d) => {
       if (err) {
         bad(err);
@@ -48,5 +48,4 @@ export readFile = (path) => (#-
         good(d)
       }
     });
-  })
--#)
+  }-#))

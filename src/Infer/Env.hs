@@ -47,12 +47,6 @@ lookupVar env x
     Nothing -> throwError $ InferError (UnboundVariable x) NoReason
 
 
--- findInstance :: Env -> Id -> Type -> Infer Instance
--- findInstance env id t = case M.lookup id (envinterfaces env) of
---   Just (Interface _ _ is) -> do
---     find ()
-
-
 extendVars :: Env -> (String, Scheme) -> Env
 extendVars env (x, s) = env { envvars = M.insert x s $ envvars env }
 

@@ -74,11 +74,11 @@ Right
                   (LNum "3"))
                (TRSingle "Number"))
         , Solved
-            (TApp (TCon (TC "Maybe" (Kfun Star Star))) (TVar (TV "e" Star)))
+            (TApp (TCon (TC "Maybe" (Kfun Star Star))) (TVar (TV "f" Star)))
             (Area (Loc 92 5 2) (Loc 110 5 20))
             (TypedExp
                (Solved
-                  (TApp (TCon (TC "Maybe" (Kfun Star Star))) (TVar (TV "e" Star)))
+                  (TApp (TCon (TC "Maybe" (Kfun Star Star))) (TVar (TV "f" Star)))
                   (Area (Loc 92 5 2) (Loc 99 5 9))
                   (Var "Nothing"))
                (TRComp "Maybe" [ TRSingle "a" ]))

@@ -36,7 +36,7 @@ export get = (k, m) => (where(m)
       ),
       items
     )
-    |> Maybe.map(T.snd)
+    |> map(T.snd)
 )
 
 

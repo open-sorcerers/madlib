@@ -97,3 +97,4 @@ const getMadlibType = (value) => {
   }
 };
 L.map(curryPowder((x) => x * 2), ([1, 2, 3]));
+export default {};

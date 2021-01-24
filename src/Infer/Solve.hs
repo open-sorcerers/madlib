@@ -165,9 +165,9 @@ inferAbs :: Env -> Src.Exp -> Infer (Substitution, [Pred], Type, Slv.Exp)
 inferAbs env l@(Meta _ _ (Src.Abs param body)) = do
   tv <- newTVar Star
   let env' = extendVars env (param, Forall [] ([] :=> tv))
-  (s1, ps, t1, es) <- inferBody env' body
-  let t = apply s1 (tv `fn` t1)
-  return (s1, ps, t, applyAbsSolve l param es t)
+  (s, ps, t, es) <- inferBody env' body
+  let t' = apply s (tv `fn` t)
+  return (s, ps, t', applyAbsSolve l param es t')
 
 
 inferBody :: Env -> [Src.Exp] -> Infer (Substitution, [Pred], Type, [Slv.Exp])
@@ -353,7 +353,7 @@ inferFieldAccess env (Meta _ area (Src.FieldAccess rec@(Meta _ _ re) abs@(Meta _
 
       Nothing -> case recordType of
         TRecord _ False ->
-          throwError $ InferError (FieldNotExisting name) (AreaReason area)
+          throwError $ InferError (FieldNotExisting name) (SimpleReason (envcurrentpath env) area)
         _ -> do
           tv <- newTVar Star
           s3 <- unify (apply recordSubst fieldType) (recordType `fn` tv)
@@ -488,6 +488,9 @@ extendRecord s t = case t of
 
 inferTypedExp :: Env -> Src.Exp -> Infer (Substitution, [Pred], Type, Slv.Exp)
 inferTypedExp env (Meta _ area (Src.TypedExp exp typing)) = do
+  -- (s1, ps1, t1, e1) <- infer env exp
+  -- return (s1, ps1, t1, Slv.Solved t1 area (Slv.TypedExp (updateType e1 t1) (updateTyping typing)))
+  infer env exp
   sc          <- typingToScheme env typing
   (ps :=> t) <- instantiate sc
 
@@ -540,6 +543,7 @@ updatePlaceholders s (Slv.Solved t a e) = case e of
   Slv.Assignment n exp -> Slv.Solved t a $ Slv.Assignment n (updatePlaceholders s exp)
   Slv.ListConstructor li -> Slv.Solved t a $ Slv.ListConstructor (updateListItem s <$> li)
   Slv.TypedExp exp typing -> Slv.Solved t a $ Slv.TypedExp (updatePlaceholders s exp) typing
+  Slv.Export exp -> Slv.Solved t a $ Slv.Export (updatePlaceholders s exp)
   _ -> Slv.Solved t a e
  where
    updateIs :: Substitution -> Slv.Is -> Slv.Is
@@ -599,7 +603,7 @@ verifyPred t p@(IsIn n [t']) = case t of
 
 
 inferImplicitlyTyped :: Env -> Src.Exp -> Infer (Substitution, [Pred], Env, Slv.Exp)
-inferImplicitlyTyped env exp = do
+inferImplicitlyTyped env exp@(Meta _ area _) = do
   tv            <- newTVar Star
 
   let env' = case getExpName exp of
@@ -614,7 +618,7 @@ inferImplicitlyTyped env exp = do
       fs  = ftv (apply s'' env)
       vs  = ftv t'
       gs  = vs \\ fs
-  (ds, rs) <- split env' fs vs (trace ("QT: "<>ppShow (ps :=> t)<>"\nS'': "<>ppShow s''<>"\nFS: "<>ppShow fs<>"\nVS: "<>ppShow vs<>"\nPS': "<>ppShow ps') ps')
+  (ds, rs) <- catchError (split env' fs vs ps') (\(InferError e _) -> throwError $ InferError e (SimpleReason (envcurrentpath env) area))
 
   mapM_ (verifyPred t') rs
 
@@ -624,15 +628,15 @@ inferImplicitlyTyped env exp = do
 
 
 inferExplicitlyTyped :: Env -> Src.Exp -> Infer (Substitution, [Pred], Env, Slv.Exp)
-inferExplicitlyTyped env e@(Meta _ a (Src.TypedExp exp typing)) = do
+inferExplicitlyTyped env e@(Meta _ area (Src.TypedExp exp typing)) = do
   sc            <- typingToScheme env typing
+  qt@(qs :=> t')  <- instantiate sc
 
   let env' = case getExpName exp of
         Just n  -> extendVars env (n, sc)
         Nothing -> env
 
   (s, ps, t, e) <- infer env' exp
-  (qs :=> t')  <- instantiate sc
   s' <- (`compose` s) <$> unify t' t
 
   let qs' = apply s' qs
@@ -641,12 +645,14 @@ inferExplicitlyTyped env e@(Meta _ a (Src.TypedExp exp typing)) = do
       gs  = ftv t'' \\ fs
       sc' = quantify gs (qs' :=> t'')
   ps' <- filterM ((not <$>) . entail env' qs') (apply s' ps)
-  (ds, rs) <- split env' fs gs ps'
+  (ds, rs) <- catchError
+    (split env' fs gs ps')
+    (\(InferError e _) -> throwError $ InferError e (SimpleReason (envcurrentpath env) area))
 
   if sc /= sc' then
-    throwError $ InferError (SignatureTooGeneral sc sc') (SimpleReason (envcurrentpath env') a)
+    throwError $ InferError (SignatureTooGeneral sc sc') (SimpleReason (envcurrentpath env') area)
   else  if not (null rs) then
-    throwError $ InferError ContextTooWeak NoReason
+    throwError $ InferError ContextTooWeak (trace ("RS: "<>ppShow rs) (SimpleReason (envcurrentpath env) area))
   else do
     let e' = updateType e t''
 
@@ -657,7 +663,7 @@ inferExplicitlyTyped env e@(Meta _ a (Src.TypedExp exp typing)) = do
           Just n  -> extendVars env' (n, sc'')
           Nothing -> env'
 
-    return (s', ps, env'', Slv.Solved t'' a (Slv.TypedExp e' (updateTyping typing)))
+    return (s', ps, env'', Slv.Solved t'' area (Slv.TypedExp e' (updateTyping typing)))
 
 
 inferExps :: Env -> [Src.Exp] -> Infer [Slv.Exp]
@@ -855,11 +861,19 @@ solveImports table (imp : is) = do
     ( M.insert modulePath solvedAST (M.union solvedTable nextTable)
     , mergedADTs
     , M.map generify allVarsT
-    , envinterfaces envSolved <> nextInterfaces
-    , envmethods envSolved <> nextMethods
+    , mergeInterfaces (envinterfaces envSolved) nextInterfaces
+    , M.union (envmethods envSolved) nextMethods
     )
 
 solveImports _ [] = return (M.empty, envtypes initialEnv, envvars initialEnv, envinterfaces initialEnv, envmethods initialEnv)
+
+mergeInterfaces :: Interfaces -> Interfaces -> Interfaces
+mergeInterfaces is is' = M.foldrWithKey mergeInterface is is'
+
+-- (k -> a -> b -> b)
+mergeInterface :: Id -> Interface -> Interfaces -> Interfaces
+mergeInterface id toMerge current = M.insertWith (\(Interface tvs ps is) (Interface _ _ is') -> Interface tvs ps $ is `union` is') id toMerge current
+
 
 isADT :: Slv.TypeDecl -> Bool
 isADT Slv.ADT{} = True

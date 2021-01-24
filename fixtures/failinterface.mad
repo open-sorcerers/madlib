@@ -1,0 +1,74 @@
+// import T from "Tuple"
+// import Maybe from "Maybe"
+// import L from "List"
+// import F from "Function"
+// import IO from "IO"
+// import FS from "FileSystem"
+import W from "Wish"
+import Maybe from "Maybe"
+
+// export data Map k v = Map_ (List <k, v>)
+
+// get :: k -> Map k v -> Maybe.Maybe v
+// export get = (k) => where
+//   is Map_ items: pipe(
+//     L.find((item) => (where(item)
+//       is <kk, _>: k == kk
+//     )),
+//     map(T.snd)
+//   )(items)
+
+
+// // export alias Row = { id :: String, cols :: List <String, String> }
+
+// readFile :: String -> W.Wish e String
+// export readFile = (path) => 
+//   W.Wish((bad, good) => (#- {
+//     fs.readFile(path, "utf8", (err, d) => {
+//       if (err) {
+//         bad(err);
+//       }
+//       else {
+//         good(d)
+//       }
+//     });
+//   }-#))
+
+collectCoverage :: a -> Maybe.Maybe String
+collectCoverage = (received) => pipe(
+  Maybe.Just,
+  map((_) => "ok")
+  // W.andDo(W.of(<received, [{ id: "id", cols: [] }]>))
+)(received)
+
+
+collectCoverage :: a -> W.Wish e String
+collectCoverage = (received) => pipe(
+  W.of,
+  map((_) => "ok")
+  // W.andDo(W.of(<received, [{ id: "id", cols: [] }]>))
+)(received)
+
+
+// collectCoverage :: a -> W.Wish e <a, List IO.Row>
+// collectCoverage = (received) => pipe(
+//   W.of,
+//   map(F.always("ok")),
+//   W.andDo(W.of(<received, [{ id: "id", cols: [] }]>))
+// )(received)
+
+
+// collectCoverage :: a -> W.Wish e <a, List IO.Row>
+// collectCoverage = (received) =>
+//   W.of(".coverage/lcov.info")
+//     |> map(F.always("ok"))
+//     |> W.andDo(W.of(<received, [{ id: "id", cols: [] }]>))
+    // |> map(Lcov.parseLcov)
+    // |> map(collect(HP.getHitPoints("")))
+    // |> W.chain((lcov) =>
+    //      W.of(lcov)
+    //        |> map(Lcov.stringify)
+    //        |> map(FS.TextData)
+    //        |> W.chain(FS.writeFile(".coverage/lcov.info"))
+    //        |> W.andDo(W.of(<received, stdoutReport(lcov)>))
+    //    )

@@ -1,18 +1,17 @@
-export data Wish e a = Wish ((e -> ()) -> (a -> ()) -> ())
+import _ from "Functor"
 
+export data Wish e a = Wish ((e -> ()) -> (a -> ()) -> ())
 
 of :: a -> Wish e a
 export of = (a) => (Wish((bad, good) => (good(a))))
 
 
-map :: (a -> b) -> Wish e a -> Wish e b
-export map = (f, m) => (
-  Wish((bad, good) => (
-    where(m) {
+instance Functor (Wish e) {
+  map = (f, m) => Wish((bad, good) =>
+    where(m)
       is Wish run: run(bad, (x) => (good(f(x))))
-    }
-  ))
-)
+  )
+}
 
 
 mapRej :: (e -> f) -> Wish e a -> Wish f a

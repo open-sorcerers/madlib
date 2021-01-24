@@ -1,5 +1,6 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE LambdaCase #-}
 module Infer.Pred where
 
 import Infer.Type
@@ -87,28 +88,22 @@ byInst env p@(IsIn interface t)    = tryInsts (insts env interface)
     tryInst (Instance (ps :=> h)) = do
         u <- match h p
         let ps' = apply u <$> ps
-        if not (null ps')
-          then do
-            ps'' <- mapM (byInst env) ps'
-            return $ concat ps''
-          else return ps'
-
+        return ps'
     tryInsts [] = case head t of
-      TVar _ -> return []
+      TVar _ -> throwError $ InferError FatalError NoReason
       _ -> throwError $ InferError (NoInstanceFound interface (head t)) NoReason
     tryInsts (inst:is) = catchError (tryInst inst) (\e -> tryInsts is)
 
+allM :: (Monad m, Foldable t) => (a -> m Bool) -> t a -> m Bool
+allM f = foldM (\b a -> f a >>= (return . (&& b))) True
 
-entail        :: Env -> [Pred] -> Pred -> Infer Bool
+entail :: Env -> [Pred] -> Pred -> Infer Bool
 entail env ps p = do
-  qs <- byInst env p
-  one <- catchError (foldM (\a q -> do
-      x <- entail env ps q
-      return $ a && x
-      ) True qs) (const $ return False)
-  let two = any ((p `elem`) . bySuper env) ps
-  return $ two || (one && not (null qs))
-
+  tt <- catchError (byInst env p >>= allM (entail env ps)) (\case
+      InferError FatalError _ -> return False
+      e -> throwError e
+      )
+  return $ any ((p `elem`) . bySuper env) ps || tt
 
 -----------------------------------------------------------------------------
 

@@ -5,9 +5,9 @@ data Maybe a = Just a | Nothing
 
 data Either e a = Right a | Left e
 
-interface Functor m {
-  map :: (a -> b) -> m a -> m b
-}
+// interface Functor m {
+//   map :: (a -> b) -> m a -> m b
+// }
 
 instance Functor Maybe {
   map = (f) => where
@@ -58,7 +58,6 @@ instance Read Number {
 }
 
 
-// read("3")
 (read("3") :: Number)
 
 
@@ -142,6 +141,7 @@ useBoth(Just("Hello World")) |> map(IO.log)
 ambiguity :: Monad m => String -> m String
 ambiguity = (s) => of(s) |> map((x) => x ++ " !")
 
+// read("3")
 // ambiguity("fail")
 
 ambi :: String -> String

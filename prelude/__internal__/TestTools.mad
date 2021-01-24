@@ -77,7 +77,7 @@ updateFnh = (section) => (
 collectFnh :: Lcov.LcovInfo -> Lcov.LcovInfo
 collectFnh = (lcov) => L.map(updateFnh, lcov)
 
-collect :: List HP.HitPoint -> Lcov.LcovInfo -> Lcov.LcovInfo
+collect :: List (HP.HitPoint) -> Lcov.LcovInfo -> Lcov.LcovInfo
 collect = (hps, lcov) =>
   L.reduceL(
     (currLcov) => where
@@ -126,12 +126,12 @@ stdoutReport = (lcov) => generateTable(lcov)
 collectCoverage :: a -> W.Wish e <a, List IO.Row>
 collectCoverage = (received) =>
   FS.readFile(".coverage/lcov.info")
-    |> W.map(Lcov.parseLcov)
-    |> W.map(collect(HP.getHitPoints("")))
+    |> map(Lcov.parseLcov)
+    |> map(collect(HP.getHitPoints("")))
     |> W.chain((lcov) =>
          W.of(lcov)
-           |> W.map(Lcov.stringify)
-           |> W.map(FS.TextData)
+           |> map(Lcov.stringify)
+           |> map(FS.TextData)
            |> W.chain(FS.writeFile(".coverage/lcov.info"))
            |> W.andDo(W.of(<received, stdoutReport(lcov)>))
        )
@@ -152,7 +152,7 @@ formatFailureOutput = (description, result) =>
 test :: String -> (String -> W.Wish AssertionError String) -> W.Wish String String
 export test = (description) => pipe(
   (run) => run(description),
-  W.map(formatSuccessOutput(description)),
+  map(formatSuccessOutput(description)),
   W.chainRej(formatFailureOutput(description))
 )
 
@@ -164,7 +164,7 @@ export assertEquals = (actual, expected) => actual == expected
 isCoverageEnabled :: W.Wish String Boolean
 isCoverageEnabled = pipe(
   System.getEnv,
-  W.map(F.equals("on")),
+  map(F.equals("on")),
   W.chainRej(F.always(W.of(false)))
 )("COVERAGE_MODE")
 

@@ -103,3 +103,4 @@ const getMadlibType = (value) => {
   }
 };
 W.fulfill(curryPowder((a) => ({ __constructor: "Unit", __args: [] })), curryPowder((a) => ({ __constructor: "Unit", __args: [] })))(W.map(curryPowder((x) => x + `!`))(W.chain(curryPowder((x) => W.of(`finally a string`)))(W.chain(curryPowder((x) => W.of(x * 3)))(W.map(curryPowder((x) => x % 2))(W.of(3))))));
+export default {};
