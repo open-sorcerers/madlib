@@ -25,8 +25,8 @@ data AssertionError = AssertionError a a
 
 addFunctionHit :: String -> String -> Lcov.LcovInfo -> Lcov.LcovInfo
 addFunctionHit = (astPath, name, lcov) =>
-  L.map((section) => Lcov.getPath(section) == astPath
-      ? L.map(where
+  map((section) => Lcov.getPath(section) == astPath
+      ? map(where
           is Lcov.FNDA count n: n == name ? Lcov.FNDA(count + 1, n) : Lcov.FNDA(count, n)
           is x           : x
           , section.fndas
@@ -37,10 +37,10 @@ addFunctionHit = (astPath, name, lcov) =>
 
 addLineHit :: String -> Number -> Lcov.LcovInfo -> Lcov.LcovInfo
 addLineHit = (astPath, line, lcov) =>
-  L.map(
+  map(
     (section) =>
         Lcov.getPath(section) == astPath
-          ? L.map(where
+          ? map(where
               is Lcov.DA l count: l == line ? Lcov.DA(l, count + 1) : Lcov.DA(l, count)
               is x         : x
               , section.das
@@ -61,7 +61,7 @@ updateLh = (section) => (
 )
 
 collectLh :: Lcov.LcovInfo -> Lcov.LcovInfo
-collectLh = (lcov) => L.map(updateLh, lcov)
+collectLh = (lcov) => map(updateLh, lcov)
 
 updateFnh :: Lcov.LcovSection -> Lcov.LcovSection
 updateFnh = (section) => (
@@ -75,7 +75,7 @@ updateFnh = (section) => (
 )
 
 collectFnh :: Lcov.LcovInfo -> Lcov.LcovInfo
-collectFnh = (lcov) => L.map(updateFnh, lcov)
+collectFnh = (lcov) => map(updateFnh, lcov)
 
 collect :: List (HP.HitPoint) -> Lcov.LcovInfo -> Lcov.LcovInfo
 collect = (hps, lcov) =>
@@ -113,7 +113,7 @@ allRow = (lcov) =>
 
 generateTable :: Lcov.LcovInfo -> List IO.Row
 generateTable = (lcov) =>
-  L.map(where
+  map(where
     is { sf: Lcov.SF path, lf: Lcov.LF found, lh: Lcov.LH hit, fnf: Lcov.FNF ffound, fnh: Lcov.FNH fhit }:
       <100 * hit / found, 100 * fhit / ffound>
         |> (t) => buildRow(path, T.fst(t), T.fst(t))
@@ -170,7 +170,7 @@ isCoverageEnabled = pipe(
 
 displayResults :: <List String, List IO.Row> -> List IO.Row
 displayResults = (results) => {
-  L.map(IO.log, T.fst(results))
+  map(IO.log, T.fst(results))
   return F.when(
     F.complement(L.isEmpty),
     pipe(

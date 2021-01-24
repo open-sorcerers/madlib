@@ -1,8 +1,13 @@
 import Fun from "Function"
 import Maybe from "Maybe"
 
-map :: (a -> b) -> List a -> List b
-export map = (f, xs) => (#- xs.map((x) => f(x)) -#)
+
+instance Functor List {
+  map = (f, xs) => (#- xs.map((x) => f(x)) -#)
+}
+
+// map :: (a -> b) -> List a -> List b
+// export map = (f, xs) => (#- xs.map((x) => f(x)) -#)
 
 mapWithIndex :: (a -> Number -> b) -> List a -> List b
 export mapWithIndex = (f, xs) => (#- xs.map(f) -#)

@@ -167,7 +167,7 @@ inferAbs env l@(Meta _ _ (Src.Abs param body)) = do
   let env' = extendVars env (param, Forall [] ([] :=> tv))
   (s, ps, t, es) <- inferBody env' body
   let t' = apply s (tv `fn` t)
-  return (s, ps, t', applyAbsSolve l param es t')
+  return (s, apply s ps, t', applyAbsSolve l param es t')
 
 
 inferBody :: Env -> [Src.Exp] -> Infer (Substitution, [Pred], Type, [Slv.Exp])
@@ -185,7 +185,7 @@ inferBody env (e : xs) = do
 
         _ -> env
 
-  (\(sb, ps, tb, eb) -> (s `compose` sb, ps, tb, e' : eb)) <$> inferBody env' xs
+  (\(sb, ps', tb, eb) -> (sb `compose` s, ps `union` ps', tb, e' : eb)) <$> inferBody env' xs
 
 
 -- INFER APP

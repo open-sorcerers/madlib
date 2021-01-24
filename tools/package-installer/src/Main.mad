@@ -26,7 +26,7 @@ installPackages = pipe(
     is E.Right depMap: pipe(
       M.keys,
       (keys) => IO.trace("Packages to install:" ++ L.reduceR((ptis, k) => (ptis ++ "\n" ++ "  - " ++ k), "", keys) ++ "\n", keys),
-      L.map((key) => pipe(
+      map((key) => pipe(
         (k) => M.get(k, depMap),
         where
           is Maybe.Just p : Http.get(p)

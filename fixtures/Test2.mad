@@ -42,13 +42,13 @@ export get = (k, m) => (where(m)
 
 keys :: Map k v -> List k
 export keys = (m) => (where(m)
-  is Map_ items: L.map(T.fst, items)
+  is Map_ items: map(T.fst, items)
 )
 
 
 values :: Map k v -> List v
 export values = (m) => (where(m)
-  is Map_ items: L.map(T.snd, items)
+  is Map_ items: map(T.snd, items)
 )
 
 len :: Map k v -> Number

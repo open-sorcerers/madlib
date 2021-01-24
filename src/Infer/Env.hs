@@ -144,14 +144,32 @@ solveInstance env inst = case inst of
     addInstance env ps $ IsIn n [t]
 
 
+populateTopLevelTypings :: Env -> [Src.Exp] -> Infer Env
+populateTopLevelTypings env []                = return env
+populateTopLevelTypings env ((Meta _ _ e):es) = do
+  nextEnv <- case e of
+    Src.TypedExp (Meta _ _ (Src.Assignment name _)) typing -> do
+      sc <- typingToScheme env typing
+      return $ extendVars env (name, sc)
+
+    Src.TypedExp (Meta _ _ (Src.Export (Meta _ _ (Src.Assignment name _)))) typing -> do
+      sc <- typingToScheme env typing
+      return $ extendVars env (name, sc)
+
+    _ -> return env
+
+  populateTopLevelTypings nextEnv es
+
+
 buildInitialEnv :: Env -> AST -> Infer Env
-buildInitialEnv priorEnv AST { atypedecls, ainterfaces, ainstances, apath = Just apath }
+buildInitialEnv priorEnv AST { aexps, atypedecls, ainterfaces, ainstances, apath = Just apath }
   = do
     tadts <- buildTypeDecls priorEnv apath atypedecls
     vars  <- resolveTypeDecls priorEnv apath tadts atypedecls
     env   <- solveInterfaces priorEnv ainterfaces
     env'  <- solveInstances (env { envtypes = M.union (envtypes initialEnv) tadts }) ainstances
-    return env' { envvars        = envvars initialEnv <> vars <> envvars env
-                , envtypes       = M.union (envtypes initialEnv) tadts
+    let env'' = env' { envvars        = envvars initialEnv <> vars <> envvars env
+                , envtypes       = M.union (envtypes priorEnv) tadts
                 , envcurrentpath = apath
                 }
+    populateTopLevelTypings env'' aexps
