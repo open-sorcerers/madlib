@@ -103,8 +103,8 @@ getImportsWithAbsolutePaths pathUtils ctxPath ast = case ast of
 
 setImportAbsolutePath :: Import -> FilePath -> Import
 setImportAbsolutePath imp fp = case imp of
-  Meta i a (NamedImport   s p _) -> Meta i a (NamedImport s p fp)
-  Meta i a (DefaultImport s p _) -> Meta i a (DefaultImport s p fp)
+  Source i a (NamedImport   s p _) -> Source i a (NamedImport s p fp)
+  Source i a (DefaultImport s p _) -> Source i a (DefaultImport s p fp)
 
 
 findAST :: Table -> FilePath -> Either InferError AST

@@ -23,11 +23,11 @@ format :: (FilePath -> IO String) -> InferError -> IO String
 format rf (InferError err reason) = do
   moduleContent <- lines <$> getModuleContent rf reason
   case reason of
-    Reason (WrongTypeApplied (Meta _ _ abs) (Meta infos (Area (Loc a li c) _) e)) _ area
+    Reason (WrongTypeApplied (Src.Source _ _ abs) (Src.Source infos (Area (Loc a li c) _) e)) _ area
       -> do
         let beginning = case abs of
               -- TODO: Extend to other operators
-              Src.App (Meta _ _ (Src.Var "+")) _ _ ->
+              Src.App (Src.Source _ _ (Src.Var "+")) _ _ ->
                 "Error applying the operator +"
               Src.Var "+" -> "Error applying the operator +"
               _           -> "Error in function call"
@@ -77,7 +77,7 @@ format rf (InferError err reason) = do
           <> "\n\n"
           <> hint
 
-    Reason (VariableNotDeclared (Meta _ (Area (Loc a li c) _) exp)) _ area ->
+    Reason (VariableNotDeclared (Src.Source _ (Area (Loc a li c) _) exp)) _ area ->
       do
         let l           = moduleContent !! (li - 1)
 
@@ -104,8 +104,8 @@ format rf (InferError err reason) = do
           <> hint
 
     Reason (IfElseBranchTypesDontMatch ifElse falsy) _ _ -> do
-      let ifElseArea                         = getArea ifElse
-      let falsyArea                          = getArea falsy
+      let ifElseArea                         = Src.getArea ifElse
+      let falsyArea                          = Src.getArea falsy
       let (Area (Loc _ falsyLine _) _)       = falsyArea
       let (showStart, showEnd) = computeLinesToShow ifElseArea falsyArea
       let linesToShow = slice showStart showEnd moduleContent
@@ -133,8 +133,8 @@ format rf (InferError err reason) = do
         <> hint
 
     Reason (IfElseCondIsNotBool ifElse cond) _ _ -> do
-      let ifElseArea                         = getArea ifElse
-      let condArea                           = getArea cond
+      let ifElseArea                         = Src.getArea ifElse
+      let condArea                           = Src.getArea cond
       let (Area (Loc _ falsyLine _) _)       = condArea
       let (showStart, showEnd) = computeLinesToShow ifElseArea condArea
       let linesToShow = slice showStart showEnd moduleContent
@@ -161,8 +161,8 @@ format rf (InferError err reason) = do
         <> hint
 
     Reason (PatternTypeError switch pat) _ _ -> do
-      let switchArea                         = getArea switch
-      let patternArea                        = getArea pat
+      let switchArea                         = Src.getArea switch
+      let patternArea                        = Src.getArea pat
       let (Area (Loc _ patternLine _) _)     = patternArea
       let (showStart, showEnd) = computeLinesToShow switchArea patternArea
       let linesToShow = slice showStart showEnd moduleContent
@@ -190,8 +190,8 @@ format rf (InferError err reason) = do
         <> hint
 
     Reason (PatternConstructorDoesNotExist switch pat) _ _ -> do
-      let switchArea                     = getArea switch
-      let patternArea                    = getArea pat
+      let switchArea                     = Src.getArea switch
+      let patternArea                    = Src.getArea pat
       let (Area (Loc _ patternLine _) _) = patternArea
       let (showStart, showEnd) = computeLinesToShow switchArea patternArea
       let linesToShow = slice showStart showEnd moduleContent
@@ -213,8 +213,8 @@ format rf (InferError err reason) = do
         <> hint
 
     Reason (WrongImport imp) _ _ -> do
-      let importArea                    = getArea imp
-      let highlightArea                 = getArea imp
+      let importArea                    = Src.getArea imp
+      let highlightArea                 = Src.getArea imp
       let (Area (Loc _ importLine _) _) = highlightArea
       let (showStart, showEnd) = computeLinesToShow importArea highlightArea
       let linesToShow                   = slice showStart showEnd moduleContent
@@ -237,14 +237,14 @@ format rf (InferError err reason) = do
         <> hint
 
     Reason (TypeAndTypingMismatch exp typing expectedType actualType) _ _ -> do
-      let typingArea                 = getArea typing
-      let expArea                    = getArea exp
+      let typingArea                 = Src.getArea typing
+      let expArea                    = Src.getArea exp
       let (Area (Loc _ expLine _) _) = expArea
       let (typingStart, typingEnd) = computeLinesToShow typingArea typingArea
       let (expStart, expEnd)         = computeLinesToShow expArea expArea
       let typingContent = slice typingStart typingEnd moduleContent
       let expContent = case exp of
-            (Meta _ _ (Src.Assignment _ _)) ->
+            (Src.Source _ _ (Src.Assignment _ _)) ->
               slice expStart expEnd moduleContent
             _ -> []
 

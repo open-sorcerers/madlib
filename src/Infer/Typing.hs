@@ -33,7 +33,7 @@ typingToScheme env typing = do
 
 
 qualTypingToQualType :: Env -> Src.Typing -> Infer (Qual Type)
-qualTypingToQualType env t@(Meta _ _ typing) = case typing of
+qualTypingToQualType env t@(Src.Source _ _ typing) = case typing of
   Src.TRConstrained constraints typing' -> do
     t  <- typingToType env typing'
     ps <- mapM (constraintToPredicate env t) constraints
@@ -43,13 +43,13 @@ qualTypingToQualType env t@(Meta _ _ typing) = case typing of
 
 
 constraintToPredicate :: Env -> Type -> Src.Typing -> Infer Pred
-constraintToPredicate env t (Meta _ _ (Src.TRComp n typings)) = do
+constraintToPredicate env t (Src.Source _ _ (Src.TRComp n typings)) = do
   let s = buildVarSubsts t
   ts <- mapM
     (\case
-      Meta _ _ (Src.TRSingle var) -> return $ apply s $ TVar $ TV var Star
+      Src.Source _ _ (Src.TRSingle var) -> return $ apply s $ TVar $ TV var Star
 
-      fullTyping@(Meta _ _ (Src.TRComp n typings')) -> do
+      fullTyping@(Src.Source _ _ (Src.TRComp n typings')) -> do
         apply s <$> typingToType env fullTyping
     )
     typings
@@ -58,7 +58,7 @@ constraintToPredicate env t (Meta _ _ (Src.TRComp n typings)) = do
 
 
 typingToType :: Env -> Src.Typing -> Infer Type
-typingToType env (Meta _ _ (Src.TRSingle t))
+typingToType env (Src.Source _ _ (Src.TRSingle t))
   | t == "Number" = return tNumber
   | t == "Boolean" = return tBool
   | t == "String" = return tStr
@@ -71,7 +71,7 @@ typingToType env (Meta _ _ (Src.TRSingle t))
       t                -> return $ getConstructorCon t
 
 
-typingToType env (Meta info area (Src.TRComp t ts))
+typingToType env (Src.Source info area (Src.TRComp t ts))
   | isLower . head $ t = do
     params <- mapM (typingToType env) ts
     return $ foldl TApp (TVar $ TV t (buildKind (length ts))) params
@@ -100,16 +100,16 @@ typingToType env (Meta info area (Src.TRComp t ts))
       t                  -> return $ foldl TApp (getConstructorCon t) params
 
 
-typingToType env (Meta _ _ (Src.TRArr l r)) = do
+typingToType env (Src.Source _ _ (Src.TRArr l r)) = do
   l' <- typingToType env l
   r' <- typingToType env r
   return $ l' `fn` r'
 
-typingToType env (Meta _ _ (Src.TRRecord fields)) = do
+typingToType env (Src.Source _ _ (Src.TRRecord fields)) = do
   fields' <- mapM (typingToType env) fields
   return $ TRecord fields' False
 
-typingToType env (Meta _ _ (Src.TRTuple elems)) = do
+typingToType env (Src.Source _ _ (Src.TRTuple elems)) = do
   elems' <- mapM (typingToType env) elems
   let tupleT = getTupleCtor (length elems)
   return $ foldl TApp tupleT elems'
@@ -153,15 +153,15 @@ updateAliasVars t args = do
 
 updateTyping :: Src.Typing -> Slv.Typing
 updateTyping typing = case typing of
-  Meta _ _ (Src.TRSingle name   ) -> Slv.TRSingle name
+  Src.Source _ _ (Src.TRSingle name   ) -> Slv.TRSingle name
 
-  Meta _ _ (Src.TRComp name vars) -> Slv.TRComp name (updateTyping <$> vars)
+  Src.Source _ _ (Src.TRComp name vars) -> Slv.TRComp name (updateTyping <$> vars)
 
-  Meta _ _ (Src.TRArr  l    r   ) -> Slv.TRArr (updateTyping l) (updateTyping r)
+  Src.Source _ _ (Src.TRArr  l    r   ) -> Slv.TRArr (updateTyping l) (updateTyping r)
 
-  Meta _ _ (Src.TRRecord fields ) -> Slv.TRRecord (updateTyping <$> fields)
+  Src.Source _ _ (Src.TRRecord fields ) -> Slv.TRRecord (updateTyping <$> fields)
 
-  Meta _ _ (Src.TRTuple  elems  ) -> Slv.TRTuple (updateTyping <$> elems)
+  Src.Source _ _ (Src.TRTuple  elems  ) -> Slv.TRTuple (updateTyping <$> elems)
 
-  Meta _ _ (Src.TRConstrained ts t) ->
+  Src.Source _ _ (Src.TRConstrained ts t) ->
     Slv.TRConstrained (updateTyping <$> ts) (updateTyping t)

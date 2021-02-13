@@ -29,7 +29,7 @@ inferPatterns env pats = do
   return (ps, as, ts)
 
 inferPattern :: Env -> Src.Pattern -> Infer ([Pred], Vars, Type)
-inferPattern env (Meta _ _ pat) = case pat of
+inferPattern env (Src.Source _ _ pat) = case pat of
   Src.PNum  _ -> return ([], M.empty, tNumber)
   Src.PBool _ -> return ([], M.empty, tBool)
   Src.PStr  _ -> return ([], M.empty, tStr)
@@ -73,8 +73,8 @@ inferPattern env (Meta _ _ pat) = case pat of
 
    where
     inferPListItem :: Env -> Src.Pattern -> Infer ([Pred], Vars, Type)
-    inferPListItem env pat@(Meta _ _ p) = case p of
-      Src.PSpread (Meta _ _ (Src.PVar i)) -> do
+    inferPListItem env pat@(Src.Source _ _ p) = case p of
+      Src.PSpread (Src.Source _ _ (Src.PVar i)) -> do
         tv <- newTVar Star
         let t' = TApp (TCon (TC "List" $ Kfun Star Star)) tv
         return ([], M.singleton i (toScheme t'), tv)
@@ -90,8 +90,8 @@ inferPattern env (Meta _ _ pat) = case pat of
 
    where
     inferFieldPattern :: Env -> Src.Pattern -> Infer ([Pred], Vars, Type)
-    inferFieldPattern env pat@(Meta _ _ p) = case p of
-      Src.PSpread (Meta _ _ (Src.PVar i)) -> do
+    inferFieldPattern env pat@(Src.Source _ _ p) = case p of
+      Src.PSpread (Src.Source _ _ (Src.PVar i)) -> do
         tv <- newTVar Star
         return ([], M.singleton i (toScheme tv), tv)
 

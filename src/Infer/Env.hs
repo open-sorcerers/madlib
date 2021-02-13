@@ -113,7 +113,7 @@ solveInterface env interface = case interface of
           rmdups $ catMaybes $ concat $ mapM searchVarInType vars <$> M.elems ts
 
     let supers = mapMaybe
-          (\(Meta _ _ (Src.TRComp interface' [Meta _ _ (Src.TRSingle v)])) ->
+          (\(Src.Source _ _ (Src.TRComp interface' [Src.Source _ _ (Src.TRSingle v)])) ->
             (\tv -> IsIn interface' [tv]) <$> findTypeVar tvs v
           )
           constraints
@@ -171,12 +171,12 @@ solveInstance env inst = case inst of
     ps <-
       apply subst
         <$> mapM
-              (\(Meta _ _ (Src.TRComp interface' args)) ->
+              (\(Src.Source _ _ (Src.TRComp interface' args)) ->
                 case M.lookup interface' (envinterfaces env) of
                   Just (Ty.Interface tvs _ _) -> do
                     vars <- mapM
                       (\case
-                        (Meta _ _ (Src.TRSingle v), TV _ k) ->
+                        (Src.Source _ _ (Src.TRSingle v), TV _ k) ->
                           return $ TVar $ TV v k
                         (typing, _) -> typingToType env typing
                       )
@@ -196,13 +196,13 @@ solveInstance env inst = case inst of
 
 populateTopLevelTypings :: Env -> [Src.Exp] -> Infer Env
 populateTopLevelTypings env []                  = return env
-populateTopLevelTypings env ((Meta _ _ e) : es) = do
+populateTopLevelTypings env ((Src.Source _ _ e) : es) = do
   nextEnv <- case e of
-    Src.TypedExp (Meta _ _ (Src.Assignment name _)) typing -> do
+    Src.TypedExp (Src.Source _ _ (Src.Assignment name _)) typing -> do
       sc <- typingToScheme env typing
       return $ extendVars env (name, sc)
 
-    Src.TypedExp (Meta _ _ (Src.Export (Meta _ _ (Src.Assignment name _)))) typing
+    Src.TypedExp (Src.Source _ _ (Src.Export (Src.Source _ _ (Src.Assignment name _)))) typing
       -> do
         sc <- typingToScheme env typing
         return $ extendVars env (name, sc)

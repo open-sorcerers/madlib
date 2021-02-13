@@ -135,7 +135,7 @@ argToType
   -> [Name]
   -> Typing
   -> Infer Type
-argToType _ gens typeDecls _ params (Meta _ _ (TRSingle n))
+argToType _ gens typeDecls _ params (Source _ _ (TRSingle n))
   | n == "Number" = return tNumber
   | n == "Boolean" = return tBool
   | n == "String" = return tStr
@@ -145,7 +145,7 @@ argToType _ gens typeDecls _ params (Meta _ _ (TRSingle n))
     Just a  -> return a
     Nothing -> throwError $ InferError (UnknownType n) NoReason
 
-argToType priorEnv gens typeDecls name params (Meta _ _ (TRComp tname targs)) =
+argToType priorEnv gens typeDecls name params (Source _ _ (TRComp tname targs)) =
   case M.lookup tname (envtypes priorEnv <> typeDecls) of
     Just t -> foldM
       (\prev a -> do
@@ -166,16 +166,16 @@ argToType priorEnv gens typeDecls name params (Meta _ _ (TRComp tname targs)) =
           targs
       else throwError $ InferError (UnknownType tname) NoReason
 
-argToType priorEnv gens typeDecls name params (Meta _ _ (TRArr l r)) = do
+argToType priorEnv gens typeDecls name params (Source _ _ (TRArr l r)) = do
   l' <- argToType priorEnv gens typeDecls name params l
   r' <- argToType priorEnv gens typeDecls name params r
   return $ l' `fn` r'
 
-argToType priorEnv gens typeDecls name params (Meta _ _ (TRRecord f)) = do
+argToType priorEnv gens typeDecls name params (Source _ _ (TRRecord f)) = do
   f' <- mapM (argToType priorEnv gens typeDecls name params) f
   return $ TRecord f' False
 
-argToType priorEnv gens typeDecls name params (Meta _ _ (TRTuple elems)) = do
+argToType priorEnv gens typeDecls name params (Source _ _ (TRTuple elems)) = do
   elems' <- mapM (argToType priorEnv gens typeDecls name params) elems
   let tupleT = getTupleCtor (length elems)
   return $ foldl TApp tupleT elems'

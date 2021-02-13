@@ -52,7 +52,7 @@ import           Infer.Placeholder
 
 infer :: Env -> Src.Exp -> Infer (Substitution, [Pred], Type, Slv.Exp)
 infer env lexp = do
-  let (Meta _ area exp) = lexp
+  let (Src.Source _ area exp) = lexp
   r@(s, ps, t, e) <- case exp of
     Src.LNum _ -> return (M.empty, [], tNumber, applyLitSolve lexp tNumber)
     Src.LStr _ -> return (M.empty, [], tStr, applyLitSolve lexp tStr)
@@ -81,18 +81,18 @@ infer env lexp = do
 
 
 applyLitSolve :: Src.Exp -> Type -> Slv.Exp
-applyLitSolve (Meta _ area exp) t = case exp of
+applyLitSolve (Src.Source _ area exp) t = case exp of
   Src.LNum  v -> Slv.Solved t area $ Slv.LNum v
   Src.LStr  v -> Slv.Solved t area $ Slv.LStr v
   Src.LBool v -> Slv.Solved t area $ Slv.LBool v
   Src.LUnit   -> Slv.Solved t area $ Slv.LUnit
 
 applyAbsSolve :: Src.Exp -> Slv.Name -> [Slv.Exp] -> Type -> Slv.Exp
-applyAbsSolve (Meta _ loc _) param body t =
+applyAbsSolve (Src.Source _ loc _) param body t =
   Slv.Solved t loc $ Slv.Abs param body
 
 applyAssignmentSolve :: Src.Exp -> Slv.Name -> Slv.Exp -> Type -> Slv.Exp
-applyAssignmentSolve (Meta _ loc _) n exp t =
+applyAssignmentSolve (Src.Source _ loc _) n exp t =
   Slv.Solved t loc $ Slv.Assignment n exp
 
 
@@ -101,7 +101,7 @@ updateType (Slv.Solved _ a e) t' = Slv.Solved t' a e
 
 
 updatePattern :: Src.Pattern -> Slv.Pattern
-updatePattern (Meta _ _ pat) = case pat of
+updatePattern (Src.Source _ _ pat) = case pat of
   Src.PVar name             -> Slv.PVar name
   Src.PAny                  -> Slv.PAny
   Src.PCtor name patterns   -> Slv.PCtor name (updatePattern <$> patterns)
@@ -119,7 +119,7 @@ updatePattern (Meta _ _ pat) = case pat of
 -- INFER VAR
 
 inferVar :: Env -> Src.Exp -> Infer (Substitution, [Pred], Type, Slv.Exp)
-inferVar env exp@(Meta _ area (Src.Var n)) = case n of
+inferVar env exp@(Src.Source _ area (Src.Var n)) = case n of
   ('.' : name) -> do
     let s =
           Forall [Star]
@@ -146,7 +146,7 @@ enhanceVarError env exp area (InferError e _) = throwError
 -- INFER ABSTRACTIONS
 
 inferAbs :: Env -> Src.Exp -> Infer (Substitution, [Pred], Type, Slv.Exp)
-inferAbs env l@(Meta _ _ (Src.Abs param body)) = do
+inferAbs env l@(Src.Source _ _ (Src.Abs param body)) = do
   tv <- newTVar Star
   let env' = extendVars env (param, Forall [] ([] :=> tv))
   (s, ps, t, es) <- inferBody env' body
@@ -160,7 +160,7 @@ inferBody env [e     ] = (\(s, ps, t, e) -> (s, ps, t, [e])) <$> infer env e
 inferBody env (e : xs) = do
   (_, _ , t   , _ ) <- infer env e
   (s, ps, env', e') <- case e of
-    Meta _ _ (Src.TypedExp _ _) -> inferExplicitlyTyped env e
+    Src.Source _ _ (Src.TypedExp _ _) -> inferExplicitlyTyped env e
     _                           -> inferImplicitlyTyped True env e
 
   e''  <- insertClassPlaceholders env e' ps
@@ -184,7 +184,7 @@ inferBody env (e : xs) = do
 -- INFER APP
 
 inferApp :: Env -> Src.Exp -> Infer (Substitution, [Pred], Type, Slv.Exp)
-inferApp env (Meta _ area (Src.App abs arg final)) = do
+inferApp env (Src.Source _ area (Src.App abs arg final)) = do
   tv                  <- newTVar Star
   (s1, ps1, t1, eabs) <- infer env abs
   (s2, ps2, t2, earg) <- infer env arg
@@ -195,11 +195,11 @@ inferApp env (Meta _ area (Src.App abs arg final)) = do
       InferError (UnificationError _ _) _ ->
         throwError
           $ InferError (UnificationError (apply s2 t1) (t2 `fn` tv))
-          $ Reason (WrongTypeApplied abs arg) (envcurrentpath env) (getArea arg)
+          $ Reason (WrongTypeApplied abs arg) (envcurrentpath env) (Src.getArea arg)
       InferError e _ -> throwError $ InferError e $ Reason
         (WrongTypeApplied abs arg)
         (envcurrentpath env)
-        (getArea arg)
+        (Src.getArea arg)
     )
 
   let t = apply s3 tv
@@ -214,7 +214,7 @@ inferApp env (Meta _ area (Src.App abs arg final)) = do
 
 inferTemplateString
   :: Env -> Src.Exp -> Infer (Substitution, [Pred], Type, Slv.Exp)
-inferTemplateString env e@(Meta _ area (Src.TemplateString exps)) = do
+inferTemplateString env e@(Src.Source _ area (Src.TemplateString exps)) = do
   inferred <- mapM (infer env) exps
 
   let elemSubsts = (\(s, _, _, _) -> s) <$> inferred
@@ -241,7 +241,7 @@ inferTemplateString env e@(Meta _ area (Src.TemplateString exps)) = do
 -- INFER ASSIGNMENT
 
 inferAssignment :: Env -> Src.Exp -> Infer (Substitution, [Pred], Type, Slv.Exp)
-inferAssignment env e@(Meta _ _ (Src.Assignment name exp)) = do
+inferAssignment env e@(Src.Source _ _ (Src.Assignment name exp)) = do
   t <- newTVar Star
   let env' = extendVars env (name, Forall [] ([] :=> t))
   (s1, ps1, t1, e1) <- infer env' exp
@@ -252,7 +252,7 @@ inferAssignment env e@(Meta _ _ (Src.Assignment name exp)) = do
 -- INFER EXPORT
 
 inferExport :: Env -> Src.Exp -> Infer (Substitution, [Pred], Type, Slv.Exp)
-inferExport env (Meta _ area (Src.Export exp)) = do
+inferExport env (Src.Source _ area (Src.Export exp)) = do
   (s, ps, t, e) <- infer env exp
   return (s, ps, t, Slv.Solved t area (Slv.Export e))
 
@@ -262,7 +262,7 @@ inferExport env (Meta _ area (Src.Export exp)) = do
 
 inferListConstructor
   :: Env -> Src.Exp -> Infer (Substitution, [Pred], Type, Slv.Exp)
-inferListConstructor env (Meta _ area (Src.ListConstructor elems)) =
+inferListConstructor env (Src.Source _ area (Src.ListConstructor elems)) =
   case elems of
     [] -> do
       tv <- newTVar Star
@@ -309,7 +309,7 @@ inferListItem env li = case li of
 
 inferTupleConstructor
   :: Env -> Src.Exp -> Infer (Substitution, [Pred], Type, Slv.Exp)
-inferTupleConstructor env (Meta _ area (Src.TupleConstructor elems)) = do
+inferTupleConstructor env (Src.Source _ area (Src.TupleConstructor elems)) = do
   inferredElems <- mapM (infer env) elems
   let elemSubsts = (\(s, _, _, _) -> s) <$> inferredElems
   let elemTypes  = (\(_, _, t, _) -> t) <$> inferredElems
@@ -330,7 +330,7 @@ inferTupleConstructor env (Meta _ area (Src.TupleConstructor elems)) = do
 
 inferRecord :: Env -> Src.Exp -> Infer (Substitution, [Pred], Type, Slv.Exp)
 inferRecord env exp = do
-  let Meta _ area (Src.Record fields) = exp
+  let Src.Source _ area (Src.Record fields) = exp
 
   inferred <- mapM (inferRecordField env) fields
   open     <- shouldBeOpen env fields
@@ -378,7 +378,7 @@ shouldBeOpen env = foldrM
 
 inferNamespaceAccess
   :: Env -> Src.Exp -> Infer (Substitution, [Pred], Type, Slv.Exp)
-inferNamespaceAccess env e@(Meta t area (Src.NamespaceAccess var)) = do
+inferNamespaceAccess env e@(Src.Source t area (Src.NamespaceAccess var)) = do
   sc         <- catchError (lookupVar env var) (enhanceVarError env e area)
   (ps :=> t) <- instantiate sc
 
@@ -393,7 +393,7 @@ inferNamespaceAccess env e@(Meta t area (Src.NamespaceAccess var)) = do
 
 inferFieldAccess
   :: Env -> Src.Exp -> Infer (Substitution, [Pred], Type, Slv.Exp)
-inferFieldAccess env (Meta _ area (Src.FieldAccess rec@(Meta _ _ re) abs@(Meta _ _ (Src.Var ('.' : name)))))
+inferFieldAccess env (Src.Source _ area (Src.FieldAccess rec@(Src.Source _ _ re) abs@(Src.Source _ _ (Src.Var ('.' : name)))))
   = do
     (fieldSubst , fieldPs , fieldType , fieldExp ) <- infer env abs
     (recordSubst, recordPs, recordType, recordExp) <- infer env rec
@@ -429,7 +429,7 @@ inferFieldAccess env (Meta _ area (Src.FieldAccess rec@(Meta _ _ re) abs@(Meta _
 -- INFER IF
 
 inferIf :: Env -> Src.Exp -> Infer (Substitution, [Pred], Type, Slv.Exp)
-inferIf env exp@(Meta _ area (Src.If cond truthy falsy)) = do
+inferIf env exp@(Src.Source _ area (Src.If cond truthy falsy)) = do
   (s1, ps1, tcond, econd) <- infer env cond
   (s2, ps2, ttruthy, etruthy) <- infer env truthy
   (s3, ps3, tfalsy, efalsy) <- infer env falsy
@@ -467,7 +467,7 @@ addBranchReason env ifExp falsyExp area (InferError e _) =
 -- INFER WHERE
 
 inferWhere :: Env -> Src.Exp -> Infer (Substitution, [Pred], Type, Slv.Exp)
-inferWhere env (Meta _ area (Src.Where exp iss)) = do
+inferWhere env (Src.Source _ area (Src.Where exp iss)) = do
   (s, ps, t, e) <- infer env exp
   tv            <- newTVar Star
   pss           <- mapM (inferBranch env tv t) iss
@@ -489,7 +489,7 @@ inferWhere env (Meta _ area (Src.Where exp iss)) = do
 
 inferBranch
   :: Env -> Type -> Type -> Src.Is -> Infer (Substitution, [Pred], Slv.Is)
-inferBranch env tv t (Meta _ area (Src.Is pat exp)) = do
+inferBranch env tv t (Src.Source _ area (Src.Is pat exp)) = do
   (ps, vars, t') <- inferPattern env pat
   s              <- catchError
     (unify t (removeSpread t'))
@@ -551,7 +551,7 @@ extendRecord s t = case t of
 -- INFER TYPEDEXP
 
 inferTypedExp :: Env -> Src.Exp -> Infer (Substitution, [Pred], Type, Slv.Exp)
-inferTypedExp env (Meta _ area (Src.TypedExp exp typing)) = do
+inferTypedExp env (Src.Source _ area (Src.TypedExp exp typing)) = do
   infer env exp
   sc                <- typingToScheme env typing
   (ps :=> t)        <- instantiate sc
@@ -574,15 +574,15 @@ inferTypedExp env (Meta _ area (Src.TypedExp exp typing)) = do
 
 
 getExpName :: Src.Exp -> Maybe String
-getExpName (Meta _ _ exp) = case exp of
+getExpName (Src.Source _ _ exp) = case exp of
   Src.Assignment name                               _ -> return name
 
-  Src.TypedExp   (Meta _ _ (Src.Assignment name _)) _ -> return name
+  Src.TypedExp   (Src.Source _ _ (Src.Assignment name _)) _ -> return name
 
-  Src.TypedExp (Meta _ _ (Src.Export (Meta _ _ (Src.Assignment name _)))) _ ->
+  Src.TypedExp (Src.Source _ _ (Src.Export (Src.Source _ _ (Src.Assignment name _)))) _ ->
     return name
 
-  Src.Export (Meta _ _ (Src.Assignment name _)) -> return name
+  Src.Export (Src.Source _ _ (Src.Assignment name _)) -> return name
 
   _ -> Nothing
 
@@ -604,7 +604,7 @@ split env fs gs ps = do
 
 inferImplicitlyTyped
   :: Bool -> Env -> Src.Exp -> Infer (Substitution, [Pred], Env, Slv.Exp)
-inferImplicitlyTyped isLet env exp@(Meta _ area _) = do
+inferImplicitlyTyped isLet env exp@(Src.Source _ area _) = do
   tv <- newTVar Star
 
   let env' = case getExpName exp of
@@ -639,7 +639,7 @@ inferImplicitlyTyped isLet env exp@(Meta _ area _) = do
 
 inferExplicitlyTyped
   :: Env -> Src.Exp -> Infer (Substitution, [Pred], Env, Slv.Exp)
-inferExplicitlyTyped env e@(Meta _ area (Src.TypedExp exp typing)) = do
+inferExplicitlyTyped env e@(Src.Source _ area (Src.TypedExp exp typing)) = do
   sc             <- typingToScheme env typing
   qt@(qs :=> t') <- instantiate sc
 
@@ -692,8 +692,8 @@ inferExps :: Env -> [Src.Exp] -> Infer ([Slv.Exp], Env)
 inferExps env []       = return ([], env)
 
 inferExps env (e : es) = do
-  (s, ps, env', e') <- upgradeReason env (getArea e) $ case e of
-    Meta _ _ (Src.TypedExp _ _) -> inferExplicitlyTyped env e
+  (s, ps, env', e') <- upgradeReason env (Src.getArea e) $ case e of
+    Src.Source _ _ (Src.TypedExp _ _) -> inferExplicitlyTyped env e
     _                           -> inferImplicitlyTyped False env e
 
   e''            <- insertClassPlaceholders env e' ps
@@ -795,7 +795,7 @@ solveImports table (imp : is) = do
         (envvars envSolved)
 
   (exports, vars) <- case (exportedTypes, imp) of
-    (Just exports, Meta _ _ (Src.DefaultImport namespace _ _)) -> do
+    (Just exports, Src.Source _ _ (Src.DefaultImport namespace _ _)) -> do
 
       let constructors = M.mapKeys ((namespace <> ".") <>) buildConstructorVars
       exports' <- M.fromList <$> mapM
@@ -804,7 +804,7 @@ solveImports table (imp : is) = do
 
       return (exports', constructors)
 
-    (Just exports, Meta _ _ (Src.NamedImport names _ _)) -> do
+    (Just exports, Src.Source _ _ (Src.NamedImport names _ _)) -> do
       exports' <- M.fromList
         <$> mapM (\(k, _) -> (k, ) <$> lookupVar envSolved k) (M.toList exports)
 
@@ -824,7 +824,7 @@ solveImports table (imp : is) = do
 
   mergedADTs <- do
     withNamespaces <- case imp of
-      Meta _ _ (Src.DefaultImport namespace _ absPath) -> return
+      Src.Source _ _ (Src.DefaultImport namespace _ absPath) -> return
         $ M.mapKeys (mergeTypeDecl namespace absPath adtExports) adtExports
 
       _ -> return adtExports
@@ -907,7 +907,7 @@ inferAST env Src.AST { Src.aexps, Src.apath, Src.aimports, Src.atypedecls, Src.a
 
 buildInstanceConstraint :: Env -> Src.Typing -> Infer Pred
 buildInstanceConstraint env typing = case typing of
-  (Meta _ _ (Src.TRComp n [Meta _ _ (Src.TRSingle var)])) ->
+  (Src.Source _ _ (Src.TRComp n [Src.Source _ _ (Src.TRSingle var)])) ->
     case M.lookup n (envinterfaces env) of
       Just (Interface ts _ _) ->
         let tvs = catMaybes $ searchVarInType var . TVar <$> ts--IsIn n [TVar $ TV var k]
@@ -916,11 +916,11 @@ buildInstanceConstraint env typing = case typing of
               else return $ IsIn n [TVar $ TV var Star]
 
       x -> return $ IsIn n [TVar $ TV var Star]
-  (Meta _ _ (Src.TRComp n args)) -> case M.lookup n (envinterfaces env) of
+  (Src.Source _ _ (Src.TRComp n args)) -> case M.lookup n (envinterfaces env) of
     Just (Interface tvs _ _) -> do
       vars <- mapM
         (\case
-          (Meta _ _ (Src.TRSingle v), TV _ k) -> return $ TVar $ TV v k
+          (Src.Source _ _ (Src.TRSingle v), TV _ k) -> return $ TVar $ TV v k
           (typing                   , _     ) -> typingToType env typing
         )
         (zip args tvs)
@@ -955,7 +955,7 @@ inferMethod
   -> Infer (Slv.Name, Slv.Exp, Scheme)
 inferMethod env instancePreds constraintPreds (mn, m) = upgradeReason
   env
-  (getArea m)
+  (Src.getArea m)
   (inferMethod' env instancePreds constraintPreds (mn, m))
 
 -- createInstanceConstraintError :: InferError -> [Pred] -> [Pred] -> 
@@ -993,11 +993,11 @@ inferMethod' env instancePreds constraintPreds (mn, m) = do
   if sc /= sc'
     then throwError $ InferError
       (SignatureTooGeneral sc sc')
-      (SimpleReason (envcurrentpath env) (getArea m))
+      (SimpleReason (envcurrentpath env) (Src.getArea m))
     else if not (null rs)
       then throwError $ InferError
         ContextTooWeak
-        (SimpleReason (envcurrentpath env) (getArea m))
+        (SimpleReason (envcurrentpath env) (Src.getArea m))
       else do
         let e' = updateType e t''
         tmp <- insertClassPlaceholders
@@ -1022,9 +1022,9 @@ upgradeReason env area a = catchError
 
 updateImport :: Src.Import -> Slv.Import
 updateImport i = case i of
-  Meta _ _ (Src.NamedImport   ns p fp) -> Slv.NamedImport ns p fp
+  Src.Source _ _ (Src.NamedImport   ns p fp) -> Slv.NamedImport ns p fp
 
-  Meta _ _ (Src.DefaultImport n  p fp) -> Slv.DefaultImport n p fp
+  Src.Source _ _ (Src.DefaultImport n  p fp) -> Slv.DefaultImport n p fp
 
 
 updateADT :: Src.TypeDecl -> Slv.TypeDecl

@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 4abd9e5245a742c7cc837b08ff7042efbbee3f2f17acf2ba51cc72fae8209569
+-- hash: 77517a38f929e6fb96e70a638898433e2fd851f516e17f2d66b8dab0913a9e01
 
 name:           madlib
 version:        0.0.8
@@ -31,6 +31,7 @@ library
       AST.Optimized
       AST.Solved
       AST.Source
+      Canonicalize.Canonicalize
       Compile.Compile
       Compile.JSInternals
       Coverage.Coverable
@@ -100,6 +101,7 @@ executable madlib
       AST.Optimized
       AST.Solved
       AST.Source
+      Canonicalize.Canonicalize
       Compile.Compile
       Compile.JSInternals
       Coverage.Coverable
