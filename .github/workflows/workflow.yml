@@ -20,7 +20,6 @@ jobs:
           path: ~/.stack
           key: ${{ runner.os }}-8.8.4-stack
       - run: stack install alex happy
-      - run: stack install
       - run: ./scripts/test coverage
       - run: ./scripts/coverage
       - name: Coveralls
