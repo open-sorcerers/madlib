@@ -10,7 +10,7 @@ import qualified AST.Canonical                 as Can
 import qualified AST.Source                    as Src
 import           Infer.Type
 import           Data.List
-import Explain.Meta
+import           Explain.Meta
 
 
 type CanonicalM a = forall m . Monad m => m a
@@ -25,67 +25,67 @@ instance Canonicalizable Src.Exp Can.Exp where
     Src.LNum  x           -> return $ Can.Canonical area (Can.LNum x)
 
     Src.LStr  x           -> return $ Can.Canonical area (Can.LStr x)
-  
+
     Src.LBool x           -> return $ Can.Canonical area (Can.LBool x)
-  
+
     Src.LUnit             -> return $ Can.Canonical area Can.LUnit
-  
+
     Src.TemplateString es -> do
       es' <- mapM canonicalize es
       return $ Can.Canonical area (Can.TemplateString es')
-  
+
     Src.JSExp js         -> return $ Can.Canonical area (Can.JSExp js)
-  
+
     Src.App fn arg close -> do
       fn'  <- canonicalize fn
       arg' <- canonicalize arg
       return $ Can.Canonical area (Can.App fn' arg' close)
-  
+
     Src.FieldAccess rec field -> do
       rec'   <- canonicalize rec
       field' <- canonicalize field
       return $ Can.Canonical area (Can.FieldAccess rec' field')
-  
+
     Src.NamespaceAccess n ->
       return $ Can.Canonical area (Can.NamespaceAccess n)
-  
+
     Src.Abs param body -> do
       body' <- mapM canonicalize body
       return $ Can.Canonical area (Can.Abs param body')
-  
+
     Src.Assignment name exp -> do
       exp' <- canonicalize exp
       return $ Can.Canonical area (Can.Assignment name exp')
-  
+
     Src.Export exp -> do
       exp' <- canonicalize exp
       return $ Can.Canonical area (Can.Export exp')
-  
+
     Src.Var name            -> return $ Can.Canonical area (Can.Var name)
-  
+
     Src.TypedExp exp typing -> do
       exp'    <- canonicalize exp
       typing' <- canonicalize typing
       return $ Can.Canonical area (Can.TypedExp exp' typing')
-  
+
     Src.ListConstructor items -> do
       items' <- mapM canonicalize items
       return $ Can.Canonical area (Can.ListConstructor items')
-  
+
     Src.TupleConstructor exps -> do
       exps' <- mapM canonicalize exps
       return $ Can.Canonical area (Can.TupleConstructor exps')
-  
+
     Src.Record fields -> do
       fields' <- mapM canonicalize fields
       return $ Can.Canonical area (Can.Record fields')
-  
+
     Src.If cond truthy falsy -> do
       cond'   <- canonicalize cond
       truthy' <- canonicalize truthy
       falsy'  <- canonicalize falsy
       return $ Can.Canonical area (Can.If cond' truthy' falsy')
-  
+
     Src.Where exp iss -> do
       exp' <- canonicalize exp
       iss' <- mapM canonicalize iss
@@ -97,26 +97,26 @@ instance Canonicalizable Src.Typing Can.Typing where
     Src.TRSingle name       -> return $ Can.Canonical area (Can.TRSingle name)
 
     Src.TRComp name typings -> do
-        typings' <- mapM canonicalize typings
-        return $ Can.Canonical area (Can.TRComp name typings')
+      typings' <- mapM canonicalize typings
+      return $ Can.Canonical area (Can.TRComp name typings')
 
     Src.TRArr left right -> do
-        left'  <- canonicalize left
-        right' <- canonicalize right
-        return $ Can.Canonical area (Can.TRArr left' right')
+      left'  <- canonicalize left
+      right' <- canonicalize right
+      return $ Can.Canonical area (Can.TRArr left' right')
 
     Src.TRRecord fields -> do
-        fields' <- mapM canonicalize fields
-        return $ Can.Canonical area (Can.TRRecord fields')
+      fields' <- mapM canonicalize fields
+      return $ Can.Canonical area (Can.TRRecord fields')
 
     Src.TRTuple typings -> do
-        typings' <- mapM canonicalize typings
-        return $ Can.Canonical area (Can.TRTuple typings')
+      typings' <- mapM canonicalize typings
+      return $ Can.Canonical area (Can.TRTuple typings')
 
     Src.TRConstrained constraints typing -> do
-        constraints' <- mapM canonicalize constraints
-        typing'      <- canonicalize typing
-        return $ Can.Canonical area (Can.TRConstrained constraints' typing')
+      constraints' <- mapM canonicalize constraints
+      typing'      <- canonicalize typing
+      return $ Can.Canonical area (Can.TRConstrained constraints' typing')
 
 instance Canonicalizable Src.ListItem Can.ListItem where
   canonicalize item = case item of
@@ -211,8 +211,8 @@ instance Canonicalizable Src.Interface Can.Interface where
 instance Canonicalizable Src.Instance Can.Instance where
   canonicalize (Src.Instance constraints interface typings methods) = do
     constraints' <- mapM canonicalize constraints
-    typings' <- mapM canonicalize typings
-    methods' <- mapM canonicalize methods
+    typings'     <- mapM canonicalize typings
+    methods'     <- mapM canonicalize methods
     return $ Can.Instance constraints' interface typings' methods'
 
 instance Canonicalizable Src.Import Can.Import where

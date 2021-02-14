@@ -145,8 +145,8 @@ argToType _ gens typeDecls _ params (Source _ _ (TRSingle n))
     Just a  -> return a
     Nothing -> throwError $ InferError (UnknownType n) NoReason
 
-argToType priorEnv gens typeDecls name params (Source _ _ (TRComp tname targs)) =
-  case M.lookup tname (envtypes priorEnv <> typeDecls) of
+argToType priorEnv gens typeDecls name params (Source _ _ (TRComp tname targs))
+  = case M.lookup tname (envtypes priorEnv <> typeDecls) of
     Just t -> foldM
       (\prev a -> do
         arg <- argToType priorEnv gens typeDecls name params a

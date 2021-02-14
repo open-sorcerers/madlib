@@ -77,8 +77,8 @@ format rf (InferError err reason) = do
           <> "\n\n"
           <> hint
 
-    Reason (VariableNotDeclared (Src.Source _ (Area (Loc a li c) _) exp)) _ area ->
-      do
+    Reason (VariableNotDeclared (Src.Source _ (Area (Loc a li c) _) exp)) _ area
+      -> do
         let l           = moduleContent !! (li - 1)
 
         let (Src.Var n) = exp

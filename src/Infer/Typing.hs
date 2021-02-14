@@ -47,7 +47,8 @@ constraintToPredicate env t (Src.Source _ _ (Src.TRComp n typings)) = do
   let s = buildVarSubsts t
   ts <- mapM
     (\case
-      Src.Source _ _ (Src.TRSingle var) -> return $ apply s $ TVar $ TV var Star
+      Src.Source _ _ (Src.TRSingle var) ->
+        return $ apply s $ TVar $ TV var Star
 
       fullTyping@(Src.Source _ _ (Src.TRComp n typings')) -> do
         apply s <$> typingToType env fullTyping
@@ -153,15 +154,17 @@ updateAliasVars t args = do
 
 updateTyping :: Src.Typing -> Slv.Typing
 updateTyping typing = case typing of
-  Src.Source _ _ (Src.TRSingle name   ) -> Slv.TRSingle name
+  Src.Source _ _ (Src.TRSingle name) -> Slv.TRSingle name
 
-  Src.Source _ _ (Src.TRComp name vars) -> Slv.TRComp name (updateTyping <$> vars)
+  Src.Source _ _ (Src.TRComp name vars) ->
+    Slv.TRComp name (updateTyping <$> vars)
 
-  Src.Source _ _ (Src.TRArr  l    r   ) -> Slv.TRArr (updateTyping l) (updateTyping r)
+  Src.Source _ _ (Src.TRArr l r) -> Slv.TRArr (updateTyping l) (updateTyping r)
 
-  Src.Source _ _ (Src.TRRecord fields ) -> Slv.TRRecord (updateTyping <$> fields)
+  Src.Source _ _ (Src.TRRecord fields) ->
+    Slv.TRRecord (updateTyping <$> fields)
 
-  Src.Source _ _ (Src.TRTuple  elems  ) -> Slv.TRTuple (updateTyping <$> elems)
+  Src.Source _ _ (Src.TRTuple elems) -> Slv.TRTuple (updateTyping <$> elems)
 
   Src.Source _ _ (Src.TRConstrained ts t) ->
     Slv.TRConstrained (updateTyping <$> ts) (updateTyping t)

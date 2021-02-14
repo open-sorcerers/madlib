@@ -161,7 +161,7 @@ inferBody env (e : xs) = do
   (_, _ , t   , _ ) <- infer env e
   (s, ps, env', e') <- case e of
     Src.Source _ _ (Src.TypedExp _ _) -> inferExplicitlyTyped env e
-    _                           -> inferImplicitlyTyped True env e
+    _ -> inferImplicitlyTyped True env e
 
   e''  <- insertClassPlaceholders env e' ps
   e''' <- updatePlaceholders env s e''
@@ -195,7 +195,9 @@ inferApp env (Src.Source _ area (Src.App abs arg final)) = do
       InferError (UnificationError _ _) _ ->
         throwError
           $ InferError (UnificationError (apply s2 t1) (t2 `fn` tv))
-          $ Reason (WrongTypeApplied abs arg) (envcurrentpath env) (Src.getArea arg)
+          $ Reason (WrongTypeApplied abs arg)
+                   (envcurrentpath env)
+                   (Src.getArea arg)
       InferError e _ -> throwError $ InferError e $ Reason
         (WrongTypeApplied abs arg)
         (envcurrentpath env)
@@ -575,12 +577,12 @@ inferTypedExp env (Src.Source _ area (Src.TypedExp exp typing)) = do
 
 getExpName :: Src.Exp -> Maybe String
 getExpName (Src.Source _ _ exp) = case exp of
-  Src.Assignment name                               _ -> return name
+  Src.Assignment name _ -> return name
 
-  Src.TypedExp   (Src.Source _ _ (Src.Assignment name _)) _ -> return name
+  Src.TypedExp (Src.Source _ _ (Src.Assignment name _)) _ -> return name
 
-  Src.TypedExp (Src.Source _ _ (Src.Export (Src.Source _ _ (Src.Assignment name _)))) _ ->
-    return name
+  Src.TypedExp (Src.Source _ _ (Src.Export (Src.Source _ _ (Src.Assignment name _)))) _
+    -> return name
 
   Src.Export (Src.Source _ _ (Src.Assignment name _)) -> return name
 
@@ -694,7 +696,7 @@ inferExps env []       = return ([], env)
 inferExps env (e : es) = do
   (s, ps, env', e') <- upgradeReason env (Src.getArea e) $ case e of
     Src.Source _ _ (Src.TypedExp _ _) -> inferExplicitlyTyped env e
-    _                           -> inferImplicitlyTyped False env e
+    _ -> inferImplicitlyTyped False env e
 
   e''            <- insertClassPlaceholders env e' ps
   e'''           <- updatePlaceholders env s e''
@@ -824,8 +826,9 @@ solveImports table (imp : is) = do
 
   mergedADTs <- do
     withNamespaces <- case imp of
-      Src.Source _ _ (Src.DefaultImport namespace _ absPath) -> return
-        $ M.mapKeys (mergeTypeDecl namespace absPath adtExports) adtExports
+      Src.Source _ _ (Src.DefaultImport namespace _ absPath) ->
+        return
+          $ M.mapKeys (mergeTypeDecl namespace absPath adtExports) adtExports
 
       _ -> return adtExports
 
@@ -916,15 +919,16 @@ buildInstanceConstraint env typing = case typing of
               else return $ IsIn n [TVar $ TV var Star]
 
       x -> return $ IsIn n [TVar $ TV var Star]
-  (Src.Source _ _ (Src.TRComp n args)) -> case M.lookup n (envinterfaces env) of
-    Just (Interface tvs _ _) -> do
-      vars <- mapM
-        (\case
-          (Src.Source _ _ (Src.TRSingle v), TV _ k) -> return $ TVar $ TV v k
-          (typing                   , _     ) -> typingToType env typing
-        )
-        (zip args tvs)
-      return $ IsIn n vars
+  (Src.Source _ _ (Src.TRComp n args)) ->
+    case M.lookup n (envinterfaces env) of
+      Just (Interface tvs _ _) -> do
+        vars <- mapM
+          (\case
+            (Src.Source _ _ (Src.TRSingle v), TV _ k) -> return $ TVar $ TV v k
+            (typing                         , _     ) -> typingToType env typing
+          )
+          (zip args tvs)
+        return $ IsIn n vars
 
 
 resolveInstance :: Env -> Src.Instance -> Infer Slv.Instance

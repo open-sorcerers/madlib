@@ -112,11 +112,12 @@ solveInterface env interface = case interface of
     let tvs =
           rmdups $ catMaybes $ concat $ mapM searchVarInType vars <$> M.elems ts
 
-    let supers = mapMaybe
-          (\(Src.Source _ _ (Src.TRComp interface' [Src.Source _ _ (Src.TRSingle v)])) ->
-            (\tv -> IsIn interface' [tv]) <$> findTypeVar tvs v
-          )
-          constraints
+    let
+      supers = mapMaybe
+        (\(Src.Source _ _ (Src.TRComp interface' [Src.Source _ _ (Src.TRSingle v)])) ->
+          (\tv -> IsIn interface' [tv]) <$> findTypeVar tvs v
+        )
+        constraints
 
     let psTypes = concat $ (\(IsIn _ ts) -> ts) <$> supers
     let subst   = foldl (\s t -> s `compose` buildVarSubsts t) mempty psTypes
@@ -195,7 +196,7 @@ solveInstance env inst = case inst of
 
 
 populateTopLevelTypings :: Env -> [Src.Exp] -> Infer Env
-populateTopLevelTypings env []                  = return env
+populateTopLevelTypings env []                        = return env
 populateTopLevelTypings env ((Src.Source _ _ e) : es) = do
   nextEnv <- case e of
     Src.TypedExp (Src.Source _ _ (Src.Assignment name _)) typing -> do

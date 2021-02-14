@@ -138,7 +138,7 @@ getImportPath imp@(Source _ _ (DefaultImport _ p _)) = (imp, p)
 isAssignment :: Exp -> Bool
 isAssignment exp = case exp of
   Source _ _ (Assignment _ _) -> True
-  _                         -> False
+  _                           -> False
 
 getArea :: Source a -> Area
 getArea (Source _ a _) = a

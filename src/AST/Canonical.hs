@@ -2,8 +2,8 @@ module AST.Canonical where
 
 import qualified Data.Map                      as M
 
-import Explain.Location
-import Explain.Meta
+import           Explain.Location
+import           Explain.Meta
 
 
 data Canonical a = Canonical Area a deriving(Eq, Show)
@@ -140,4 +140,4 @@ getImportPath imp@(Canonical _ (DefaultImport _ p _)) = (imp, p)
 isAssignment :: Exp -> Bool
 isAssignment exp = case exp of
   Canonical _ (Assignment _ _) -> True
-  _                         -> False
+  _                            -> False
