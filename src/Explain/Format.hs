@@ -367,6 +367,25 @@ formatTypeError err = case err of
       <> predToStr pCorrect
       <> "'\nwas expected."
 
+  ImportCycle paths ->
+    "I found an import cycle:\n\n"
+      <> buildCycleOutput (length paths) 0 paths
+      <> "\nHint: Import cycles are not allowed and usually show a design issue. Consider splitting things in more\n"
+      <> "modules in order to have both modules import a common dependency instead of having them being co-dependent.\n"
+      <> "Another solution would be to move things that depend on the other module from the cycle into the other in\n"
+      <> "order to collocate things that depend on each other."
+
+   where
+    buildCycleOutput :: Int -> Int -> [FilePath] -> String
+    buildCycleOutput total current paths =
+      let amountOfSpaces = current * 2
+          spaces         = concat $ replicate amountOfSpaces " "
+          prefix         = spaces <> if current /= 0 then "-> " else ""
+          next           = if current < (total - 1)
+            then buildCycleOutput total (current + 1) paths
+            else ""
+      in  prefix <> paths !! current <> "\n" <> next
+
   _ -> ppShow err
 
 

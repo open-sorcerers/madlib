@@ -757,6 +757,7 @@ spec = do
                 pathUtils
                 "/root/project/src/Main.mad"
                 Nothing
+                []
                 "/root/project/src/Main.mad"
           let r' = r >>= canonicalizeTable
           let ast =
@@ -800,7 +801,7 @@ spec = do
           }
 
       let r = unsafePerformIO
-            $ buildASTTable' pathUtils "/src/Main.mad" Nothing "/src/Main.mad"
+            $ buildASTTable' pathUtils "/src/Main.mad" Nothing [] "/src/Main.mad"
       let r'  = r >>= canonicalizeTable
       let ast = r' >>= flip Canonicalize.findAST "/src/Main.mad"
       let actual = case (ast, r') of
@@ -849,6 +850,7 @@ spec = do
                 pathUtils
                 "/root/project/src/Main.mad"
                 Nothing
+                []
                 "/root/project/src/Main.mad"
 
           let r' = r >>= canonicalizeTable
@@ -886,6 +888,7 @@ spec = do
       let r = unsafePerformIO $ buildASTTable' pathUtils
                                                "/root/project/src/Main.mad"
                                                Nothing
+                                               []
                                                "/root/project/src/Main.mad"
       let r'  = r >>= canonicalizeTable
       let ast = r' >>= flip Canonicalize.findAST "/root/project/src/Main.mad"
@@ -1045,6 +1048,7 @@ spec = do
                 pathUtils
                 "/root/project/src/Main.mad"
                 Nothing
+                []
                 "/root/project/src/Main.mad"
           let r' = r >>= canonicalizeTable
           let ast =
@@ -1109,6 +1113,7 @@ spec = do
           let r = unsafePerformIO $ buildASTTable' pathUtils
                                                    "/src/Main.mad"
                                                    Nothing
+                                                   []
                                                    "/src/Main.mad"
           let r'  = r >>= canonicalizeTable
           let ast = r' >>= flip Canonicalize.findAST "/src/Main.mad"

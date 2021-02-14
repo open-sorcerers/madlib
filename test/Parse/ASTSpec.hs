@@ -51,7 +51,7 @@ spec = do
 
           pathUtils   = defaultPathUtils { readFile = rf }
 
-      r <- buildASTTable' pathUtils "" Nothing "fixtures/source.mad"
+      r <- buildASTTable' pathUtils "" Nothing [] "fixtures/source.mad"
       let actual = r >>= flip findAST "./fixtures/source.mad"
       actual `shouldBe` expected
 
@@ -75,7 +75,7 @@ spec = do
         rf        = makeReadFile files
         pathUtils = defaultPathUtils { readFile = rf }
 
-      r <- buildASTTable' pathUtils "" Nothing "fixtures/source.mad"
+      r <- buildASTTable' pathUtils "" Nothing [] "fixtures/source.mad"
       let actual = r >>= flip findAST "./fixtures/source-not-there.mad"
       actual `shouldBe` expected
 
@@ -105,7 +105,7 @@ spec = do
         pathUtils = defaultPathUtils { readFile = makeReadFile files }
 
         actual    = unsafePerformIO
-          $ buildASTTable' pathUtils "" Nothing "/fixtures/sourceA.mad"
+          $ buildASTTable' pathUtils "" Nothing [] "/fixtures/sourceA.mad"
       snapshotTest "should build an AST Table" actual
 
     it "should fail to build an ast table if the source file is not found" $ do
@@ -124,7 +124,7 @@ spec = do
         pathUtils    = defaultPathUtils { readFile = rf }
 
         actual       = unsafePerformIO
-          $ buildASTTable' pathUtils "" Nothing "/fixtures/sourceA.mad"
+          $ buildASTTable' pathUtils "" Nothing [] "/fixtures/sourceA.mad"
       snapshotTest
         "should fail to build an ast table if the source file is not found"
         actual
@@ -155,7 +155,7 @@ spec = do
         pathUtils = defaultPathUtils { readFile = rf }
 
         actual    = unsafePerformIO
-          $ buildASTTable' pathUtils "" Nothing "/src/sourceA.mad"
+          $ buildASTTable' pathUtils "" Nothing [] "/src/sourceA.mad"
 
       snapshotTest "should figure out the root directory" actual
 
