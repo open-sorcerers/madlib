@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 77517a38f929e6fb96e70a638898433e2fd851f516e17f2d66b8dab0913a9e01
+-- hash: fbb76270e595aae0efa81b0b86f54f60f4665da080bc5b705a1e270d2db8d5c0
 
 name:           madlib
 version:        0.0.8
@@ -88,7 +88,7 @@ library
     , mtl
     , optparse-applicative
     , pretty-show
-    , process ==1.6.8.0
+    , process ==1.6.9.0
     , regex-tdfa
     , text
     , transformers
@@ -157,7 +157,7 @@ executable madlib
     , mtl
     , optparse-applicative
     , pretty-show
-    , process ==1.6.8.0
+    , process ==1.6.9.0
     , regex-tdfa
     , text
     , transformers
@@ -198,7 +198,7 @@ test-suite madlib-test
     , mtl
     , optparse-applicative
     , pretty-show
-    , process ==1.6.8.0
+    , process ==1.6.9.0
     , regex-tdfa
     , text
     , transformers

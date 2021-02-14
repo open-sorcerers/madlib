@@ -19,41 +19,41 @@ Left
            (TVar (TV "b" Star))))
      (Reason
         (WrongTypeApplied
-           (Meta
+           (Source
               Infos { nthArg = Nothing , origin = Nothing }
               (Area (Loc 0 1 1) (Loc 14 1 15))
               (App
-                 (Meta
+                 (Source
                     Infos { nthArg = Nothing , origin = Nothing }
                     (Area (Loc 15 1 16) (Loc 17 1 18))
                     (Var "=="))
-                 (Meta
+                 (Source
                     Infos { nthArg = Nothing , origin = Nothing }
                     (Area (Loc 0 1 1) (Loc 14 1 15))
                     (Record
                        [ Field
                            ( "x"
-                           , Meta
+                           , Source
                                Infos { nthArg = Nothing , origin = Nothing }
                                (Area (Loc 5 1 6) (Loc 6 1 7))
                                (LNum "3")
                            )
                        , Field
                            ( "y"
-                           , Meta
+                           , Source
                                Infos { nthArg = Nothing , origin = Nothing }
                                (Area (Loc 11 1 12) (Loc 12 1 13))
                                (LNum "5")
                            )
                        ]))
                  False))
-           (Meta
+           (Source
               Infos { nthArg = Nothing , origin = Nothing }
               (Area (Loc 18 1 19) (Loc 34 1 35))
               (Record
                  [ Field
                      ( "name"
-                     , Meta
+                     , Source
                          Infos { nthArg = Nothing , origin = Nothing }
                          (Area (Loc 26 1 27) (Loc 32 1 33))
                          (LStr "John")
