@@ -19,44 +19,25 @@ Left
            (TVar (TV "b" Star))))
      (Reason
         (WrongTypeApplied
-           (Source
-              Infos { nthArg = Nothing , origin = Nothing }
+           (Canonical
               (Area (Loc 0 1 1) (Loc 14 1 15))
               (App
-                 (Source
-                    Infos { nthArg = Nothing , origin = Nothing }
-                    (Area (Loc 15 1 16) (Loc 17 1 18))
-                    (Var "=="))
-                 (Source
-                    Infos { nthArg = Nothing , origin = Nothing }
+                 (Canonical (Area (Loc 15 1 16) (Loc 17 1 18)) (Var "=="))
+                 (Canonical
                     (Area (Loc 0 1 1) (Loc 14 1 15))
                     (Record
                        [ Field
-                           ( "x"
-                           , Source
-                               Infos { nthArg = Nothing , origin = Nothing }
-                               (Area (Loc 5 1 6) (Loc 6 1 7))
-                               (LNum "3")
-                           )
+                           ( "x" , Canonical (Area (Loc 5 1 6) (Loc 6 1 7)) (LNum "3") )
                        , Field
-                           ( "y"
-                           , Source
-                               Infos { nthArg = Nothing , origin = Nothing }
-                               (Area (Loc 11 1 12) (Loc 12 1 13))
-                               (LNum "5")
-                           )
+                           ( "y" , Canonical (Area (Loc 11 1 12) (Loc 12 1 13)) (LNum "5") )
                        ]))
                  False))
-           (Source
-              Infos { nthArg = Nothing , origin = Nothing }
+           (Canonical
               (Area (Loc 18 1 19) (Loc 34 1 35))
               (Record
                  [ Field
                      ( "name"
-                     , Source
-                         Infos { nthArg = Nothing , origin = Nothing }
-                         (Area (Loc 26 1 27) (Loc 32 1 33))
-                         (LStr "John")
+                     , Canonical (Area (Loc 26 1 27) (Loc 32 1 33)) (LStr "John")
                      )
                  ])))
         "path"

@@ -1,4 +1,3 @@
-{-# LANGUAGE TupleSections #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
@@ -11,9 +10,12 @@ import qualified AST.Source                    as Src
 import           Infer.Type
 import           Data.List
 import           Explain.Meta
+import           Control.Monad.Except
+import           Error.Error
+import           Explain.Reason
 
 
-type CanonicalM a = forall m . Monad m => m a
+type CanonicalM a = forall m . MonadError InferError m => m a
 
 
 class Canonicalizable a b where
@@ -240,5 +242,10 @@ instance Canonicalizable Src.AST Can.AST where
                      }
 
 
-canonicalizeTable :: Src.Table -> CanonicalM Can.Table
-canonicalizeTable = mapM canonicalize
+canonicalizeTable :: Src.Table -> Either InferError Can.Table
+canonicalizeTable table = runExcept $ mapM canonicalize table
+
+findAST :: Can.Table -> FilePath -> Either InferError Can.AST
+findAST table path = case M.lookup path table of
+  Just found -> return found
+  Nothing    -> Left $ InferError (ImportNotFound path) NoReason

@@ -24,6 +24,7 @@ import           Infer.Infer
 import           Error.Error
 import           Explain.Reason
 import           Parse.AST
+import           Canonicalize.Canonicalize
 
 snapshotTest :: Show a => String -> a -> Golden Text
 snapshotTest name actualOutput = Golden
@@ -37,7 +38,7 @@ snapshotTest name actualOutput = Golden
   }
 
 tester :: String -> Either InferError Slv.AST
-tester code = case buildAST "path" code of
+tester code = case buildAST "path" code >>= canonicalize of
   (Right ast) -> runEnv ast >>= (`runInfer` ast)
   (Left  e  ) -> Left e
  where
@@ -45,8 +46,11 @@ tester code = case buildAST "path" code of
     (runStateT (buildInitialEnv initialEnv x) Unique { count = 0 })
 
 tableTester :: Src.Table -> Src.AST -> Either InferError Slv.Table
-tableTester table ast =
-  fst <$> runExcept (runStateT (solveTable table ast) Unique { count = 0 })
+tableTester table ast = do
+  canTable <- canonicalizeTable table
+  canAST   <- canonicalize ast
+  fst <$> runExcept
+    (runStateT (solveTable canTable canAST) Unique { count = 0 })
 
 spec :: Spec
 spec = do

@@ -6,7 +6,7 @@ module Infer.Env where
 
 import qualified Data.Map                      as M
 import           Infer.Type                    as Ty
-import           AST.Source                    as Src
+import           AST.Canonical                 as Can
 import           Control.Monad.Except           ( MonadError(throwError) )
 import           Infer.Instantiate
 import           Infer.ADT
@@ -99,13 +99,13 @@ initialEnv = Env
   , envcurrentpath = ""
   }
 
-solveInterfaces :: Env -> [Src.Interface] -> Infer Env
+solveInterfaces :: Env -> [Can.Interface] -> Infer Env
 solveInterfaces = foldM solveInterface
 
 
-solveInterface :: Env -> Src.Interface -> Infer Env
+solveInterface :: Env -> Can.Interface -> Infer Env
 solveInterface env interface = case interface of
-  Src.Interface constraints n vars ms -> do
+  Can.Interface constraints n vars ms -> do
     ts <- mapM (typingToType env) ms
 
     let ts' = addConstraints n vars <$> ts
@@ -114,7 +114,7 @@ solveInterface env interface = case interface of
 
     let
       supers = mapMaybe
-        (\(Src.Source _ _ (Src.TRComp interface' [Src.Source _ _ (Src.TRSingle v)])) ->
+        (\(Can.Canonical _ (Can.TRComp interface' [Can.Canonical _ (Can.TRSingle v)])) ->
           (\tv -> IsIn interface' [tv]) <$> findTypeVar tvs v
         )
         constraints
@@ -158,13 +158,13 @@ addConstraints n tvs t =
   in  ps :=> t
 
 
-solveInstances :: Env -> [Src.Instance] -> Infer Env
+solveInstances :: Env -> [Can.Instance] -> Infer Env
 solveInstances = foldM solveInstance
 
 
-solveInstance :: Env -> Src.Instance -> Infer Env
+solveInstance :: Env -> Can.Instance -> Infer Env
 solveInstance env inst = case inst of
-  Src.Instance constraints n typing _ -> do
+  Can.Instance constraints n typing _ -> do
     ts <- mapM (typingToType env) typing
 
     let subst = foldl (\s t -> s `compose` buildVarSubsts t) mempty ts
@@ -172,12 +172,12 @@ solveInstance env inst = case inst of
     ps <-
       apply subst
         <$> mapM
-              (\(Src.Source _ _ (Src.TRComp interface' args)) ->
+              (\(Can.Canonical _ (Can.TRComp interface' args)) ->
                 case M.lookup interface' (envinterfaces env) of
                   Just (Ty.Interface tvs _ _) -> do
                     vars <- mapM
                       (\case
-                        (Src.Source _ _ (Src.TRSingle v), TV _ k) ->
+                        (Can.Canonical _ (Can.TRSingle v), TV _ k) ->
                           return $ TVar $ TV v k
                         (typing, _) -> typingToType env typing
                       )
@@ -195,15 +195,15 @@ solveInstance env inst = case inst of
     addInstance env (apply subst' ps) $ IsIn n (apply subst' ts)
 
 
-populateTopLevelTypings :: Env -> [Src.Exp] -> Infer Env
-populateTopLevelTypings env []                        = return env
-populateTopLevelTypings env ((Src.Source _ _ e) : es) = do
+populateTopLevelTypings :: Env -> [Can.Exp] -> Infer Env
+populateTopLevelTypings env []                         = return env
+populateTopLevelTypings env ((Can.Canonical _ e) : es) = do
   nextEnv <- case e of
-    Src.TypedExp (Src.Source _ _ (Src.Assignment name _)) typing -> do
+    Can.TypedExp (Can.Canonical _ (Can.Assignment name _)) typing -> do
       sc <- typingToScheme env typing
       return $ extendVars env (name, sc)
 
-    Src.TypedExp (Src.Source _ _ (Src.Export (Src.Source _ _ (Src.Assignment name _)))) typing
+    Can.TypedExp (Can.Canonical _ (Can.Export (Can.Canonical _ (Can.Assignment name _)))) typing
       -> do
         sc <- typingToScheme env typing
         return $ extendVars env (name, sc)

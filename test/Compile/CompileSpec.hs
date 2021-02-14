@@ -16,6 +16,7 @@ import           Text.Show.Pretty               ( ppShow )
 import           Control.Monad.Except           ( runExcept )
 import           Control.Monad.State
 import qualified AST.Source                    as Src
+import qualified AST.Canonical                 as Can
 import qualified AST.Optimized                 as Opt
 import           Infer.Solve
 import           Infer.Env
@@ -29,6 +30,7 @@ import           Prelude                 hiding ( readFile )
 import           GHC.IO                         ( unsafePerformIO )
 import           Utils.PathUtils
 import           TestUtils
+import           Canonicalize.Canonicalize     as Canonicalize
 
 
 snapshotTest :: String -> String -> Golden Text
@@ -46,7 +48,7 @@ snapshotTest name actualOutput = Golden
 -- TODO: Refactor in order to use the inferAST function instead that supports imports
 tester :: Bool -> String -> String
 tester optimized code =
-  let inferred = case buildAST "path" code of
+  let inferred = case buildAST "path" code >>= canonicalize of
         (Right ast) -> runEnv ast >>= (`runInfer` ast)
         _           -> Left $ InferError (UnboundVariable "") NoReason
   in  case inferred of
@@ -66,7 +68,7 @@ tester optimized code =
 
 coverageTester :: String -> String
 coverageTester code =
-  let inferred = case buildAST "path" code of
+  let inferred = case buildAST "path" code >>= canonicalize of
         (Right ast) -> runEnv ast >>= (`runInfer` ast)
         _           -> Left $ InferError (UnboundVariable "") NoReason
   in  case inferred of
@@ -84,8 +86,8 @@ coverageTester code =
   runEnv x = fst <$> runExcept
     (runStateT (buildInitialEnv initialEnv x) Unique { count = 0 })
 
-tableTester :: FilePath -> Src.Table -> Src.AST -> String
-tableTester rootPath table ast@Src.AST { Src.apath = Just path } =
+tableTester :: FilePath -> Can.Table -> Can.AST -> String
+tableTester rootPath table ast@Can.AST { Can.apath = Just path } =
   let resolved =
           fst <$> runExcept
             (runStateT (solveTable table ast) Unique { count = 0 })
@@ -600,14 +602,14 @@ spec = do
 
     it "should compile imports and exports" $ do
       let codeA = "export singleton = (a) => ([a])"
-          astA  = buildAST "./ModuleA" codeA
+          astA  = buildAST "./ModuleA" codeA >>= canonicalize
 
           codeB = unlines
             [ "import L from \"./ModuleA\""
             , "import { singleton } from \"./ModuleA\""
             , "L.singleton(3)"
             ]
-          astB   = buildAST "./ModuleB" codeB
+          astB   = buildAST "./ModuleB" codeB >>= canonicalize
           actual = case (astA, astB) of
             (Right a, Right b) ->
               let astTable = M.fromList [("./ModuleA", a), ("./ModuleB", b)]
@@ -618,7 +620,7 @@ spec = do
     it "should compile imports and exports of Namespaced ADTs" $ do
       let
         codeA = "export data Maybe a = Just a | Nothing"
-        astA  = buildAST "./ADTs" codeA
+        astA  = buildAST "./ADTs" codeA >>= canonicalize
 
         codeB = unlines
           [ "import ADTs from \"./ADTs\""
@@ -633,7 +635,7 @@ spec = do
           , "  }"
           , ")"
           ]
-        astB   = buildAST "./Module" codeB
+        astB   = buildAST "./Module" codeB >>= canonicalize
         actual = case (astA, astB) of
           (Right a, Right b) ->
             let astTable = M.fromList [("./Module", b), ("./ADTs", a)]
@@ -756,8 +758,10 @@ spec = do
                 "/root/project/src/Main.mad"
                 Nothing
                 "/root/project/src/Main.mad"
-          let ast = r >>= flip findAST "/root/project/src/Main.mad"
-          let actual = case (ast, r) of
+          let r' = r >>= canonicalizeTable
+          let ast =
+                r' >>= flip Canonicalize.findAST "/root/project/src/Main.mad"
+          let actual = case (ast, r') of
                 (Right a, Right t) -> tableTester "/root/project/src" t a
                 (Left  e, _      ) -> ppShow e
                 (_      , Left e ) -> ppShow e
@@ -797,8 +801,9 @@ spec = do
 
       let r = unsafePerformIO
             $ buildASTTable' pathUtils "/src/Main.mad" Nothing "/src/Main.mad"
-      let ast = r >>= flip findAST "/src/Main.mad"
-      let actual = case (ast, r) of
+      let r'  = r >>= canonicalizeTable
+      let ast = r' >>= flip Canonicalize.findAST "/src/Main.mad"
+      let actual = case (ast, r') of
             (Right a, Right t) -> tableTester "/src" t a
 
       snapshotTest "should compile and resolve imported packages" actual
@@ -845,8 +850,11 @@ spec = do
                 "/root/project/src/Main.mad"
                 Nothing
                 "/root/project/src/Main.mad"
-          let ast = r >>= flip findAST "/root/project/src/Main.mad"
-          let actual = case (ast, r) of
+
+          let r' = r >>= canonicalizeTable
+          let ast =
+                r' >>= flip Canonicalize.findAST "/root/project/src/Main.mad"
+          let actual = case (ast, r') of
                 (Right a, Right t) -> tableTester "/root/project/src" t a
 
           snapshotTest
@@ -879,8 +887,9 @@ spec = do
                                                "/root/project/src/Main.mad"
                                                Nothing
                                                "/root/project/src/Main.mad"
-      let ast = r >>= flip findAST "/root/project/src/Main.mad"
-      let actual = case (ast, r) of
+      let r'  = r >>= canonicalizeTable
+      let ast = r' >>= flip Canonicalize.findAST "/root/project/src/Main.mad"
+      let actual = case (ast, r') of
             (Right a, Right t) -> tableTester "/root/project/src" t a
             (Left  e, _      ) -> ppShow e
             (_      , Left e ) -> ppShow e
@@ -1037,8 +1046,10 @@ spec = do
                 "/root/project/src/Main.mad"
                 Nothing
                 "/root/project/src/Main.mad"
-          let ast = r >>= flip findAST "/root/project/src/Main.mad"
-          let actual = case (ast, r) of
+          let r' = r >>= canonicalizeTable
+          let ast =
+                r' >>= flip Canonicalize.findAST "/root/project/src/Main.mad"
+          let actual = case (ast, r') of
                 (Right a, Right t) -> tableTester "/root/project/src" t a
                 (Left  e, _      ) -> ppShow e
                 (_      , Left e ) -> ppShow e
@@ -1099,8 +1110,9 @@ spec = do
                                                    "/src/Main.mad"
                                                    Nothing
                                                    "/src/Main.mad"
-          let ast = r >>= flip findAST "/src/Main.mad"
-          let actual = case (ast, r) of
+          let r'  = r >>= canonicalizeTable
+          let ast = r' >>= flip Canonicalize.findAST "/src/Main.mad"
+          let actual = case (ast, r') of
                 (Right a, Right t) -> tableTester "/src" t a
 
           snapshotTest

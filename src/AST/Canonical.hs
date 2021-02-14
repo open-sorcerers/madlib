@@ -141,3 +141,6 @@ isAssignment :: Exp -> Bool
 isAssignment exp = case exp of
   Canonical _ (Assignment _ _) -> True
   _                            -> False
+
+getArea :: Canonical a -> Area
+getArea (Canonical a _) = a

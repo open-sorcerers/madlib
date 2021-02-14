@@ -3,7 +3,6 @@
 {-# LANGUAGE RankNTypes #-}
 module Infer.Typing where
 
-import qualified AST.Source                    as Src
 import           Infer.Type
 import           Explain.Meta
 import           Infer.Infer
@@ -22,9 +21,10 @@ import           Data.List                      ( nub
                                                 , union
                                                 )
 import qualified AST.Solved                    as Slv
+import qualified AST.Canonical                 as Can
 
 
-typingToScheme :: Env -> Src.Typing -> Infer Scheme
+typingToScheme :: Env -> Can.Typing -> Infer Scheme
 typingToScheme env typing = do
   (ps :=> t) <- qualTypingToQualType env typing
   let vars =
@@ -32,9 +32,9 @@ typingToScheme env typing = do
   return $ quantify vars (ps :=> t)
 
 
-qualTypingToQualType :: Env -> Src.Typing -> Infer (Qual Type)
-qualTypingToQualType env t@(Src.Source _ _ typing) = case typing of
-  Src.TRConstrained constraints typing' -> do
+qualTypingToQualType :: Env -> Can.Typing -> Infer (Qual Type)
+qualTypingToQualType env t@(Can.Canonical _ typing) = case typing of
+  Can.TRConstrained constraints typing' -> do
     t  <- typingToType env typing'
     ps <- mapM (constraintToPredicate env t) constraints
     return $ ps :=> t
@@ -42,15 +42,15 @@ qualTypingToQualType env t@(Src.Source _ _ typing) = case typing of
   _ -> ([] :=>) <$> typingToType env t
 
 
-constraintToPredicate :: Env -> Type -> Src.Typing -> Infer Pred
-constraintToPredicate env t (Src.Source _ _ (Src.TRComp n typings)) = do
+constraintToPredicate :: Env -> Type -> Can.Typing -> Infer Pred
+constraintToPredicate env t (Can.Canonical _ (Can.TRComp n typings)) = do
   let s = buildVarSubsts t
   ts <- mapM
     (\case
-      Src.Source _ _ (Src.TRSingle var) ->
+      Can.Canonical _ (Can.TRSingle var) ->
         return $ apply s $ TVar $ TV var Star
 
-      fullTyping@(Src.Source _ _ (Src.TRComp n typings')) -> do
+      fullTyping@(Can.Canonical _ (Can.TRComp n typings')) -> do
         apply s <$> typingToType env fullTyping
     )
     typings
@@ -58,8 +58,8 @@ constraintToPredicate env t (Src.Source _ _ (Src.TRComp n typings)) = do
   return $ IsIn n ts
 
 
-typingToType :: Env -> Src.Typing -> Infer Type
-typingToType env (Src.Source _ _ (Src.TRSingle t))
+typingToType :: Env -> Can.Typing -> Infer Type
+typingToType env (Can.Canonical _ (Can.TRSingle t))
   | t == "Number" = return tNumber
   | t == "Boolean" = return tBool
   | t == "String" = return tStr
@@ -72,7 +72,7 @@ typingToType env (Src.Source _ _ (Src.TRSingle t))
       t                -> return $ getConstructorCon t
 
 
-typingToType env (Src.Source info area (Src.TRComp t ts))
+typingToType env (Can.Canonical area (Can.TRComp t ts))
   | isLower . head $ t = do
     params <- mapM (typingToType env) ts
     return $ foldl TApp (TVar $ TV t (buildKind (length ts))) params
@@ -101,16 +101,16 @@ typingToType env (Src.Source info area (Src.TRComp t ts))
       t                  -> return $ foldl TApp (getConstructorCon t) params
 
 
-typingToType env (Src.Source _ _ (Src.TRArr l r)) = do
+typingToType env (Can.Canonical _ (Can.TRArr l r)) = do
   l' <- typingToType env l
   r' <- typingToType env r
   return $ l' `fn` r'
 
-typingToType env (Src.Source _ _ (Src.TRRecord fields)) = do
+typingToType env (Can.Canonical _ (Can.TRRecord fields)) = do
   fields' <- mapM (typingToType env) fields
   return $ TRecord fields' False
 
-typingToType env (Src.Source _ _ (Src.TRTuple elems)) = do
+typingToType env (Can.Canonical _ (Can.TRTuple elems)) = do
   elems' <- mapM (typingToType env) elems
   let tupleT = getTupleCtor (length elems)
   return $ foldl TApp tupleT elems'
@@ -152,19 +152,20 @@ updateAliasVars t args = do
 
     _ -> return t
 
-updateTyping :: Src.Typing -> Slv.Typing
+updateTyping :: Can.Typing -> Slv.Typing
 updateTyping typing = case typing of
-  Src.Source _ _ (Src.TRSingle name) -> Slv.TRSingle name
+  Can.Canonical _ (Can.TRSingle name) -> Slv.TRSingle name
 
-  Src.Source _ _ (Src.TRComp name vars) ->
+  Can.Canonical _ (Can.TRComp name vars) ->
     Slv.TRComp name (updateTyping <$> vars)
 
-  Src.Source _ _ (Src.TRArr l r) -> Slv.TRArr (updateTyping l) (updateTyping r)
+  Can.Canonical _ (Can.TRArr l r) ->
+    Slv.TRArr (updateTyping l) (updateTyping r)
 
-  Src.Source _ _ (Src.TRRecord fields) ->
+  Can.Canonical _ (Can.TRRecord fields) ->
     Slv.TRRecord (updateTyping <$> fields)
 
-  Src.Source _ _ (Src.TRTuple elems) -> Slv.TRTuple (updateTyping <$> elems)
+  Can.Canonical _ (Can.TRTuple elems) -> Slv.TRTuple (updateTyping <$> elems)
 
-  Src.Source _ _ (Src.TRConstrained ts t) ->
+  Can.Canonical _ (Can.TRConstrained ts t) ->
     Slv.TRConstrained (updateTyping <$> ts) (updateTyping t)

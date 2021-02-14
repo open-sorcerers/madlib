@@ -1,6 +1,5 @@
 {-# LANGUAGE MultiParamTypeClasses   #-}
 {-# LANGUAGE FlexibleInstances   #-}
-{-# LANGUAGE FunctionalDependencies   #-}
 {-# LANGUAGE FlexibleContexts   #-}
 {-# LANGUAGE NamedFieldPuns #-}
 module Main where
@@ -24,6 +23,7 @@ import           Options.Applicative
 import           Tools.CommandLineFlags
 import           Tools.CommandLine
 import           Compile.Compile
+import qualified AST.Canonical                 as Can
 import qualified AST.Solved                    as Slv
 import qualified AST.Optimized                 as Opt
 import           Optimize.Optimize
@@ -50,6 +50,9 @@ import           Data.List                      ( isInfixOf
                                                 )
 import           Data.String.Utils
 import           Compile.JSInternals
+import           Error.Error
+import           Explain.Reason
+import qualified Canonicalize.Canonicalize     as Canonicalize
 
 
 main :: IO ()
@@ -154,7 +157,7 @@ runTests entrypoint coverage = do
   testOutput <-
     try $ callCommand $ "node " <> testRunnerPathChecked <> " " <> entrypoint
   case (testOutput :: Either IOError ()) of
-    Left  e -> return () --putStrLn $ ppShow e
+    Left  e -> return ()
     Right a -> return ()
 
 runCompilation
@@ -163,15 +166,16 @@ runCompilation entrypoint outputPath verbose debug bundle coverage optimized =
   do
     canonicalEntrypoint <- canonicalizePath entrypoint
     astTable            <- buildASTTable canonicalEntrypoint
+    let canTable = astTable >>= Canonicalize.canonicalizeTable
 
-    rootPath            <- canonicalizePath $ computeRootPath entrypoint
+    rootPath <- canonicalizePath $ computeRootPath entrypoint
 
-    let entryAST         = astTable >>= flip findAST canonicalEntrypoint
-        resolvedASTTable = case (entryAST, astTable) of
-          (Right ast, Right table) ->
+    let entryAST = canTable >>= flip Canonicalize.findAST canonicalEntrypoint
+        resolvedASTTable = case (entryAST, canTable) of
+          (Right ast, Right table) -> do
             runExcept (runStateT (solveTable table ast) Unique { count = 0 })
-          (_     , Left e) -> Left e
-          (Left e, _     ) -> Left e
+          (_, Left e) -> Left e
+          (Left e, _) -> Left $ InferError (ImportNotFound rootPath) NoReason
 
     when verbose $ do
       putStrLn $ "OUTPUT: " ++ outputPath
