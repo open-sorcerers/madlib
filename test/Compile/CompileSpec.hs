@@ -795,7 +795,17 @@ spec = do
 
     it "should compile and resolve imported packages" $ do
       let
-        madlibDotJSON = unlines ["{", "  \"main\": \"src/Main.mad\"", "}"]
+        madlibDotJSON = unlines
+          [ "{"
+          , "  \"main\": \"src/Main.mad\""
+          , "}"
+          ]
+        mainMadlibDotJSON = unlines
+          [ "{"
+          , "  \"main\": \"src/Main.mad\","
+          , "  \"dependencies\": { \"random\": \"url\" }"
+          , "}"
+          ]
 
         libMain       = unlines
           [ "import R from \"./Utils/Random\""
@@ -807,16 +817,17 @@ spec = do
         main      = unlines ["import R from \"random\"", "R.random(3)"]
 
         files     = M.fromList
-          [ ("/madlib_modules/random/madlib.json"         , madlibDotJSON)
-          , ("/madlib_modules/random/src/Main.mad"        , libMain)
-          , ("/madlib_modules/random/src/Utils/Random.mad", libRandom)
-          , ("/src/Main.mad"                              , main)
+          [ ("/madlib_modules/url/madlib.json"         , madlibDotJSON)
+          , ("/madlib_modules/url/src/Main.mad"        , libMain)
+          , ("/madlib_modules/url/src/Utils/Random.mad", libRandom)
+          , ("/src/Main.mad"                           , main)
+          , ("/madlib.json"                            , mainMadlibDotJSON)
           ]
 
         pathUtils = defaultPathUtils
           { readFile = makeReadFile files
           , byteStringReadFile = makeByteStringReadFile files
-          , doesFileExist = \f -> if f == "/madlib_modules/random/madlib.json"
+          , doesFileExist = \f -> if f == "/madlib_modules/url/madlib.json" || f == "/madlib.json"
                               then return True
                               else return False
           }
@@ -839,6 +850,12 @@ spec = do
       $ do
           let
             madlibDotJSON = unlines ["{", "  \"main\": \"src/Main.mad\"", "}"]
+            mainMadlibDotJSON = unlines
+              [ "{"
+              , "  \"main\": \"src/Main.mad\","
+              , "  \"dependencies\": { \"random\": \"url\" }"
+              , "}"
+              ]
 
             libMain       = unlines
               [ "import R from \"./Utils/Random\""
@@ -851,21 +868,22 @@ spec = do
             main      = unlines ["import R from \"random\"", "R.random(3)"]
 
             files     = M.fromList
-              [ ( "/root/project/madlib_modules/random/madlib.json"
+              [ ( "/root/project/madlib_modules/url/madlib.json"
                 , madlibDotJSON
                 )
-              , ("/root/project/madlib_modules/random/src/Main.mad", libMain)
-              , ( "/root/project/madlib_modules/random/src/Utils/Random.mad"
+              , ("/root/project/madlib_modules/url/src/Main.mad", libMain)
+              , ( "/root/project/madlib_modules/url/src/Utils/Random.mad"
                 , libRandom
                 )
               , ("/root/project/src/Main.mad", main)
+              , ("/root/project/madlib.json", mainMadlibDotJSON)
               ]
 
             pathUtils = defaultPathUtils
               { readFile           = makeReadFile files
               , byteStringReadFile = makeByteStringReadFile files
               , doesFileExist      = \f ->
-                if f == "/root/project/madlib_modules/random/madlib.json"
+                if f == "/root/project/madlib_modules/url/madlib.json" || f == "/root/project/madlib.json"
                   then return True
                   else return False
               }
@@ -1087,12 +1105,27 @@ spec = do
     it "should compile and resolve imported packages that also rely on packages"
       $ do
           let
-            mathMadlibDotJSON =
-              unlines ["{", "  \"main\": \"src/Main.mad\"", "}"]
+            mainMadlibDotJSON = unlines
+              [ "{"
+              , "  \"main\": \"src/Main.mad\","
+              , "  \"dependencies\": { \"random\": \"urlrandom\" }"
+              , "}"
+              ]
+            
+            mathMadlibDotJSON = unlines
+              [ "{"
+              , "  \"main\": \"src/Main.mad\""
+              , "}"
+              ]
+
             mathMain = unlines ["export avg = (a, b) => ((a + b) / 2)"]
 
-            randomMadlibDotJSON =
-              unlines ["{", "  \"main\": \"src/Main.mad\"", "}"]
+            randomMadlibDotJSON = unlines
+              [ "{"
+              , "  \"main\": \"src/Main.mad\","
+              , "  \"dependencies\": { \"math\": \"urlmath\" }"
+              , "}"
+              ]
 
             randomMain = unlines
               [ "import R from \"./Utils/Random\""
@@ -1105,26 +1138,26 @@ spec = do
             main      = unlines ["import R from \"random\"", "R.random(3)"]
 
             files     = M.fromList
-              [ ( "/madlib_modules/random/madlib_modules/math/madlib.json"
+              [ ( "/madlib_modules/urlmath/madlib.json"
                 , mathMadlibDotJSON
                 )
-              , ( "/madlib_modules/random/madlib_modules/math/src/Main.mad"
+              , ( "/madlib_modules/urlmath/src/Main.mad"
                 , mathMain
                 )
-              , ("/madlib_modules/random/madlib.json", randomMadlibDotJSON)
-              , ("/madlib_modules/random/src/Main.mad"        , randomMain)
-              , ("/madlib_modules/random/src/Utils/Random.mad", libRandom)
+              , ("/madlib_modules/urlrandom/madlib.json", randomMadlibDotJSON)
+              , ("/madlib_modules/urlrandom/src/Main.mad"        , randomMain)
+              , ("/madlib_modules/urlrandom/src/Utils/Random.mad", libRandom)
               , ("/src/Main.mad"                              , main)
+              , ("/madlib.json"                              , mainMadlibDotJSON)
               ]
 
             pathUtils = defaultPathUtils
               { readFile           = makeReadFile files
               , byteStringReadFile = makeByteStringReadFile files
               , doesFileExist      = \f ->
-                if f
-                   == "/madlib_modules/random/madlib.json"
-                   || f
-                   == "/madlib_modules/random/madlib_modules/math/madlib.json"
+                if f == "/madlib_modules/urlrandom/madlib.json"
+                   || f == "/madlib_modules/urlmath/madlib.json"
+                   || f == "/madlib.json"
                 then
                   return True
                 else
@@ -1140,6 +1173,7 @@ spec = do
           let ast = r >>= flip Parse.findAST "/src/Main.mad"
           let actual = case (ast, r) of
                 (Right a, Right t) -> tableTester "/src" t a
+                (a, b) -> ppShow a <> ppShow b
 
           snapshotTest
             "should compile and resolve imported packages that also rely on packages"
