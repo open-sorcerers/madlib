@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: c76da47c8819c4b0fd22190ebe912af0b04a7c11f5af9de5ab6d1edffcc39aab
+-- hash: 7ff985c41e9384e255b9069d997cdd34f584347858afc1e445bc7eb02264360c
 
 name:           madlib
 version:        0.1.0
@@ -74,6 +74,7 @@ library
       Utils.Path
       Utils.PathUtils
       Utils.Tuple
+      Utils.URL
   other-modules:
       Paths_madlib
   hs-source-dirs:
@@ -153,6 +154,7 @@ executable madlib
       Utils.Path
       Utils.PathUtils
       Utils.Tuple
+      Utils.URL
       Paths_madlib
   hs-source-dirs:
       src
